@@ -1,0 +1,35 @@
+[Srv->Client]
+*event init:
+
+{"logs":[Logobj, Logobj, ...](time desc),
+"users":[Userobj, Userobj, ...]}
+
+*event log:
+Logobj
+
+[Client->Srv]
+*event say:
+
+{"comment":String}
+
+*event inout:
+
+{"name":String/null}
+
+
+
+*object Logobj:
+{
+"name":String,
+"time":Number(ms)
+"comment":String,
+"ip":String
+}
+
+*object Userobj:
+{
+"id":Id,
+"name":String,
+"ip":String,
+"rom":Boolean
+}
