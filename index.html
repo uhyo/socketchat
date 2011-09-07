@@ -1,0 +1,110 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>socket chat</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+function SocketChat(log,users){
+	this.logid=log,this.usersid=users;
+}
+SocketChat.prototype={
+	init:function(){
+		this.log=document.getElementById(this.logid);
+		this.users=document.getElementById(this.usersid);
+		
+		var socket;
+		socket=this.socket = io.connect(location.origin);
+		
+		socket.on("init",this.loginit.bind(this));
+		socket.on("log",this.write.bind(this));
+		socket.on("users",this.userlist.bind(this));
+		
+		/*document.forms["inout"].addEventListener("submit",this.submit.bind(this),false);
+		document.forms["comment"].addEventListener("submit",this.submit.bind(this),false);*/
+		document.addEventListener("submit",this.submit.bind(this),false);
+	},
+	loginit:function(data){
+		console.log("loginit",data);
+			
+		data.logs.reverse().forEach(function(line){
+			this.write(line);
+		},this);
+	},
+	write:function(obj){
+		console.log("write",obj);
+		var df=document.createDocumentFragment();
+		df.appendChild(el("dt",obj.name));
+		var dd=el("dd","");
+		var comsp=el("span",obj.comment);
+		comsp.classList.add("comment");
+		dd.appendChild(comsp);
+		var infsp=el("span","(");
+		infsp.classList.add("info");
+		var date=new Date(obj.time);
+		var time=el("time",date.getFullYear()+"-"+(date.getMonth()+1)+"-"+date.getDate()+" "+date.getHours()+":"+date.getMinutes()+":"+date.getSeconds());
+		time.datetime=date.getFullYear()+"-"+(date.getMonth()+1)+"-"+date.getDate()+"T"+date.getHours()+":"+date.getMinutes()+":"+date.getSeconds()+"+09:00";
+		
+		infsp.appendChild(time);
+		infsp.appendChild(document.createTextNode(", "+obj.ip+")"));
+		dd.appendChild(infsp);
+		df.appendChild(dd);
+		
+		this.log.insertBefore(df,this.log.firstChild);
+		
+		
+		function el(name,text){
+			var ret=document.createElement(name);
+			ret.textContent=text;
+			return ret;
+		}
+	},
+	userlist:function(obj){
+		console.log("userlist",obj);
+		while(this.users.firstChild)this.users.removeChild(this.users.firstChild);
+		
+		obj.users.forEach(function(user){
+			if(user.rom)return;
+			var li=document.createElement("li");
+			li.textContent=user.name;
+			this.users.appendChild(li);
+		});
+	},
+	submit:function(e){
+		var f=e.target;
+		console.log(f.name);
+		if(f.name=="inout"){
+			//入退室
+			console.log(f.elements);
+			var el=f.elements["uname"];
+			console.log(el);
+			this.socket.emit("inout",{"name":el.value});
+		}else if(f.name=="comment"){
+			//発言
+			var el=f.elements["comment"];
+			this.socket.emit("say",{"comment":el.value});
+		}
+		e.preventDefault();
+	},
+	
+};
+    </script>
+    <script>
+Chat=new SocketChat("log","users");
+window.addEventListener('load',function(){
+	Chat.init();
+},false);
+    </script>
+  </head>
+  <body>
+  <form name="inout">
+    <p><input name="uname" size="30" maxlength="25" required><input type="submit" value="入室"></p>
+  </form>
+  <form name="comment">
+    <p><input name="comment" size="80" maxlength="200" required><input type="submit" value="発言"></p>
+  <dl id="log">
+  </dl>
+  <ul id="users">
+  </ul>
+  </body>
+</html>

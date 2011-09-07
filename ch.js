@@ -23,7 +23,6 @@ var httpserver = http.createServer(function(req, res){
 				res.end();
 			});
 			break;
-		  "users":users
 		default: send404(res);
 	}
 	function send404(res){
@@ -71,7 +70,7 @@ io.sockets.on('connection',function(socket){
 	//いなくなった
 	socket.on("disconnect",function(data){
 		delUser(user);
-		socket.broadcast.emit("users",{"users":users});
+		sendusers(socket);
 	});
 	
 });
@@ -81,13 +80,14 @@ function sendFirstLog(socket){
 	});
 }
 function addUser(socket){
-	var user={"id":user_next,
+	var user={"id":users_next,
 		  "name":null,
 		  "rom":true,
 		  "ip":socket.handshake.address.address
 		  };
 	users.push(user);
-	socket.broadcast.emit("users",{"users":users});
+	sendusers(socket);
+	users_next++;
 	return user;
 }
 function delUser(user){
@@ -103,13 +103,47 @@ function says(socket,user,data){
 		    };
 
 	log.insert(logobj,{"safe":true},function(err,docs){
+		if(err){
+			console.log(err);
+			throw err;
+		}
+		socket.emit("log",logobj);
+		socket.broadcast.emit("log",logobj);
+	});
+
+//	makelog(socket,logobj);
+}
+function makelog(socket,logobj){
+	log.insert(logobj,{"safe":true},function(err,docs){
+		if(err){
+			console.log(err);
+			throw err;
+		}
+		socket.emit("log",logobj);
 		socket.broadcast.emit("log",logobj);
 	});
 }
 function inout(socket,user,data){
 	user.rom = !user.rom;
-	user.name= user.rom ? null : data.name;
+	if(!user.rom)user.name=data.name;
+	//シスログ
+	var syslog={"name" : (user.rom?"■退室通知":"■入室通知"),
+		    "time":Date.now(),
+		    "ip":user.ip,
+		    "comment":"「"+user.name+"」さんが"+(user.rom?"退室":"入室"),
+		    "syslog":true};
+	makelog(socket,syslog);
+	if(user.rom)user.name=null;
 
-	socket.broadcast.emit("users",{"users":users});
+	sendusers(socket);
+	
+
+}
+function sendusers(socket){
+	var p={"users":users};
+	socket.emit("users",p);
+	socket.broadcast.emit("users",p);
+	
+	
 }
 

@@ -26,7 +26,8 @@ Logobj
 "name":String,
 "time":Number(ms)
 "comment":String,
-"ip":String
+"ip":String,
+("syslog":Boolean),
 }
 
 *object Userobj:
