@@ -27,7 +27,7 @@ SocketChat.prototype={
 	loginit:function(data){
 		console.log("loginit",data);
 			
-		data.logs.reverse().forEach(function(line){
+		data.logs.forEach(function(line){
 			this.write(line);
 		},this);
 	},

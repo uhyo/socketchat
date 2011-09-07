@@ -75,7 +75,8 @@ io.sockets.on('connection',function(socket){
 	
 });
 function sendFirstLog(socket){
-	log.find({},{"limit":CHAT_FIRST_LOG,"sort":["time","desc"]}).toArray(function(err,docs){
+	log.find({},{"limit":CHAT_FIRST_LOG,"sort":["time","asc"]}).toArray(function(err,docs){
+		console.log(docs.length);
 		socket.emit("init",{"logs":docs});
 	});
 }
@@ -102,16 +103,8 @@ function says(socket,user,data){
 		    "time":Date.now()
 		    };
 
-	log.insert(logobj,{"safe":true},function(err,docs){
-		if(err){
-			console.log(err);
-			throw err;
-		}
-		socket.emit("log",logobj);
-		socket.broadcast.emit("log",logobj);
-	});
 
-//	makelog(socket,logobj);
+	makelog(socket,logobj);
 }
 function makelog(socket,logobj){
 	log.insert(logobj,{"safe":true},function(err,docs){
