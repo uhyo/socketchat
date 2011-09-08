@@ -5,7 +5,7 @@
 
 *event users:
 
-{"users":[Userobj, Userobj, ...]}
+{"users":[Userobj, Userobj, ...],"roms":Number}
 
 *event log:
 Logobj

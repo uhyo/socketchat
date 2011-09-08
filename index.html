@@ -4,23 +4,104 @@
     <meta charset="UTF-8">
     <title>socket chat</title>
     <style>
+dl#log{
+	margin:0;
+}
 #log dt.syslog{
-	color:#0000ff;
+	color:#0000ff !important;
 }
 #log dd span.info{
 	font-size:smaller;
 	color:#cccccc;
 }
+#log dt{
+	display:inline;
+}
+#log dt:after{
+	content:'>';
+}
+#log dt ~ dt:before{
+	content:"\a";
+	white-space:pre;
+}
+#log dd{
+	display:inline;
+	margin-left:0;
+}
+div#info{
+	position:fixed;
+	right:0px;
+	bottom:0px;
+	opacity:0.45;
+	text-align:right;
+}
+ul.users{
+	margin:0;
+}
+ul.users li{
+	list-style:none;
+}
+ul.users li span{
+	background-color:#dddddd;
+}
     </style>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-function SocketChat(log,users){
-	this.logid=log,this.usersid=users;
+function LineMaker(){
+}
+LineMaker.prototype={
+	make:function(obj){
+		var df=document.createDocumentFragment();
+		var color=this.getColor(obj.ip);
+		var dt=el("dt",obj.name);
+		if(obj.syslog)dt.classList.add("syslog");
+		dt.style.color=color;
+		
+		df.appendChild(dt);
+		var dd=el("dd","");
+		var comsp=el("span",obj.comment);
+		comsp.classList.add("comment");
+		dd.appendChild(comsp);
+		var infsp=el("span","(");
+		infsp.classList.add("info");
+		var date=new Date(obj.time);
+		var time=el("time",date.getFullYear()+"-"+(date.getMonth()+1)+"-"+date.getDate()+" "+date.getHours()+":"+date.getMinutes()+":"+date.getSeconds());
+		time.datetime=date.getFullYear()+"-"+(date.getMonth()+1)+"-"+date.getDate()+"T"+date.getHours()+":"+date.getMinutes()+":"+date.getSeconds()+"+09:00";
+	
+		infsp.appendChild(time);
+		infsp.appendChild(document.createTextNode(", "+obj.ip+")"));
+		dd.appendChild(infsp);
+		dd.style.color=color;
+		df.appendChild(dd);
+		return df;
+
+		function el(name,text){
+			var ret=document.createElement(name);
+			ret.textContent=text;
+			return ret;
+		}
+	},
+	getColor:function(ip){
+		var arr=ip.split(/\./);
+		return "rgb("+Math.floor(parseInt(arr[0])*0.75)+", "+
+		Math.floor(parseInt(arr[1])*0.75)+", "+
+		Math.floor(parseInt(arr[2])*0.75)+")";
+	},
+}
+
+
+    </script>
+    <script>
+function SocketChat(log,info){
+	this.logid=log,this.infoid=info;
+	this.line=new LineMaker();
 }
 SocketChat.prototype={
 	init:function(){
 		this.log=document.getElementById(this.logid);
-		this.users=document.getElementById(this.usersid);
+		this.info=document.getElementById(this.infoid);
+		this.users=this.info.getElementsByClassName("users")[0];
+		this.usernumber=this.info.getElementsByClassName("usernumber")[0];
 		
 		var socket;
 		socket=this.socket = io.connect(location.origin);
@@ -33,6 +114,10 @@ SocketChat.prototype={
 		/*document.forms["inout"].addEventListener("submit",this.submit.bind(this),false);
 		document.forms["comment"].addEventListener("submit",this.submit.bind(this),false);*/
 		document.addEventListener("submit",this.submit.bind(this),false);
+		
+		if(localStorage.socketchat_name){
+			document.forms["inout"].elements["uname"].value=localStorage.socketchat_name;
+		}
 	},
 	loginit:function(data){
 			
@@ -41,43 +126,26 @@ SocketChat.prototype={
 		},this);
 	},
 	write:function(obj){
-		var df=document.createDocumentFragment();
-		var dt=el("dt",obj.name);
-		if(obj.syslog)dt.classList.add("syslog");
-		df.appendChild(dt);
-		var dd=el("dd","");
-		var comsp=el("span",obj.comment);
-		comsp.classList.add("comment");
-		dd.appendChild(comsp);
-		var infsp=el("span","(");
-		infsp.classList.add("info");
-		var date=new Date(obj.time);
-		var time=el("time",date.getFullYear()+"-"+(date.getMonth()+1)+"-"+date.getDate()+" "+date.getHours()+":"+date.getMinutes()+":"+date.getSeconds());
-		time.datetime=date.getFullYear()+"-"+(date.getMonth()+1)+"-"+date.getDate()+"T"+date.getHours()+":"+date.getMinutes()+":"+date.getSeconds()+"+09:00";
 		
-		infsp.appendChild(time);
-		infsp.appendChild(document.createTextNode(", "+obj.ip+")"));
-		dd.appendChild(infsp);
-		df.appendChild(dd);
-		
-		this.log.insertBefore(df,this.log.firstChild);
+		this.log.insertBefore(this.line.make(obj),this.log.firstChild);
 		
 		
-		function el(name,text){
-			var ret=document.createElement(name);
-			ret.textContent=text;
-			return ret;
-		}
 	},
 	userlist:function(obj){
 		while(this.users.firstChild)this.users.removeChild(this.users.firstChild);
 		
+		var active=0;
 		obj.users.forEach(function(user){
 			if(user.rom)return;
 			var li=document.createElement("li");
-			li.textContent=user.name;
+			var sp=document.createElement("span");
+			sp.textContent=user.name;
+			li.appendChild(sp);
 			this.users.appendChild(li);
-		});
+			active++;
+		},this);
+		this.usernumber.textContent=active+"人"+(obj.roms? "（ROM"+obj.roms+")":"");
+
 	},
 	userinfo:function(obj){
 		var f=document.forms["inout"];
@@ -85,22 +153,22 @@ SocketChat.prototype={
 		
 		var result=document.evaluate('descendant::input[@type="submit"]',f,null,XPathResult.ANY_UNORDERED_NODE_TYPE,null);
 		var bt=result.singleNodeValue;
-		console.log(bt);
 		bt.value=obj.rom?"入室":"退室";
+		
 	},
 	submit:function(e){
 		var f=e.target;
-		console.log(f.name);
 		if(f.name=="inout"){
 			//入退室
-			console.log(f.elements);
 			var el=f.elements["uname"];
-			console.log(el);
 			this.socket.emit("inout",{"name":el.value});
+			
+			localStorage.socketchat_name=el.value;
 		}else if(f.name=="comment"){
 			//発言
 			var el=f.elements["comment"];
 			this.socket.emit("say",{"comment":el.value});
+			el.value="";
 		}
 		e.preventDefault();
 	},
@@ -108,7 +176,7 @@ SocketChat.prototype={
 };
     </script>
     <script>
-Chat=new SocketChat("log","users");
+Chat=new SocketChat("log","info");
 window.addEventListener('load',function(){
 	Chat.init();
 },false);
@@ -122,7 +190,10 @@ window.addEventListener('load',function(){
     <p><input name="comment" size="80" maxlength="200" required><input type="submit" value="発言"></p>
   <dl id="log">
   </dl>
-  <ul id="users">
-  </ul>
+  <div id="info">
+    <span class="usernumber"></span>
+    <ul class="users">
+    </ul>
+  </div>
   </body>
 </html>

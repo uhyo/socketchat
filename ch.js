@@ -147,7 +147,7 @@ function discon(socket,user){
 	sendusers(socket);
 }
 function sendusers(socket){
-	var p={"users":users};
+	var p={"users":users,"roms":users.filter(function(x){return x.rom}).length};
 	socket.emit("users",p);
 	socket.broadcast.emit("users",p);
 	
