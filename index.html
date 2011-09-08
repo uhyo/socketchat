@@ -3,6 +3,15 @@
   <head>
     <meta charset="UTF-8">
     <title>socket chat</title>
+    <style>
+#log dt.syslog{
+	color:#0000ff;
+}
+#log dd span.info{
+	font-size:smaller;
+	color:#cccccc;
+}
+    </style>
     <script src="/socket.io/socket.io.js"></script>
     <script>
 function SocketChat(log,users){
@@ -19,22 +28,23 @@ SocketChat.prototype={
 		socket.on("init",this.loginit.bind(this));
 		socket.on("log",this.write.bind(this));
 		socket.on("users",this.userlist.bind(this));
+		socket.on("userinfo",this.userinfo.bind(this));
 		
 		/*document.forms["inout"].addEventListener("submit",this.submit.bind(this),false);
 		document.forms["comment"].addEventListener("submit",this.submit.bind(this),false);*/
 		document.addEventListener("submit",this.submit.bind(this),false);
 	},
 	loginit:function(data){
-		console.log("loginit",data);
 			
 		data.logs.forEach(function(line){
 			this.write(line);
 		},this);
 	},
 	write:function(obj){
-		console.log("write",obj);
 		var df=document.createDocumentFragment();
-		df.appendChild(el("dt",obj.name));
+		var dt=el("dt",obj.name);
+		if(obj.syslog)dt.classList.add("syslog");
+		df.appendChild(dt);
 		var dd=el("dd","");
 		var comsp=el("span",obj.comment);
 		comsp.classList.add("comment");
@@ -60,7 +70,6 @@ SocketChat.prototype={
 		}
 	},
 	userlist:function(obj){
-		console.log("userlist",obj);
 		while(this.users.firstChild)this.users.removeChild(this.users.firstChild);
 		
 		obj.users.forEach(function(user){
@@ -69,6 +78,15 @@ SocketChat.prototype={
 			li.textContent=user.name;
 			this.users.appendChild(li);
 		});
+	},
+	userinfo:function(obj){
+		var f=document.forms["inout"];
+		f.elements["uname"].disabled=!obj.rom;
+		
+		var result=document.evaluate('descendant::input[@type="submit"]',f,null,XPathResult.ANY_UNORDERED_NODE_TYPE,null);
+		var bt=result.singleNodeValue;
+		console.log(bt);
+		bt.value=obj.rom?"入室":"退室";
 	},
 	submit:function(e){
 		var f=e.target;

@@ -10,6 +10,9 @@
 *event log:
 Logobj
 
+*event userinfo:
+{"name":String,"rom":Boolean}
+
 [Client->Srv]
 *event say:
 

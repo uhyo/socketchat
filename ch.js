@@ -69,8 +69,7 @@ io.sockets.on('connection',function(socket){
 
 	//いなくなった
 	socket.on("disconnect",function(data){
-		delUser(user);
-		sendusers(socket);
+		discon(socket,user);
 	});
 	
 });
@@ -124,13 +123,28 @@ function inout(socket,user,data){
 		    "time":Date.now(),
 		    "ip":user.ip,
 		    "comment":"「"+user.name+"」さんが"+(user.rom?"退室":"入室"),
-		    "syslog":true};
+		    "syslog":true
+	};
 	makelog(socket,syslog);
 	if(user.rom)user.name=null;
 
 	sendusers(socket);
+	socket.emit("userinfo",{"rom":user.rom});
 	
 
+}
+function discon(socket,user){
+	if(!user.rom){
+		var syslog={"name" : "■失踪通知",
+			    "time":Date.now(),
+			    "ip":user.ip,
+			    "comment":"「"+user.name+"」さんいない",
+			    "syslog":true
+		};
+		makelog(socket,syslog);
+	}
+	delUser(user);
+	sendusers(socket);
 }
 function sendusers(socket){
 	var p={"users":users};
