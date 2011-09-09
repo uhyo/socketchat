@@ -83,7 +83,8 @@ function addUser(socket){
 	var user={"id":users_next,
 		  "name":null,
 		  "rom":true,
-		  "ip":socket.handshake.address.address
+		  "ip":socket.handshake.address.address,
+		  "ua":socket.handshake.headers["user-agent"],
 		  };
 	users.push(user);
 	sendusers(socket);

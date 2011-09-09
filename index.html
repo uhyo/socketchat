@@ -44,9 +44,16 @@ ul.users li{
 ul.users li span{
 	background-color:#dddddd;
 }
+span.s{
+	text-decoration:line-through;
+}
+span.small{
+	font-size:smaller;
+}
     </style>
     <script src="/socket.io/socket.io.js"></script>
     <script>
+    
 function LineMaker(){
 }
 LineMaker.prototype={
@@ -90,11 +97,122 @@ LineMaker.prototype={
 }
 
 
+function HighChatMaker(){
+}
+HighChatMaker.prototype=new LineMaker();
+HighChatMaker.prototype.make=function(obj){
+	var df=LineMaker.prototype.make.apply(this,arguments);
+	
+	var dd=df.childNodes.item(1);
+	parse(dd);
+	return df;
+	
+	function parse(node){
+		if(node.nodeType==Node.TEXT_NODE){
+			//テキストノード
+			var v=node.nodeValue;
+			var result;
+			//[s]の解析
+			result=v.match(/^(.*)\[s\](.*?)(\[\/s\].*)?$/);
+			if(result){
+				var dff=document.createDocumentFragment();
+				if(result[1]){
+					dff.appendChild(document.createTextNode(result[1]));
+				}
+				if(result[2]){
+					var span=document.createElement("span");
+					span.textContent=result[2];
+					span.classList.add("s");
+					dff.appendChild(span);
+				}
+				if(result[3]){
+					dff.appendChild(document.createTextNode(result[3].slice(4)));
+				}
+				parse(dff);
+				node.parentNode.replaceChild(dff,node);
+				return;
+			}
+			//[small]の解析
+			result=v.match(/^(.+)?\[small\](.*?)(\[\/small\].*)?$/);
+			if(result){
+				var dff=document.createDocumentFragment();
+				if(result[1]){
+					dff.appendChild(document.createTextNode(result[1]));
+				}
+				if(result[2]){
+					var span=document.createElement("span");
+					span.textContent=result[2];
+					span.classList.add("small");
+					dff.appendChild(span);
+				}
+				if(result[3]){
+					dff.appendChild(document.createTextNode(result[3].slice(8)));
+				}				parse(dff);
+				node.parentNode.replaceChild(dff,node);
+				return;
+			}
+			//URLの解析
+			if(!node.parentNode || node.parentNode.nodeName.toLowerCase()!="a"){
+				result=v.match(/^(.*?)(https?:\/\/\S+)(.*)$/);
+				if(result){
+					var dff=document.createDocumentFragment();
+					if(result[1]){
+						dff.appendChild(document.createTextNode(result[1]));
+					}
+					if(result[2]){
+						var a=document.createElement("a");
+						a.target="_blank";
+						a.href=result[2];
+						a.textContent=result[2];
+						dff.appendChild(a);
+					}
+					if(result[3]){
+						dff.appendChild(document.createTextNode(result[3]));
+					}
+					parse(dff);
+					node.parentNode.replaceChild(dff,node);
+					return;
+				}
+				
+				if(result=v.match(/^(.*)#(\d{4})(.*)$/)){
+					var dff=document.createDocumentFragment();
+					if(result[1]){
+						dff.appendChild(document.createTextNode(result[1]));
+					}
+					if(result[2]){
+						var a=document.createElement("a");
+						a.target="_blank";
+						a.href="http://81.la/"+result[2];
+						a.textContent="#"+result[2];
+						dff.appendChild(a);
+					}
+					if(result[3]){
+						dff.appendChild(document.createTextNode(result[3]));
+					}
+					parse(dff);
+					node.parentNode.replaceChild(dff,node);
+					return;
+				}
+				
+			}
+		}else if(node.childNodes){
+			var nodes=[];
+			for(var i=0,l=node.childNodes.length;i<l;i++){
+				nodes.push(node.childNodes[i]);
+			}
+			nodes.forEach(function(x){
+				if(x.parentNode.isSameNode(node))
+					parse(x);
+			});
+		}
+	}
+};
+
     </script>
     <script>
 function SocketChat(log,info){
 	this.logid=log,this.infoid=info;
-	this.line=new LineMaker();
+	this.line=new HighChatMaker();
 }
 SocketChat.prototype={
 	init:function(){
@@ -140,6 +258,9 @@ SocketChat.prototype={
 			var li=document.createElement("li");
 			var sp=document.createElement("span");
 			sp.textContent=user.name;
+			
+			sp.title=user.ip+" / "+user.ua;
+			
 			li.appendChild(sp);
 			this.users.appendChild(li);
 			active++;
