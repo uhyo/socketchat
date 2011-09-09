@@ -38,5 +38,6 @@ Logobj
 "id":Id,
 "name":String,
 "ip":String,
-"rom":Boolean
+"rom":Boolean,
+"ua":String,
 }

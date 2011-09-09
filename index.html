@@ -50,6 +50,13 @@ span.s{
 span.small{
 	font-size:smaller;
 }
+
+div.forms form{
+	display:inline-block;
+}
+div.forms p{
+	margin:0;
+}
     </style>
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -156,18 +163,28 @@ HighChatMaker.prototype.make=function(obj){
 				result=v.match(/^(.*?)(https?:\/\/\S+)(.*)$/);
 				if(result){
 					var dff=document.createDocumentFragment();
-					if(result[1]){
-						dff.appendChild(document.createTextNode(result[1]));
-					}
-					if(result[2]){
+					var result2=result[2].match(/^http:\/\/gyazo\.com\/([0-9a-f]{32})(?:\.png)$/);
+					if(result2){
 						var a=document.createElement("a");
 						a.target="_blank";
-						a.href=result[2];
-						a.textContent=result[2];
+						a.href="http://gyazo.com/"+result2[1]+".png";
+						a.textContent="[Gyazo]";
 						dff.appendChild(a);
-					}
-					if(result[3]){
-						dff.appendChild(document.createTextNode(result[3]));
+					}else{
+					
+						if(result[1]){
+							dff.appendChild(document.createTextNode(result[1]));
+						}
+						if(result[2]){
+							var a=document.createElement("a");
+							a.target="_blank";
+							a.href=result[2];
+							a.textContent=result[2];
+							dff.appendChild(a);
+						}
+						if(result[3]){
+							dff.appendChild(document.createTextNode(result[3]));
+						}
 					}
 					parse(dff);
 					node.parentNode.replaceChild(dff,node);
@@ -304,11 +321,14 @@ window.addEventListener('load',function(){
     </script>
   </head>
   <body>
-  <form name="inout">
-    <p><input name="uname" size="30" maxlength="25" required><input type="submit" value="入室"></p>
-  </form>
-  <form name="comment">
-    <p><input name="comment" size="80" maxlength="200" required><input type="submit" value="発言"></p>
+  <div class="forms">
+    <form name="inout">
+      <p><input name="uname" size="20" maxlength="25" required><input type="submit" value="入室"></p>
+    </form>
+    <form name="comment">
+      <p><input name="comment" size="70" required><input type="submit" value="発言"></p>
+    </form>
+  </div>
   <dl id="log">
   </dl>
   <div id="info">

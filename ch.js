@@ -6,6 +6,9 @@ DB_PORT=27017;
 DB_NAME="socketchat";
 CHAT_FIRST_LOG=100;	//最初どれだけログ表示するか
 
+CHAT_NAME_MAX_LENGTH = 25;
+CHAT_MAX_LENGTH = 1000;
+
 var mongoserver = new mongodb.Server("127.0.0.1",DB_PORT,{});
 var db = new mongodb.Db(DB_NAME,mongoserver,{});
 
@@ -96,6 +99,10 @@ function delUser(user){
 }
 function says(socket,user,data){
 	if(user.rom)return;
+	
+	if(data.comment.length>CHAT_MAX_LENGTH){
+		return;
+	}
 
 	var logobj={"name":user.name,
 		    "comment":data.comment,
@@ -118,7 +125,14 @@ function makelog(socket,logobj){
 }
 function inout(socket,user,data){
 	user.rom = !user.rom;
-	if(!user.rom)user.name=data.name;
+	if(!user.rom){
+		if(data.name.length>CHAT_NAME_MAX_LENGTH){
+			//文字数超過
+			user.rom=true;
+			return;
+		}
+		user.name=data.name;
+	}
 	//シスログ
 	var syslog={"name" : (user.rom?"■退室通知":"■入室通知"),
 		    "time":Date.now(),
