@@ -14,7 +14,7 @@ var db = new mongodb.Db(DB_NAME,mongoserver,{});
 
 
 var httpserver = http.createServer(function(req, res){
-	var path = url.parse(req.url).pathname;
+	var parts=url.parse(req.url,true),path = parts.pathname;
 	switch (path){
 		case '/':
 			path='/index.html';
@@ -25,6 +25,9 @@ var httpserver = http.createServer(function(req, res){
 				res.write(data, 'utf8');
 				res.end();
 			});
+			break;
+		case '/chalog':
+			chalog(res,parts.query);
 			break;
 		default: send404(res);
 	}
@@ -56,6 +59,7 @@ httpserver.listen(8080);
 var io=socketio.listen(httpserver);
 
 io.sockets.on('connection',function(socket){
+	console.log(io.sockets);
 	sendFirstLog(socket);
 	//ユーザー登録
 	var user=addUser(socket);
@@ -165,6 +169,43 @@ function sendusers(socket){
 	socket.emit("users",p);
 	socket.broadcast.emit("users",p);
 	
+}
+
+function chalog(res,query){
+	var page=parseInt(query.page) || 0;
+	var number=parseInt(query.number) || 500;
+	var starttime=parseInt(query.starttime) || null;
+	var endtime=parseInt(query.endtime) || null;
+	if(number>5000)number=5000;
 	
+	var queryobj={};
+	
+	var optobj={"sort":[["time","desc"]]};
+	if(page)optobj.skip=page*number;
+	optobj.limit=number;
+	
+	if(starttime){
+		queryobj.time={$gte:starttime};
+	}
+	if(endtime){
+		if(queryobj.time){
+			queryobj.time["$lte"]=endtime;
+		}else{
+			queryobj.time={$lte:endtime};
+		}
+	}
+	
+	var result=log.find(queryobj,optobj).toArray(function(err,docs){
+		var resobj={"logs":docs};
+		var log_number=docs.length;
+		
+		var result=JSON.stringify(resobj);
+		res.writeHead(200,{
+			//"Content-Length":result.length,
+			"Content-Type":"text/javascript; charset=UTF-8",
+		});
+		res.write(result);
+		res.end();
+	});
 }
 

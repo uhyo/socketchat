@@ -41,3 +41,17 @@ Logobj
 "rom":Boolean,
 "ua":String,
 }
+
+
+[HTTP]
+/chalog
+*query
+ page
+ number
+ starttime(ms)
+ endtime(ms)
+
++response:
+
+{"logs":[Logobj, Logobj, ...](time desc),
+}
