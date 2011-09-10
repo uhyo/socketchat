@@ -47,9 +47,12 @@ Logobj
 /chalog
 *query
  page
- number
+ value
  starttime(ms)
  endtime(ms)
+ name
+ ip(String)
+ comment(String)
 
 +response:
 

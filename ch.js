@@ -173,26 +173,36 @@ function sendusers(socket){
 
 function chalog(res,query){
 	var page=parseInt(query.page) || 0;
-	var number=parseInt(query.number) || 500;
-	var starttime=parseInt(query.starttime) || null;
-	var endtime=parseInt(query.endtime) || null;
-	if(number>5000)number=5000;
+	var value=parseInt(query.value) || 500;
+	if(value>5000)value=5000;
 	
 	var queryobj={};
 	
 	var optobj={"sort":[["time","desc"]]};
-	if(page)optobj.skip=page*number;
-	optobj.limit=number;
+	if(page)optobj.skip=page*value;
+	optobj.limit=value;
 	
-	if(starttime){
+	if(query.starttime){
 		queryobj.time={$gte:starttime};
 	}
-	if(endtime){
+	if(query.endtime){
 		if(queryobj.time){
 			queryobj.time["$lte"]=endtime;
 		}else{
 			queryobj.time={$lte:endtime};
 		}
+	}
+	if(query.name){
+		//一致
+		queryobj.name=query.name;
+	}
+	if(query.ip){
+		//一致
+		queryobj.ip=query,ip;
+	}
+	if(query.comment){
+		//服務
+		queryobj.comment=new RegExp(query.comment.replace(/(\W)/g,"\\$1"));
 	}
 	
 	var result=log.find(queryobj,optobj).toArray(function(err,docs){
