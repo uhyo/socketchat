@@ -104,17 +104,36 @@ LineMaker.prototype={
 }
 
 
-function HighChatMaker(){
+function HighChatMaker(infobar){
+	this.gyoza1_on=null;	//mouseoverがonになっているか
+	this.gyozas=["餃子無展開","餃子オンマウス","餃子常時"];
+	this.infobar=infobar;
+	this.init();
+
+	this.setGyoza(localStorage.soc_highchat_gyoza ? localStorage.soc_highchat_gyoza : 0);
+	
 }
 HighChatMaker.prototype=new LineMaker();
+HighChatMaker.prototype.init=function(){
+	//infobar
+	while(this.infobar.firstChild)this.infobar.removeChild(this.infobar.firstChild);
+	
+	this.gyozab=document.createElement("button");
+	this.gyozab.textContent=this.gyozas[this.gyoza];
+	this.gyozab.classList.add("gyozainfo");
+	
+	this.gyozab.addEventListener("click",this.gyozabutton.bind(this),false);
+	this.infobar.appendChild(this.gyozab);
+};
 HighChatMaker.prototype.make=function(obj){
 	var df=LineMaker.prototype.make.apply(this,arguments);
+	var parse=_parse.bind(this);
 	
 	var dd=df.childNodes.item(1);
 	parse(dd);
 	return df;
 	
-	function parse(node){
+	function _parse(node){
 		if(node.nodeType==Node.TEXT_NODE){
 			//テキストノード
 			var v=node.nodeValue;
@@ -163,12 +182,22 @@ HighChatMaker.prototype.make=function(obj){
 				result=v.match(/^(.*?)(https?:\/\/\S+)(.*)$/);
 				if(result){
 					var dff=document.createDocumentFragment();
-					var result2=result[2].match(/^http:\/\/gyazo\.com\/([0-9a-f]{32})(?:\.png)$/);
+					var result2=result[2].match(/^http:\/\/gyazo\.com\/([0-9a-f]{32})(?:\.png)?$/);
 					if(result2){
+						//[Gyazo]
 						var a=document.createElement("a");
 						a.target="_blank";
 						a.href="http://gyazo.com/"+result2[1]+".png";
-						a.textContent="[Gyazo]";
+						a.classList.add("gyoza");
+						if(this.gyoza==2){
+							//餃子常時展開
+							var img=document.createElement("img");
+							img.src="http://img.gyazo.com/a/"+result2[1]+".png";
+							img.classList.add("thumbnail");
+							a.appendChild(img);
+						}else{
+							a.textContent="[Gyazo]";
+						}
 						dff.appendChild(a);
 					}else{
 					
@@ -224,12 +253,45 @@ HighChatMaker.prototype.make=function(obj){
 		}
 	}
 };
+HighChatMaker.prototype.setGyoza=function(gyoza){
+	this.gyoza=localStorage.soc_highchat_gyoza=gyoza%this.gyozas.length;
+	this.gyozab.textContent=this.gyozas[this.gyoza];
+
+	if(this.gyoza==1 && !this.gyoza1_on){
+		this.gyoza1_on=this.gyozamouse.bind(this);
+		document.addEventListener("mouseover",this.gyoza1_on,false);
+	}else if(this.gyoza!=1 && this.gyoza1_on){
+		document.removeEventListener("mouseover",this.gyoza1_on,false);
+		this.gyoza1_on=null;
+	}
+};
+HighChatMaker.prototype.gyozabutton=function(e){
+	this.setGyoza(this.gyoza+1);
+};
+HighChatMaker.prototype.gyozamouse=function(e){
+	var t=e.target;
+	if(t.classList.contains("gyoza")){
+		var result=t.href.match(/^http:\/\/gyazo\.com\/([0-9a-f]{32})\.png$/);
+		if(!result)return;
+		var img=document.createElement("img");
+		img.src="http://img.gyazo.com/a/"+result[1]+".png";
+		
+		img.addEventListener("load",ev,false);
+		img.style.display="none";
+		t.textContent="[Gyoza...]";
+		t.appendChild(img);
+	}
+	
+	function ev(e){
+		t.removeChild(t.firstChild);
+		img.style.display="";
+	}
+};
 
     </script>
     <script>
-function SocketChat(log,info){
-	this.logid=log,this.infoid=info;
-	this.line=new HighChatMaker();
+function SocketChat(log,info,infobar){
+	this.logid=log,this.infoid=info,this.infobarid=infobar;
 }
 SocketChat.prototype={
 	init:function(){
@@ -237,6 +299,7 @@ SocketChat.prototype={
 		this.info=document.getElementById(this.infoid);
 		this.users=this.info.getElementsByClassName("users")[0];
 		this.usernumber=this.info.getElementsByClassName("usernumber")[0];
+		this.line=new HighChatMaker(document.getElementById(this.infobarid));
 		
 		var socket;
 		socket=this.socket = io.connect(location.origin);
@@ -314,7 +377,7 @@ SocketChat.prototype={
 };
     </script>
     <script>
-Chat=new SocketChat("log","info");
+Chat=new SocketChat("log","info","infobar");
 window.addEventListener('load',function(){
 	Chat.init();
 },false);
@@ -322,6 +385,7 @@ window.addEventListener('load',function(){
   </head>
   <body>
   <div class="forms">
+    <div id="infobar"></div>
     <form name="inout">
       <p><input name="uname" size="20" maxlength="25" required><input type="submit" value="入室"></p>
     </form>

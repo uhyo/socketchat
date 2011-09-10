@@ -4,7 +4,7 @@ var socketio=require('socket.io'),mongodb=require('mongodb');
 //定数定義
 DB_PORT=27017;
 DB_NAME="socketchat";
-CHAT_FIRST_LOG=100;	//最初どれだけログ表示するか
+CHAT_FIRST_LOG=150;	//最初どれだけログ表示するか
 
 CHAT_NAME_MAX_LENGTH = 25;
 CHAT_MAX_LENGTH = 1000;
