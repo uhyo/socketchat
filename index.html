@@ -295,6 +295,8 @@ HighChatMaker.prototype.gyozamouse=function(e){
     <script>
 function SocketChat(log,info,infobar){
 	this.logid=log,this.infoid=info,this.infobarid=infobar;
+	
+	this.oldest_time=null;
 }
 SocketChat.prototype={
 	init:function(){
@@ -311,6 +313,7 @@ SocketChat.prototype={
 		socket.on("log",this.write.bind(this));
 		socket.on("users",this.userlist.bind(this));
 		socket.on("userinfo",this.userinfo.bind(this));
+		socket.on("mottoResponse",this.mottoResponse.bind(this));
 		
 		/*document.forms["inout"].addEventListener("submit",this.submit.bind(this),false);
 		document.forms["comment"].addEventListener("submit",this.submit.bind(this),false);*/
@@ -319,12 +322,16 @@ SocketChat.prototype={
 		if(localStorage.socketchat_name){
 			document.forms["inout"].elements["uname"].value=localStorage.socketchat_name;
 		}
+		
+		var hottomottob=document.getElementsByClassName("logs")[0].getElementsByClassName("hottomottobutton")[0];
+		hottomottob.addEventListener("click",this.HottoMotto.bind(this),false);
 	},
 	loginit:function(data){
 			
 		data.logs.reverse().forEach(function(line){
 			this.write(line);
 		},this);
+		if(data.logs.length)this.oldest_time=data.logs.shift().time;
 	},
 	write:function(obj){
 		
@@ -360,6 +367,16 @@ SocketChat.prototype={
 		bt.value=obj.rom?"入室":"退室";
 		
 	},
+	mottoResponse:function(data){
+		data.logs.forEach(function(line){
+			this.log.appendChild(this.line.make(line));
+		},this);
+		if(data.logs.length)this.oldest_time=data.logs.pop().time;
+	},
+	HottoMotto:function(e){
+		this.socket.emit("motto",{"time":this.oldest_time});
+	},
+	
 	submit:function(e){
 		var f=e.target;
 		if(f.name=="inout"){
@@ -396,8 +413,11 @@ window.addEventListener('load',function(){
       <p><input name="comment" size="70" required><input type="submit" value="発言"></p>
     </form>
   </div>
-  <dl id="log">
-  </dl>
+  <div class="logs">
+    <dl id="log">
+    </dl>
+    <p><button class="hottomottobutton">HottoMotto</button></p>
+  </div>
   <div id="info">
     <span class="usernumber"></span>
     <ul class="users">

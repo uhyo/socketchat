@@ -13,6 +13,9 @@ Logobj
 *event userinfo:
 {"name":String,"rom":Boolean}
 
+*event mottoResponse:
+{"logs":[Logobj, Logobj, ...](time desc)}
+
 [Client->Srv]
 *event say:
 
@@ -21,6 +24,9 @@ Logobj
 *event inout:
 
 {"name":String/null}
+
+*event motto:
+{"time":Number}
 
 
 

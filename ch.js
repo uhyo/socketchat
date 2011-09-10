@@ -4,7 +4,8 @@ var socketio=require('socket.io'),mongodb=require('mongodb');
 //定数定義
 DB_PORT=27017;
 DB_NAME="socketchat";
-CHAT_FIRST_LOG=100;	//最初どれだけログ表示するか
+CHAT_FIRST_LOG=10;	//最初どれだけログ表示するか
+CHAT_MOTTO_LOG=10;	//HottoMotto時にログをどれだけ表示するか
 
 CHAT_NAME_MAX_LENGTH = 25;
 CHAT_MAX_LENGTH = 1000;
@@ -72,6 +73,11 @@ io.sockets.on('connection',function(socket){
 	//入退室
 	socket.on("inout",function(data){
 		inout(socket,user,data);
+	});
+	
+	//HottoMotto
+	socket.on("motto",function(data){
+		motto(socket,user,data);
 	});
 
 	//いなくなった
@@ -163,6 +169,15 @@ function discon(socket,user){
 	}
 	delUser(user);
 	sendusers(socket);
+}
+function motto(socket,user,data){
+	var time=data.time;
+	if(!time)return;
+	
+	log.find({"time":{$lt:time}},{"sort":[["time","desc"]],"limit":CHAT_MOTTO_LOG}).toArray(function(err,docs){
+		var resobj={"logs":docs};
+		socket.emit("mottoResponse",resobj);
+	});
 }
 function sendusers(socket){
 	var p={"users":users,"roms":users.filter(function(x){return x.rom}).length};
