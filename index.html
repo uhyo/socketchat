@@ -57,6 +57,9 @@ div.forms form{
 div.forms p{
 	margin:0;
 }
+#log img{
+	vertical-align:middle;
+}
     </style>
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -319,7 +322,7 @@ SocketChat.prototype={
 	},
 	loginit:function(data){
 			
-		data.logs.forEach(function(line){
+		data.logs.reverse().forEach(function(line){
 			this.write(line);
 		},this);
 	},
@@ -345,7 +348,7 @@ SocketChat.prototype={
 			this.users.appendChild(li);
 			active++;
 		},this);
-		this.usernumber.textContent=active+"人"+(obj.roms? "（ROM"+obj.roms+")":"");
+		this.usernumber.textContent="入室"+active+(obj.roms? "（ROM"+obj.roms+")":"");
 
 	},
 	userinfo:function(obj){

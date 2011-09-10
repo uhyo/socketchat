@@ -4,7 +4,7 @@ var socketio=require('socket.io'),mongodb=require('mongodb');
 //定数定義
 DB_PORT=27017;
 DB_NAME="socketchat";
-CHAT_FIRST_LOG=150;	//最初どれだけログ表示するか
+CHAT_FIRST_LOG=100;	//最初どれだけログ表示するか
 
 CHAT_NAME_MAX_LENGTH = 25;
 CHAT_MAX_LENGTH = 1000;
@@ -77,8 +77,7 @@ io.sockets.on('connection',function(socket){
 	
 });
 function sendFirstLog(socket){
-	log.find({},{"limit":CHAT_FIRST_LOG,"sort":["time","asc"]}).toArray(function(err,docs){
-		console.log(docs.length);
+	log.find({},{"sort":[["time","desc"]],"limit":CHAT_FIRST_LOG}).toArray(function(err,docs){
 		socket.emit("init",{"logs":docs});
 	});
 }
