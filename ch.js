@@ -19,6 +19,7 @@ var httpserver = http.createServer(function(req, res){
 	switch (path){
 		case '/':
 			path='/index.html';
+		//HTML
 		case '/index.html':
 			fs.readFile(__dirname + path, function(err, data){
 				if (err) return send404(res);
@@ -27,8 +28,43 @@ var httpserver = http.createServer(function(req, res){
 				res.end();
 			});
 			break;
+		case '/log':
+			fs.readFile(__dirname + path+".html", function(err, data){
+				if (err) return send404(res);
+				res.writeHead(200, {'Content-Type': 'text/html'})
+				res.write(data, 'utf8');
+				res.end();
+			});
+			break;
+		//JS
+		case '/line.js':
+			fs.readFile(__dirname + path, function(err, data){
+				if (err) return send404(res);
+				res.writeHead(200, {'Content-Type': 'text/javascript'})
+				res.write(data, 'utf8');
+				res.end();
+			});
+			break;
+		//CSS
+		case '/css.css':
+			fs.readFile(__dirname + path, function(err, data){
+				if (err) return send404(res);
+				res.writeHead(200, {'Content-Type': 'text/css'})
+				res.write(data, 'utf8');
+				res.end();
+			});
+			break;
+		//API
 		case '/chalog':
-			chalog(res,parts.query);
+			chalog(parts.query,function(resobj){
+				var result=JSON.stringify(resobj);
+				res.writeHead(200,{
+					//"Content-Length":result.length,
+					"Content-Type":"text/javascript; charset=UTF-8",
+				});
+				res.write(result);
+				res.end();
+			});
 			break;
 		default: send404(res);
 	}
@@ -60,29 +96,42 @@ httpserver.listen(8080);
 var io=socketio.listen(httpserver);
 
 io.sockets.on('connection',function(socket){
-	console.log(io.sockets);
-	sendFirstLog(socket);
 	//ユーザー登録
-	var user=addUser(socket);
+	var user=null;
+	socket.on("regist",function(data){
+		if(data.mode=="client"){
+			//チャットクライアント
+			socket.join("chatroom");
+			sendFirstLog(socket);
+			user=addUser(socket);
 
-	//発言
-	socket.on("say",function(data){
-		says(socket,user,data);
-	});
+			//発言
+			socket.on("say",function(data){
+				says(socket,user,data);
+			});
 
-	//入退室
-	socket.on("inout",function(data){
-		inout(socket,user,data);
-	});
+			//入退室
+			socket.on("inout",function(data){
+				inout(socket,user,data);
+			});
 	
-	//HottoMotto
-	socket.on("motto",function(data){
-		motto(socket,user,data);
-	});
+			//HottoMotto
+			socket.on("motto",function(data){
+				motto(socket,user,data);
+			});
 
-	//いなくなった
-	socket.on("disconnect",function(data){
-		discon(socket,user);
+			//いなくなった
+			socket.on("disconnect",function(data){
+				discon(socket,user);
+			});
+		}else if(data.mode=="chalog"){
+			//Chalog
+			socket.on("query",function(data){
+				chalog(data,function(resobj){
+					socket.emit("result",resobj);
+				});
+			});
+		}
 	});
 	
 });
@@ -129,7 +178,7 @@ function makelog(socket,logobj){
 			throw err;
 		}
 		socket.emit("log",logobj);
-		socket.broadcast.emit("log",logobj);
+		socket.broadcast.to("chatroom").emit("log",logobj);
 	});
 }
 function inout(socket,user,data){
@@ -182,11 +231,11 @@ function motto(socket,user,data){
 function sendusers(socket){
 	var p={"users":users,"roms":users.filter(function(x){return x.rom}).length};
 	socket.emit("users",p);
-	socket.broadcast.emit("users",p);
+	socket.broadcast.to("chatroom").emit("users",p);
 	
 }
 
-function chalog(res,query){
+function chalog(query,callback){
 	var page=parseInt(query.page) || 0;
 	var value=parseInt(query.value) || 500;
 	if(value>5000)value=5000;
@@ -222,15 +271,9 @@ function chalog(res,query){
 	
 	var result=log.find(queryobj,optobj).toArray(function(err,docs){
 		var resobj={"logs":docs};
-		var log_number=docs.length;
 		
-		var result=JSON.stringify(resobj);
-		res.writeHead(200,{
-			//"Content-Length":result.length,
-			"Content-Type":"text/javascript; charset=UTF-8",
-		});
-		res.write(result);
-		res.end();
+		callback(resobj);
+		
 	});
 }
 

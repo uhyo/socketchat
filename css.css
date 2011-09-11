@@ -1,0 +1,56 @@
+dl#log{
+	margin:0;
+}
+#log dt.syslog{
+	color:#0000ff !important;
+}
+#log dd span.info{
+	font-size:smaller;
+	color:#cccccc;
+}
+#log dt{
+	display:inline;
+}
+#log dt:after{
+	content:'>';
+}
+#log dt ~ dt:before{
+	content:"\a";
+	white-space:pre;
+}
+#log dd{
+	display:inline;
+	margin-left:0;
+}
+div#info{
+	position:fixed;
+	right:0px;
+	bottom:0px;
+	opacity:0.45;
+	text-align:right;
+}
+ul.users{
+	margin:0;
+}
+ul.users li{
+	list-style:none;
+}
+ul.users li span{
+	background-color:#dddddd;
+}
+span.s{
+	text-decoration:line-through;
+}
+span.small{
+	font-size:smaller;
+}
+
+div.forms form{
+	display:inline-block;
+}
+div.forms p{
+	margin:0;
+}
+#log img{
+	vertical-align:middle;
+}

@@ -17,6 +17,9 @@ Logobj
 {"logs":[Logobj, Logobj, ...](time desc)}
 
 [Client->Srv]
+*event regist:
+ {"mode":"client"}
+ 
 *event say:
 
 {"comment":String}
@@ -27,6 +30,17 @@ Logobj
 
 *event motto:
 {"time":Number}
+
+[LogViewer->Srv]
+*event regist:
+ {"mode":"chalog"}
+
+*event query:
+ {Query...}
+
+[Srv->LogViewer]
+*event result:
+ {"logs":[Logobj, Logobj, ...](time desc)}
 
 
 
