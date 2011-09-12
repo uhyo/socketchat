@@ -7,31 +7,158 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="/line.js"></script>
     <script>
-Chat=new SocketChat("log","info","infobar");
-window.addEventListener('load',function(){
-	Chat.init();
+function ChalogViewer(log,form,pager,infobar){
+	this.logid=log,this.formid=form,this.pagerid=pager,this.infobarid=infobar;
+}
+ChalogViewer.prototype={
+	init:function(){
+		this.log=document.getElementById(this.logid);
+		this.form=document.forms[this.formid];
+		this.pager=document.forms[this.pagerid];
+		this.line=new HighChatMaker(document.getElementById(this.infobarid));
+		
+		this.form.addEventListener("submit",this.find.bind(this),false);
+		this.pager.addEventListener("click",this.page_move.bind(this),false);
+		
+		this.mode=null;
+		this.query=null;
+		
+		var socket;
+		socket=this.socket=io.connect(location.orogin);
+		
+		socket.on("result",function(data){
+			if(data.logs.length){
+				this.pager.elements["back"].disabled=this.query.page==0;
+				this.pager.elements["forward"].disabled=false;
+				while(this.log.firstChild)this.log.removeChild(this.log.firstChild);
+				data.logs.reverse().forEach(function(line){
+					this.write(line);
+				},this);
+				if(data.logs.length<this.query.value){
+					//もう先がない
+					this.pager.elements["forward"].disabled=true;
+				}
+			}else{
+				this.pager.elements["forward"].disabled=false;
+			}
+		}.bind(this));
+		
+		socket.emit("regist",{"mode":"chalog"});
+	},
+	write:function(obj){
+		
+		this.log.insertBefore(this.line.make(obj),this.log.firstChild);
+		
+		
+	},
+	find:function(e){
+		//範囲
+		var query={};
+		query.value=this.form.elements["page_number"].value-0;
+		query.page=0;
+		
+		var range=this.getRadioValue(this.form,"range");
+		if(range=="time"){
+			query.starttime=this.form.elements["starttime"].valueAsNumber,
+			query.endtime=this.form.elements["endtime"].valueAsNumber;
+		}
+		if(this.form.elements["use_name_or_ip"].checked){
+			if(this.getRadioValue(this.form,"name_or_ip")=="name"){
+				query.name=this.form.elements["name_or_ip_value"].value;
+			}else{
+				query.ip=this.form.elements["name_or_ip_value"].value;
+			}
+		}
+		if(this.form.elements["use_comment"].checked){
+			query.comment=this.form.elements["comment_value"].value;
+		}
+		this.query=query;
+		
+		this.sendQuery();
+		
+		e.preventDefault();
+	},
+	page_move:function(e){
+		if(!this.query)return;
+		var t=e.target;
+		if(t.type=="button"){
+			if(t.name=="back"){
+				this.query.page--;
+				if(this.query.page<0){
+					this.query.page=0;
+					return;
+				}
+				this.sendQuery();
+			}else if(t.name=="forward"){
+				this.query.page++;
+				this.sendQuery();
+			}
+		}
+	},
+	sendQuery:function(){
+		if(!this.query)return;
+		this.socket.emit("query",this.query);
+		this.pager.elements["thispage"].value=this.query.page+"ページ目";
+	},
+	
+	getRadioValue:function(form,name){
+		var t=form.elements[name];
+		if(t&&t.length&&t.item){
+			var ret=null;
+			for(var i=0,l=t.length;i<l;i++){
+				if(t[i].checked){
+					ret=t[i].value;
+					break;
+				}
+			}
+			return ret;
+		}else if(t){
+			return t.checked?t.value:null;
+		}
+		return null;
+	},
+};
+    </script>
+    <script>
+var viewer=new ChalogViewer("log","find","pager","infobar");
+window.addEventListener("load",function(e){
+	viewer.init();
 },false);
     </script>
   </head>
   <body>
-  <div class="forms">
-    <div id="infobar"></div>
-    <form name="inout">
-      <p><input name="uname" size="20" maxlength="25" required><input type="submit" value="入室"></p>
-    </form>
-    <form name="comment">
-      <p><input name="comment" size="70" required><input type="submit" value="発言"></p>
-    </form>
-  </div>
+  <h1>Chalog Viewer</h1>
+  <div id="infobar"></div>
+  <form name="find">
+    <fieldset>
+      <legend>取得範囲</legend>
+      <p><label><input type="radio" name="range" value="time" checked>発言時間で検索</label>：
+      始点時間<input type="datetime-local" name="starttime">
+      終点時間<input type="datetime-local" name="endtime"></p>
+      <p><label><input type="radio" name="range" value="new" checked>新しいほうから検索</label></p>
+    </fieldset>
+    <fieldset>
+      <legend>検索条件</legend>
+      <p><input type="checkbox" name="use_name_or_ip">
+        <label><input type="radio" name="name_or_ip" value="name" checked>名前</label>or
+        <label><input type="radio" name="name_or_ip" value="ip">IPアドレス</label>
+        で検索：
+        <input type="text" name="name_or_ip_value" size="25">
+      </p>
+      <p><label><input type="checkbox" name="use_comment">コメントで検索</label>:
+        <input type="text" name="comment_value" size="60">
+      </p>
+    </firldset>
+    <p><input type="submit" value="検索"> : 1ページに<input type="number" step="100" min="100" value="100" name="page_number">発言表示</p>
+    
+  </form>
   <div class="logs">
+    <form name="pager">
+      <p><input type="button" value="前のページ" name="back" disabled> | <output name="thispage"></output> | <input type="button" value="次のページ" name="forward" disabled></p>
+    </form>
     <dl id="log">
     </dl>
-    <p><button class="hottomottobutton">HottoMotto</button></p>
   </div>
-  <div id="info">
-    <span class="usernumber"></span>
-    <ul class="users">
-    </ul>
-  </div>
+
   </body>
 </html>

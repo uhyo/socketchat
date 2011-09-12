@@ -40,7 +40,7 @@ SocketChat.prototype={
 		var hottomottob=document.getElementsByClassName("logs")[0].getElementsByClassName("hottomottobutton")[0];
 		hottomottob.addEventListener("click",this.HottoMotto.bind(this),false);
 		
-		socket.emit("regist",{});
+		socket.emit("regist",{"mode":"client"});
 	},
 	loginit:function(data){
 			

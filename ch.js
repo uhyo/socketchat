@@ -247,13 +247,13 @@ function chalog(query,callback){
 	optobj.limit=value;
 	
 	if(query.starttime){
-		queryobj.time={$gte:starttime};
+		queryobj.time={$gte:query.starttime};
 	}
 	if(query.endtime){
 		if(queryobj.time){
-			queryobj.time["$lte"]=endtime;
+			queryobj.time["$lte"]=query.endtime;
 		}else{
-			queryobj.time={$lte:endtime};
+			queryobj.time={$lte:query.endtime};
 		}
 	}
 	if(query.name){
@@ -262,7 +262,7 @@ function chalog(query,callback){
 	}
 	if(query.ip){
 		//一致
-		queryobj.ip=query,ip;
+		queryobj.ip=query.ip;
 	}
 	if(query.comment){
 		//服務
