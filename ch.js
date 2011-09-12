@@ -117,7 +117,7 @@ filters.push(function(logobj){
 		var boin=["ｧ","ｨ","ｩ","ｪ","ｫ"];
 
 		var comment=logobj.comment.replace(/[ァ-ヶ]/g,function(katakana){
-			return String.fromCharCode(hiragana.charCodeAt(0)+(0x3040-0x30A0));
+			return String.fromCharCode(katakana.charCodeAt(0)+(0x3040-0x30A0));
 		}).replace(/[ぁ-ゖ゛゜ヷ-ヺ]/g,function(hiragana){
 			return table[hiragana] || hiragana;
 		}).replace(/([ｦ-ﾟ]+)/g,function(katakanas){

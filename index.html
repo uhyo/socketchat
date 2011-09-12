@@ -11,6 +11,8 @@ function SocketChat(log,info,infobar){
 	this.logid=log,this.infoid=info,this.infobarid=infobar;
 	
 	this.oldest_time=null;
+	
+	this.flags={"sound":true};
 }
 SocketChat.prototype={
 	init:function(){
@@ -19,6 +21,29 @@ SocketChat.prototype={
 		this.users=this.info.getElementsByClassName("users")[0];
 		this.usernumber=this.info.getElementsByClassName("usernumber")[0];
 		this.line=new HighChatMaker(document.getElementById(this.infobarid));
+		
+		//Audio
+		if(this.flags.sound){
+			var audio;
+			var soundSource=[
+				["./sound.ogg", "audio/ogg"],
+				["./sound.mp3", "audio/mp3"],
+				["./sound.wav", "audio/wav"]
+			];
+			try{
+				audio=new Audio();
+				audio.removeAttribute("src");
+				soundSource.forEach(function(arr){
+					var source=document.createElement("source");
+					source.src=arr[0];
+					source.type=arr[1];
+					audio.appendChild(source);
+				});
+			}catch(e){
+				audio={play:function(){}};
+			}
+			this.audio=audio;
+		}
 		
 		var socket;
 		socket=this.socket = io.connect(location.origin);
@@ -43,13 +68,18 @@ SocketChat.prototype={
 		socket.emit("regist",{"mode":"client"});
 	},
 	loginit:function(data){
-			
+		var s=this.flags.sound;
+		this.flags.sound=false;
 		data.logs.reverse().forEach(function(line){
 			this.write(line);
 		},this);
+		this.flags.sound=s;
 		if(data.logs.length)this.oldest_time=data.logs.shift().time;
 	},
 	write:function(obj){
+		if(this.flags.sound){
+			this.audio.play();
+		}
 		
 		this.log.insertBefore(this.line.make(obj),this.log.firstChild);
 		
