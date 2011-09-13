@@ -1,0 +1,13 @@
+
+== SocketChat ==
+WebSocket+MongoDB Chat
+
+=== version ===
+0.1
+
+== required ==
+* Socket.IO
+* node-mongodb-native
+
+== event formats ==
+->events.txt
