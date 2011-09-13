@@ -22,6 +22,8 @@ SocketChat.prototype={
 		this.usernumber=this.info.getElementsByClassName("usernumber")[0];
 		this.line=new HighChatMaker(document.getElementById(this.infobarid));
 		
+		this.bots=[];
+		
 		//Audio
 		if(this.flags.sound){
 			var audio;
@@ -49,7 +51,7 @@ SocketChat.prototype={
 		socket=this.socket = io.connect(location.origin);
 		
 		socket.on("init",this.loginit.bind(this));
-		socket.on("log",this.write.bind(this));
+		socket.on("log",this.recv.bind(this));
 		socket.on("users",this.userlist.bind(this));
 		socket.on("userinfo",this.userinfo.bind(this));
 		socket.on("mottoResponse",this.mottoResponse.bind(this));
@@ -68,18 +70,19 @@ SocketChat.prototype={
 		socket.emit("regist",{"mode":"client"});
 	},
 	loginit:function(data){
-		var s=this.flags.sound;
-		this.flags.sound=false;
 		data.logs.reverse().forEach(function(line){
 			this.write(line);
 		},this);
-		this.flags.sound=s;
 		if(data.logs.length)this.oldest_time=data.logs.shift().time;
 	},
-	write:function(obj){
+	recv:function(obj){
+		this.bots.forEach(function(func){func(obj,this)},this);
 		if(this.flags.sound){
 			this.audio.play();
 		}
+		this.write(obj);
+	},
+	write:function(obj){
 		
 		this.log.insertBefore(this.line.make(obj),this.log.firstChild);
 		
@@ -134,10 +137,17 @@ SocketChat.prototype={
 		}else if(f.name=="comment"){
 			//発言
 			var el=f.elements["comment"];
-			this.socket.emit("say",{"comment":el.value});
+			this.say(el.value);
 			el.value="";
 		}
 		e.preventDefault();
+	},
+	say:function(comment){
+		this.socket.emit("say",{"comment":comment});
+	},
+	
+	bot:function(func){
+		this.bots.push(func);
 	},
 	
 };
