@@ -41,6 +41,10 @@ Logobj
 [Srv->LogViewer]
 *event result:
  {"logs":[Logobj, Logobj, ...](time desc)}
+ 
+[UserList->Srv]
+*event regist:
+ {"mode":"userlist"}
 
 
 

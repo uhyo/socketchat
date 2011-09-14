@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>UserList</title>
+    <link href="/css.css" rel="stylesheet">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/line.js"></script>
+    <script>
+function UserList(table){
+	this.tableid=table;
+}
+UserList.prototype={
+	init:function(){
+		this.table=document.getElementById(this.tableid);
+		this.line=new HighChatMaker(null);
+		
+		var socket;
+		socket=this.socket=io.connect(location.orogin);
+		
+		socket.on("users",this.users.bind(this));
+		
+		socket.emit("regist",{"mode":"userlist"});
+	},
+	users:function(data){
+		console.log(data);
+		var tbody=this.table.tBodies[0];
+		while(tbody.rows.length){
+			tbody.deleteRow(0);
+		}
+		data.users.forEach(function(user){
+			var row=tbody.insertRow(tbody.rows.length);
+			row.style.color=this.line.getColor(user.ip);
+			row.insertCell(0).textContent=user.rom?"(ROM)":user.name;
+			row.insertCell(1).textContent=user.ip;
+			row.insertCell(2).textContent=user.ua;
+		},this);
+	},
+
+};
+    </script>
+    <script>
+var list=new UserList("table");
+window.addEventListener("load",function(e){
+	list.init();
+},false);
+    </script>
+  </head>
+  <body>
+  <h1>UserList</h1>
+  <table id="table">
+    <thead>
+      <tr><th>名前</th><th>IPアドレス</th><th>UA</th></tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+
+  </body>
+</html>

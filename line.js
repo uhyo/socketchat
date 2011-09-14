@@ -46,6 +46,9 @@ function HighChatMaker(infobar){
 	this.gyoza1_on=null;	//mouseoverがonになっているか
 	this.gyozas=["餃子無展開","餃子オンマウス","餃子常時"];
 	this.infobar=infobar;
+	if(!infobar){
+		this.infobar=document.createElement("div");
+	}
 	this.init();
 
 	this.setGyoza(localStorage.soc_highchat_gyoza ? localStorage.soc_highchat_gyoza : 0);

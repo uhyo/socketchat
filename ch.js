@@ -28,7 +28,7 @@ var httpserver = http.createServer(function(req, res){
 				res.end();
 			});
 			break;
-		case '/log':
+		case '/log':case '/list':
 			fs.readFile(__dirname + path+".html", function(err, data){
 				if (err) return send404(res);
 				res.writeHead(200, {'Content-Type': 'text/html'})
@@ -155,7 +155,8 @@ io.sockets.on('connection',function(socket){
 	socket.on("regist",function(data){
 		if(data.mode=="client"){
 			//チャットクライアント
-			socket.join("chatroom");
+			socket.join("chatuser");
+			socket.join("useruser");
 			sendFirstLog(socket);
 			user=addUser(socket);
 
@@ -185,6 +186,10 @@ io.sockets.on('connection',function(socket){
 					socket.emit("result",resobj);
 				});
 			});
+		}else if(data.mode=="userlist"){
+			//ユーザーリスト
+			socket.join("useruser");
+			sendusers(socket);
 		}
 	});
 	
@@ -235,7 +240,7 @@ function makelog(socket,logobj){
 			throw err;
 		}
 		socket.emit("log",logobj);
-		socket.broadcast.to("chatroom").emit("log",logobj);
+		socket.broadcast.to("chatuser").emit("log",logobj);
 	});
 }
 function inout(socket,user,data){
@@ -288,7 +293,7 @@ function motto(socket,user,data){
 function sendusers(socket){
 	var p={"users":users,"roms":users.filter(function(x){return x.rom}).length};
 	socket.emit("users",p);
-	socket.broadcast.to("chatroom").emit("users",p);
+	socket.broadcast.to("useruser").emit("users",p);
 	
 }
 
