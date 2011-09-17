@@ -10,6 +10,9 @@ CHAT_MOTTO_LOG=100;	//HottoMotto時にログをどれだけ表示するか
 CHAT_NAME_MAX_LENGTH = 25;
 CHAT_MAX_LENGTH = 1000;
 
+CHAT_LIMIT_TIME = 10;	//0なら無効
+CHAT_LIMIT_NUMBER=10;	//CHAT_LIMIT_TIME以内にCHAT_LIMIT_NUMBER回発言したらそれ以上発言できない
+
 var mongoserver = new mongodb.Server("127.0.0.1",DB_PORT,{});
 var db = new mongodb.Db(DB_NAME,mongoserver,{});
 
@@ -90,6 +93,8 @@ db.open(function(err,_db){
 	});
 });
 var users=[],users_next=1;
+
+var users_s={};
 
 var filters=[];
 
@@ -207,6 +212,7 @@ function addUser(socket){
 		  "ua":socket.handshake.headers["user-agent"],
 		  };
 	users.push(user);
+	users_s[user.id]=[];
 	sendusers(socket);
 	users_next++;
 	return user;
@@ -219,6 +225,15 @@ function says(socket,user,data){
 	
 	if(data.comment.length>CHAT_MAX_LENGTH){
 		return;
+	}
+	if(CHAT_LIMIT_TIME>0){
+		var d=Date.now()-1000*CHAT_LIMIT_TIME;
+		console.log(users_s[user.id]);
+		if((users_s[user.id]=users_s[user.id].filter(function(x){return x>=d})).length>=CHAT_LIMIT_NUMBER){
+			//喋りすぎ
+			return;
+		}
+		users_s[user.id].push(Date.now());
 	}
 
 	var logobj={"name":user.name,
