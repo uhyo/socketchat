@@ -19,6 +19,12 @@ LineMaker.prototype={
 		var date=new Date(obj.time);
 		var time=el("time",date.getFullYear()+"-"+(date.getMonth()+1)+"-"+date.getDate()+" "+date.getHours()+":"+date.getMinutes()+":"+date.getSeconds());
 		time.datetime=date.getFullYear()+"-"+(date.getMonth()+1)+"-"+date.getDate()+"T"+date.getHours()+":"+date.getMinutes()+":"+date.getSeconds()+"+09:00";
+		
+		dd.dataset.id=obj._id;
+		if(obj.response){
+			dd.dataset.respto=obj.response;
+			dd.classList.add("respto");
+		}
 	
 		infsp.appendChild(time);
 		infsp.appendChild(document.createTextNode(", "+obj.ip+")"));

@@ -16,6 +16,9 @@ Logobj
 *event mottoResponse:
 {"logs":[Logobj, Logobj, ...](time desc)}
 
+*event idresponse:
+Logobj
+
 [Client->Srv]
 *event regist:
  {"mode":"client"}
@@ -30,6 +33,9 @@ Logobj
 
 *event motto:
 {"time":Number}
+
+*event idrequest:
+{"id":Id}
 
 [LogViewer->Srv]
 *event regist:

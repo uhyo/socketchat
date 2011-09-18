@@ -179,6 +179,11 @@ io.sockets.on('connection',function(socket){
 			socket.on("motto",function(data){
 				motto(socket,user,data);
 			});
+			
+			//IDrequest（返信用）
+			socket.on("idrequest",function(data){
+				idrequest(socket,data);
+			});
 
 			//いなくなった
 			socket.on("disconnect",function(data){
@@ -241,6 +246,7 @@ function says(socket,user,data){
 		    "ip":user.ip,
 		    "time":Date.now()
 		    };
+	if(data.response)logobj.response=data.response;
 
 
 	makelog(socket,logobj);
@@ -305,6 +311,13 @@ function motto(socket,user,data){
 		socket.emit("mottoResponse",resobj);
 	});
 }
+function idrequest(socket,data){
+	log.findOne(db.bson_serializer.ObjectID.createFromHexString(data.id),function(err,obj){
+		socket.emit("idresponse",obj);
+	});
+}
+
+
 function sendusers(socket){
 	var p={"users":users,"roms":users.filter(function(x){return x.rom}).length};
 	socket.emit("users",p);

@@ -24,6 +24,8 @@ SocketChat.prototype={
 		
 		this.bots=[];
 		
+		this.responding_to=null;	//dd
+		
 		//Audio
 		if(this.flags.sound){
 			var audio;
@@ -47,6 +49,11 @@ SocketChat.prototype={
 			this.audio=audio;
 		}
 		
+		//Responding tip
+		this.responding_tip=document.createElement("span");
+		this.responding_tip.textContent="⇒";
+		this.responding_tip.classList.add("responding_tip");
+		
 		var socket;
 		socket=this.socket = io.connect(location.origin);
 		
@@ -55,10 +62,13 @@ SocketChat.prototype={
 		socket.on("users",this.userlist.bind(this));
 		socket.on("userinfo",this.userinfo.bind(this));
 		socket.on("mottoResponse",this.mottoResponse.bind(this));
+		socket.on("idresponse",this.idresponse.bind(this));
 		
 		/*document.forms["inout"].addEventListener("submit",this.submit.bind(this),false);
 		document.forms["comment"].addEventListener("submit",this.submit.bind(this),false);*/
 		document.addEventListener("submit",this.submit.bind(this),false);
+		
+		this.log.addEventListener('click',this.click.bind(this),false);
 		
 		if(localStorage.socketchat_name){
 			document.forms["inout"].elements["uname"].value=localStorage.socketchat_name;
@@ -80,6 +90,7 @@ SocketChat.prototype={
 		if(this.flags.sound){
 			this.audio.play();
 		}
+		console.log(obj);
 		this.write(obj);
 	},
 	write:function(obj){
@@ -137,17 +148,60 @@ SocketChat.prototype={
 		}else if(f.name=="comment"){
 			//発言
 			var el=f.elements["comment"];
-			this.say(el.value);
+			this.say(f);
 			el.value="";
+			f.elements["response"].value="";
+			this.responding_tip.parentNode && this.responding_tip.parentNode.removeChild(this.responding_tip);
 		}
 		e.preventDefault();
 	},
-	say:function(comment){
-		this.socket.emit("say",{"comment":comment});
+	say:function(f){
+		this.socket.emit("say",{"comment":f.elements["comment"].value,"response":f.elements["response"].value});
 	},
 	
 	bot:function(func){
 		this.bots.push(func);
+	},
+	click:function(e){
+		var t=e.target;
+		console.log(t);
+		if(t.isSameNode(this.responding_tip)){
+			e.stopPropagation();
+			
+			document.forms["comment"].elements["response"].value=this.responding_tip.dataset.to;
+			document.forms["comment"].elements["comment"].focus();
+			this.responding_tip.classList.add("checked");
+			return;
+		}
+		var dd=document.evaluate('ancestor-or-self::dd',t,null,XPathResult.ANY_UNORDERED_NODE_TYPE,null).singleNodeValue;
+		if(!dd){
+
+			this.responding_tip.parentNode && this.responding_tip.parentNode.removeChild(this.responding_tip);
+			return;
+		}
+		if(dd.classList.contains("respto") && dd.dataset.open!="open"){
+			//開く
+			this.responding_to=dd;
+			this.socket.emit("idrequest",{"id":dd.dataset.respto});
+			dd.dataset.open="open";
+			return;
+		}
+		//コメント
+		this.responding_tip.classList.remove("checked");
+
+		document.forms["comment"].elements["response"].value="";
+		dd.appendChild(this.responding_tip);
+		this.responding_tip.dataset.to=dd.dataset.id;
+	},
+	idresponse:function(data){
+		if(!this.responding_to || !data)return;
+		var line=this.line.make(data);
+		for(var i=0,l=line.childNodes.length;i<l;i++){
+			line.childNodes[i].classList && line.childNodes[i].classList.add("resp");
+		}
+		var r=this.responding_to;
+		r.parentNode.insertBefore(line,r.nextSibling);
+		
 	},
 	
 };
@@ -167,6 +221,7 @@ window.addEventListener('load',function(){
     </form>
     <form name="comment">
       <p><input name="comment" size="70" required><input type="submit" value="発言"></p>
+      <input type="hidden" name="response" value="">
     </form>
   </div>
   <div class="logs">

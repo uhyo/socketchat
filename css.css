@@ -10,6 +10,8 @@ div.logs{
 	position:absolute;
 	top:4em;
 	bottom:0;
+	left:8px;
+	right:0;
 	overflow-y:auto;
 }
 
@@ -37,9 +39,21 @@ dl#log{
 	display:inline;
 	margin-left:0;
 }
+#log dd.respto:before{
+	color:rgb(255,127,39);
+	content: '⇓';
+}
+#log dd.respto:not([data-open="open"]){
+	cursor:pointer;
+}
+#log dt ~ dt.resp:before{
+	content:"\a　　　";
+	white-space:pre;
+}
+
 div#info{
 	position:fixed;
-	right:0px;
+	right:20px;
 	bottom:0px;
 	opacity:0.45;
 	text-align:right;
@@ -68,4 +82,13 @@ div.forms p{
 }
 #log img{
 	vertical-align:middle;
+}
+
+.responding_tip{
+	color:rgb(255,127,39);
+	cursor:pointer;
+	font-weight:bold;
+}
+.responding_tip.checked{
+	color:rgb(127,39,255);
 }
