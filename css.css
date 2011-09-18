@@ -1,3 +1,18 @@
+body{
+	overflow-y:hidden;
+}
+
+div.forms{
+	white-space:nowrap;
+	height:3em;
+}
+div.logs{
+	position:absolute;
+	top:4em;
+	bottom:0;
+	overflow-y:auto;
+}
+
 dl#log{
 	margin:0;
 }

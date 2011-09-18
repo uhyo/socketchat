@@ -55,6 +55,7 @@ Logobj
 "comment":String,
 "ip":String,
 ("syslog":Boolean),
+("response":Id),
 }
 
 *object Userobj:
