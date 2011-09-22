@@ -121,7 +121,13 @@ filters.push(function(logobj){
 		var bgrs=["ｧｱｶｻﾀﾅﾊﾏﾔｬﾗﾜ","ｨｲｷｼﾁﾆﾋﾐﾘ","ｩｳｸｽﾂﾇﾌﾑﾕｭﾙ","ｪｴｹｾﾃﾈﾍﾒﾚ","ｫｵｺｿﾄﾉﾎﾓﾖｮﾛｦ"];
 		var boin=["ｧ","ｨ","ｩ","ｪ","ｫ"];
 
-		var comment=logobj.comment.replace(/[ァ-ヶ]/g,function(katakana){
+		logobj.comment=shabetter(logobj.comment);
+		logobj.name=shabetter(logobj.name);
+		
+	}
+	
+	function shabetter(str){
+		return str.replace(/[ァ-ヶ]/g,function(katakana){
 			return String.fromCharCode(katakana.charCodeAt(0)+(0x3040-0x30A0));
 		}).replace(/[ぁ-ゖ゛゜ヷ-ヺ]/g,function(hiragana){
 			return table[hiragana] || hiragana;
@@ -144,8 +150,6 @@ filters.push(function(logobj){
 			}
 			return katakanas;
 		});
-		logobj.comment=comment;
-		
 	}
 });
 
