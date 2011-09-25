@@ -64,6 +64,7 @@ SocketChat.prototype={
 		socket.on("userinfo",this.userinfo.bind(this));
 		socket.on("mottoResponse",this.mottoResponse.bind(this));
 		socket.on("idresponse",this.idresponse.bind(this));
+		socket.on("disconnect",this.disconnect.bind(this));
 		
 		/*document.forms["inout"].addEventListener("submit",this.submit.bind(this),false);
 		document.forms["comment"].addEventListener("submit",this.submit.bind(this),false);*/
@@ -91,7 +92,6 @@ SocketChat.prototype={
 		if(this.flags.sound){
 			this.audio.play();
 		}
-		console.log(obj);
 		this.write(obj);
 	},
 	write:function(obj){
@@ -165,7 +165,6 @@ SocketChat.prototype={
 	},
 	click:function(e){
 		var t=e.target;
-		console.log(t);
 		if(t.isSameNode(this.responding_tip)){
 			e.stopPropagation();
 			
@@ -204,6 +203,9 @@ SocketChat.prototype={
 		r.parentNode.insertBefore(line,r.nextSibling);
 		
 	},
+	disconnect:function(){
+		document.body.classList.add("discon");
+	},
 	
 };
     </script>
@@ -221,7 +223,7 @@ window.addEventListener('load',function(){
       <p><input name="uname" size="20" maxlength="25" required><input type="submit" value="入室"></p>
     </form>
     <form name="comment">
-      <p><input name="comment" size="70" required><input type="submit" value="発言"></p>
+      <p><input name="comment" size="70" autocomplete="off" required><input type="submit" value="発言"></p>
       <input type="hidden" name="response" value="">
     </form>
   </div>

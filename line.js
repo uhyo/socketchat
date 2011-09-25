@@ -130,7 +130,10 @@ HighChatMaker.prototype.make=function(obj){
 			}
 			//[small]の解析
 			result=v.match(/^(.+)?\[small\](.*?)(\[\/small\].*)?$/);
-			if(result){
+			if(result){						if(result[1]){
+							dff.appendChild(document.createTextNode(result[1]));
+						}
+
 				var dff=document.createDocumentFragment();
 				if(result[1]){
 					dff.appendChild(document.createTextNode(result[1]));
@@ -152,6 +155,9 @@ HighChatMaker.prototype.make=function(obj){
 				result=v.match(/^(.*?)(https?:\/\/\S+)(.*)$/);
 				if(result){
 					var dff=document.createDocumentFragment();
+					if(result[1]){
+						dff.appendChild(document.createTextNode(result[1]));
+					}
 					var result2=result[2].match(/^http:\/\/gyazo\.com\/([0-9a-f]{32})(?:\.png)?(.*)$/);
 					if(result2){
 						//[Gyazo]
@@ -174,9 +180,6 @@ HighChatMaker.prototype.make=function(obj){
 						}
 					}else{
 					
-						if(result[1]){
-							dff.appendChild(document.createTextNode(result[1]));
-						}
 						if(result[2]){
 							var a=document.createElement("a");
 							a.target="_blank";
@@ -184,9 +187,9 @@ HighChatMaker.prototype.make=function(obj){
 							a.textContent=result[2];
 							dff.appendChild(a);
 						}
-						if(result[3]){
-							dff.appendChild(document.createTextNode(result[3]));
-						}
+					}
+					if(result[3]){
+						dff.appendChild(document.createTextNode(result[3]));
 					}
 					parse(dff);
 					node.parentNode.replaceChild(dff,node);

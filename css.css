@@ -2,6 +2,9 @@ body{
 	overflow-y:hidden;
 	font-family:'Arial';
 }
+body.discon{
+	background-color:#f4f4f4;
+}
 
 div.forms{
 	white-space:nowrap;

@@ -17,6 +17,8 @@ CHAT_MAX_LENGTH = 1000;
 CHAT_LIMIT_TIME = 10;	//0なら無効
 CHAT_LIMIT_NUMBER=10;	//CHAT_LIMIT_TIME以内にCHAT_LIMIT_NUMBER回発言したらそれ以上発言できない
 
+HTTP_PORT = 8080;
+
 var mongoserver = new mongodb.Server("127.0.0.1",DB_PORT,{});
 var db = new mongodb.Db(DB_NAME,mongoserver,{});
 
@@ -161,7 +163,7 @@ filters.push(function(logobj){
 });
 
 
-httpserver.listen(8080);
+httpserver.listen(HTTP_PORT);
 
 var io=socketio.listen(httpserver);
 
@@ -242,6 +244,8 @@ function says(socket,user,data){
 	if(data.comment.length>CHAT_MAX_LENGTH){
 		return;
 	}
+	if(data.comment=="")return;
+
 	if(CHAT_LIMIT_TIME>0){
 		var d=Date.now()-1000*CHAT_LIMIT_TIME;
 		console.log(users_s[user.id]);
