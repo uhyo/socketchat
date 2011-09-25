@@ -129,7 +129,7 @@ HighChatMaker.prototype.make=function(obj){
 				result=v.match(/^(.*?)(https?:\/\/\S+)(.*)$/);
 				if(result){
 					var dff=document.createDocumentFragment();
-					var result2=result[2].match(/^http:\/\/gyazo\.com\/([0-9a-f]{32})(?:\.png)?$/);
+					var result2=result[2].match(/^http:\/\/gyazo\.com\/([0-9a-f]{32})(?:\.png)?(.*)$/);
 					if(result2){
 						//[Gyazo]
 						var a=document.createElement("a");
@@ -146,6 +146,9 @@ HighChatMaker.prototype.make=function(obj){
 							a.textContent="[Gyazo]";
 						}
 						dff.appendChild(a);
+						if(result2[2]){
+							dff.appendChild(document.createTextNode(result2[2]));
+						}
 					}else{
 					
 						if(result[1]){
