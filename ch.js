@@ -4,6 +4,10 @@ var socketio=require('socket.io'),mongodb=require('mongodb');
 //定数定義
 DB_PORT=27017;
 DB_NAME="socketchat";
+
+DB_USER="";	//user
+DB_PASS="";	//pass
+
 CHAT_FIRST_LOG=100;	//最初どれだけログ表示するか
 CHAT_MOTTO_LOG=100;	//HottoMotto時にログをどれだけ表示するか
 
@@ -78,18 +82,21 @@ var httpserver = http.createServer(function(req, res){
 	}
 });
 
-var log,props;
+var log;
 //データベース使用準備
 db.open(function(err,_db){
 	if(err){
 		console.log("DB Open err: "+err);
 		throw err;
 	}
-	db.collection("log",function(err,collection){
-		log=collection;
-	});
-	db.collection("props",function(err,collection){
-		props=collection;
+	db.authenticate(DB_USER, DB_PASS, function(err){
+		if(err){
+			console.log("DM Auth err: "+err);
+			throw err;
+		}
+		db.collection("log",function(err,collection){
+			log=collection;
+		});
 	});
 });
 var users=[],users_next=1;
@@ -103,7 +110,7 @@ var filters=[];
 filters.push(function(logobj){
 	var date=new Date(logobj.time);
 	var minutes=date.getMinutes();
-	if(minutes==0 || minutes==30){
+	if((minutes==0 || minutes==30)&&(date.getSeconds()<30){
 		//半角カナに変換
 		var table={
 "ぁ":"ｧ", "あ":"ｱ", "ぃ":"ｨ", "い":"ｲ", "ぅ":"ｩ", "う":"ｳ", "ぇ":"ｪ", "え":"ｴ", "ぉ":"ｫ", "お":"ｵ",

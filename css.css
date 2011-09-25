@@ -28,6 +28,7 @@ dl#log{
 }
 #log dt{
 	display:inline;
+	font-weight:bold;
 }
 #log dt:after{
 	content:'>';
