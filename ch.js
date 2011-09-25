@@ -5,8 +5,8 @@ var socketio=require('socket.io'),mongodb=require('mongodb');
 DB_PORT=27017;
 DB_NAME="socketchat";
 
-DB_USER="";	//user
-DB_PASS="";	//pass
+DB_USER="test";	//user
+DB_PASS="test";	//pass
 
 CHAT_FIRST_LOG=100;	//最初どれだけログ表示するか
 CHAT_MOTTO_LOG=100;	//HottoMotto時にログをどれだけ表示するか
@@ -110,7 +110,7 @@ var filters=[];
 filters.push(function(logobj){
 	var date=new Date(logobj.time);
 	var minutes=date.getMinutes();
-	if((minutes==0 || minutes==30)&&(date.getSeconds()<30){
+	if((minutes==0 || minutes==30)&&(date.getSeconds()<30)){
 		//半角カナに変換
 		var table={
 "ぁ":"ｧ", "あ":"ｱ", "ぃ":"ｨ", "い":"ｲ", "ぅ":"ｩ", "う":"ｳ", "ぇ":"ｪ", "え":"ｴ", "ぉ":"ｫ", "お":"ｵ",
