@@ -12,7 +12,6 @@ function SocketChat(log,info,infobar){
 	this.logid=log,this.infoid=info,this.infobarid=infobar;
 	
 	this.oldest_time=null;
-	
 	this.flags={"sound":true};
 }
 SocketChat.prototype={
@@ -23,6 +22,7 @@ SocketChat.prototype={
 		this.usernumber=this.info.getElementsByClassName("usernumber")[0];
 		this.line=new HighChatMaker(document.getElementById(this.infobarid));
 		
+		this.usernumber.dataset.actives=this.usernumber.dataset.roms=0;
 		this.bots=[];
 		
 		this.responding_to=null;	//dd
@@ -60,11 +60,14 @@ SocketChat.prototype={
 		
 		socket.on("init",this.loginit.bind(this));
 		socket.on("log",this.recv.bind(this));
-		socket.on("users",this.userlist.bind(this));
+		socket.on("users",this.userinit.bind(this));
 		socket.on("userinfo",this.userinfo.bind(this));
 		socket.on("mottoResponse",this.mottoResponse.bind(this));
 		socket.on("idresponse",this.idresponse.bind(this));
 		socket.on("disconnect",this.disconnect.bind(this));
+		socket.on("newuser",this.newuser.bind(this));
+		socket.on("deluser",this.deluser.bind(this));
+		socket.on("inout",this.inout.bind(this));
 		
 		/*document.forms["inout"].addEventListener("submit",this.submit.bind(this),false);
 		document.forms["comment"].addEventListener("submit",this.submit.bind(this),false);*/
@@ -95,30 +98,79 @@ SocketChat.prototype={
 		this.write(obj);
 	},
 	write:function(obj){
-		
 		this.log.insertBefore(this.line.make(obj),this.log.firstChild);
-		
-		
 	},
-	userlist:function(obj){
-		while(this.users.firstChild)this.users.removeChild(this.users.firstChild);
+	//誰かが来た
+	newuser: function(user){
+		console.log("newuser", user);
+		var li=document.createElement("li");
+		var sp=document.createElement("span");
+		sp.textContent=user.name;
+		sp.title=user.ip+" / "+user.ua;
+		li.dataset.id=user.id;
+		if(user.rom){
+			li.classList.add("rom");
+			this.setusernumber(0, 1);
+		}else{
+			this.setusernumber(1, 0);
+		}
 		
-		var active=0;
-		obj.users.forEach(function(user){
-			if(user.rom)return;
-			var li=document.createElement("li");
-			var sp=document.createElement("span");
-			sp.textContent=user.name;
-			
-			sp.title=user.ip+" / "+user.ua;
-			
-			li.appendChild(sp);
-			this.users.appendChild(li);
-			active++;
-		},this);
-		this.usernumber.textContent="入室"+active+(obj.roms? "（ROM"+obj.roms+")":"");
-
+		li.appendChild(sp);
+		this.users.appendChild(li);
 	},
+	getuserelement: function(id){
+		var ul=this.users.childNodes;
+		for(var i=0, l=ul.length; i<l; i++){
+			if(ul[i].dataset.id==id){
+				return ul[i];
+			}
+		}
+		return null;
+	},
+	//誰かがお亡くなりに
+	deluser: function(id){
+		console.log("deluser", id);
+		var elem=this.getuserelement(id);
+		if(!elem) return;
+		
+		var actives=this.usernumber.dataset.actives, roms=this.usernumber.dataset.roms;
+		if(elem.classList.contains("rom")){
+			this.setusernumber(0, -1);
+		}else{
+			this.setusernumber(-1, 0);
+		}
+		this.users.removeChild(elem);
+	},
+	//最初にユーザリストを得る
+	userinit:function(obj){
+		console.log("userinit", obj);
+		while(this.users.firstChild)this.users.removeChild(this.users.firstChild);//textNode消す
+		
+		obj.users.forEach(this.newuser, this);
+		//this.setusernumber(obj.actives, obj.roms);
+	},
+	//人数をセットして反映
+	setusernumber: function(actives, roms){
+		var dataset=this.usernumber.dataset;
+		dataset.actives=parseInt(dataset.actives)+actives;
+		dataset.roms=parseInt(dataset.roms)+roms;
+		this.usernumber.textContent="入室"+dataset.actives+(dataset.roms!=0? " (ROM"+dataset.roms+")":"");
+	},
+	//誰かが入退室
+	inout: function(obj){
+		console.log("inout", obj);
+		var elem=this.getuserelement(obj.id);
+		if(!elem)return;
+		elem.firstChild.textContent=obj.name;
+		if(obj.rom){
+			elem.classList.add("rom");
+			this.setusernumber(-1, 1);
+		}else{
+			elem.classList.remove("rom");
+			this.setusernumber(1, -1);
+		}
+	},
+	//自分が入退室
 	userinfo:function(obj){
 		var f=document.forms["inout"];
 		f.elements["uname"].disabled=!obj.rom;
@@ -126,7 +178,7 @@ SocketChat.prototype={
 		var result=document.evaluate('descendant::input[@type="submit"]',f,null,XPathResult.ANY_UNORDERED_NODE_TYPE,null);
 		var bt=result.singleNodeValue;
 		bt.value=obj.rom?"入室":"退室";
-		
+		this.inout(obj);
 	},
 	mottoResponse:function(data){
 		data.logs.forEach(function(line){
@@ -205,7 +257,7 @@ SocketChat.prototype={
 	},
 	disconnect:function(){
 		document.body.classList.add("discon");
-	},
+	}
 	
 };
     </script>
