@@ -68,6 +68,7 @@ ul.users li{
 }
 ul.users li span{
 	background-color:#dddddd;
+	font-weight:bold;
 }
 span.s{
 	text-decoration:line-through;
