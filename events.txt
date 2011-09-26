@@ -98,3 +98,9 @@ Logobj
 
 {"logs":[Logobj, Logobj, ...](time desc),
 }
+
+/api
+*query
+   login=String
+or logout=任意
+or comment=String

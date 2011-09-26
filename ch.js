@@ -14,6 +14,9 @@ CHAT_MAX_LENGTH = 1000;
 CHAT_LIMIT_TIME = 10;	//0なら無効
 CHAT_LIMIT_NUMBER=10;	//CHAT_LIMIT_TIME以内にCHAT_LIMIT_NUMBER回発言したらそれ以上発言できない
 
+CHAT_APIUSER_TIMEOUT = 60;	//APIユーザーがいなくなるまでの時間（秒）
+CHAT_APIUSER_SESSIONID_LENGTH = 20;
+
 
 HTTP_PORT = 8080;
 
@@ -40,8 +43,8 @@ app.get('/chalog', function(req, res){
 		}, 200);
 	});
 });
-app.get('/api', function(){
-	
+app.get(/^\/api\/(.*)$/, function(req,res){
+	api(req.params[0],req,res);
 })
 app.get('/show', function(req, res){
 	res.send({
@@ -196,6 +199,8 @@ User.prototype.inout=function(data){
 
 };
 User.prototype.inoutSplash=function(){
+	var socket = this.socket || getAvailableSocket(), obj={"rom":this.rom, id: this.id, name: this.name};
+	socket && (socket.emit("userinfo",obj), socket.broadcast.to("useruser").emit("inout",obj));
 };
 //mottoの該当レス探す処理
 User.prototype.findMotto=function(data,callback){
@@ -218,6 +223,8 @@ User.prototype.discon=function(){
 	this.delUserSplash();
 };
 User.prototype.delUserSplash=function(){
+	var socket=this.socket || getAvailableSocket();
+	socket && socket.broadcast.to("useruser").emit("deluser", this.id);
 };
 
 
@@ -227,10 +234,6 @@ function SocketUser(id,name,ip,rom,ua,socket){
 }
 SocketUser.prototype=new User;
 SocketUser.prototype.type="socket";
-SocketUser.prototype.inoutSplash=function(){
-	this.socket.emit("userinfo",{"rom":this.rom, id: this.id, name: this.name});
-	this.socket.broadcast.to("useruser").emit("inout",{"rom":this.rom, id: this.id, name: this.name});
-};
 SocketUser.prototype.motto=function(data){
 	this.findMotto(data,function(err,docs){
 		var resobj={"logs":docs};
@@ -242,8 +245,30 @@ SocketUser.prototype.idrequest=function(data){
 		this.socket.emit("idresponse",obj);
 	}.bind(this));
 };
-SocketUser.prototype.delUserSplash=function(){
-	if(this.socket)this.socket.broadcast.to("useruser").emit("deluser", this.id);
+
+function APIUser(id,name,ip,rom,ua,sessionId){
+	User.apply(this,arguments);
+	this.sessionId=sessionId;
+	
+	this.logs=[];
+	this.userlogs=[];
+	
+	this.last_userid=-1;	//知っているユーザーIDの最後
+	this.last_time=Date.now();	//最終生存確認時間
+}
+APIUser.prototype=new User;
+APIUser.prototype.type="api";
+APIUser.prototype.motto=function(data,res){
+	this.findMotto(data,function(err,docs){
+		res.send({"error":false,
+			"logs":docs,
+		},{"Content-Type":"text/javascript; charset=UTF-8"});
+	}.bind(this));
+};
+APIUser.prototype.idrequest=function(data,res){
+	log.findOne(db.bson_serializer.ObjectID.createFromHexString(data.id),function(err,obj){
+		res.send(obj,{"Content-Type":"text/javascript; charset=UTF-8"});
+	}.bind(this));
 };
 
 
@@ -255,8 +280,8 @@ io.sockets.on('connection',function(socket){
 			//チャットクライアント
 			socket.join("chatuser");
 			socket.join("useruser");
-			sendFirstLog(socket);
 			user=addSocketUser(socket);
+			sendFirstLog(user);
 			sendFirstUsers(socket);
 
 			//発言
@@ -298,9 +323,13 @@ io.sockets.on('connection',function(socket){
 	});
 	
 });
-function sendFirstLog(socket){
+function sendFirstLog(user){
 	log.find({},{"sort":[["time","desc"]],"limit":CHAT_FIRST_LOG}).toArray(function(err,docs){
-		socket.emit("init",{"logs":docs});
+		if(user.socket){
+			user.socket.emit("init",{"logs":docs});
+		}else if(user.sessionId){
+			user.logs=user.logs.concat(docs);
+		}
 	});
 }
 function sendFirstUsers(socket){
@@ -334,13 +363,24 @@ function makelog(user,logobj){
 			console.log(err);
 			throw err;
 		}
-		splashlog(logobj,user.socket);
+		splashlog(logobj,user.socket || getAvailableSocket());
 	});
 	function splashlog(logobj,socket){
 		if(socket){
 			socket.emit("log",logobj);
 			socket.broadcast.to("chatuser").emit("log",logobj);
 		}
+		var dead=[];
+		users.filter(function(x){return x.sessionId}).forEach(function(x){
+			x.logs.unshift(logobj);
+			if(x.last_time+CHAT_APIUSER_TIMEOUT*1000 < Date.now()){
+				//いなくなった
+				dead.push(x);
+			}
+		});
+		dead.forEach(function(x){
+			x.discon();
+		});
 	}
 }
 
@@ -359,6 +399,55 @@ function idrequest(socket,data){
 	});
 }
 
+//HTTP API
+function api(mode,req,res){
+	//sessionidを作る
+	var query=req.query;
+	var sessionId=query.sessionId;
+	var user = sessionId ? users.filter(function(x){return x.sessionId==sessionId})[0] : null;
+	if(!user){
+		while(!sessionId){
+			sessionId="";
+			for(var i=0;i<CHAT_APIUSER_SESSIONID_LENGTH;i++){
+				sessionId+="0123456789abcdefghijklmnopqrstuvwxyz"[Math.floor(Math.random()*36)];
+			}
+			if(users.filter(function(x){return x.sessionId==sessionId}).length)sessionId=null;
+		}
+		//ROMに追加
+		user=new APIUser(users_next,null,
+			req.connection.remoteAddress,true,
+			req.header("User-Agent"),
+			sessionId);
+		sendFirstLog(user);
+		users.push(user);
+		
+		users_next++;
+	}
+	if(mode=="inout"){
+		user.inout(query);
+	}else if(mode=="say"){
+		user.says(query);
+	}else if(mode=="motto"){
+		user.motto(query);
+		return;
+	}else if(mode=="idrequest"){
+		user.idrequest(query);
+		return;
+	}
+
+
+	var newusers = users.filter(function(x){return x.id>user.last_userid}).map(function(x){return x.getUserObj()});
+	res.send({"error":false,
+		"newusers":newusers,
+		"userlist":users.map(function(x){return x.id}),
+		"myid":user.id,
+		"logs":user.logs,
+		"sessionid":user.sessionId
+	},{"Content-Type":"text/javascript; charset=UTF-8"});
+	
+	user.logs.length=0;
+	user.last_time=Date.now();
+}
 
 
 function chalog(query,callback){
@@ -402,4 +491,6 @@ function chalog(query,callback){
 		
 	});
 }
-
+function getAvailableSocket(){
+	return users.filter(function(x){return x.socket})[0] || null;
+}
