@@ -251,7 +251,6 @@ function APIUser(id,name,ip,rom,ua,sessionId){
 	this.sessionId=sessionId;
 	
 	this.logs=[];
-	this.userlogs=[];
 	
 	this.last_userid=-1;	//知っているユーザーIDの最後
 	this.last_time=Date.now();	//最終生存確認時間
@@ -420,7 +419,8 @@ function api(mode,req,res){
 			sessionId);
 		sendFirstLog(user);
 		users.push(user);
-		
+		var socket=getAvailableSocket();
+		socket && socket.broadcast.to("useruser").emit("newuser", user.getUserObj());
 		users_next++;
 	}
 	if(mode=="inout"){
@@ -444,6 +444,7 @@ function api(mode,req,res){
 		"logs":user.logs,
 		"sessionid":user.sessionId
 	},{"Content-Type":"text/javascript; charset=UTF-8"});
+	user.last_userid=users_next-1;
 	
 	user.logs.length=0;
 	user.last_time=Date.now();
@@ -492,5 +493,5 @@ function chalog(query,callback){
 	});
 }
 function getAvailableSocket(){
-	return users.filter(function(x){return x.socket})[0] || null;
+	return users.filter(function(x){return x.socket})[0].socket || null;
 }
