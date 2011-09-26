@@ -98,3 +98,6 @@ div.forms p{
 .responding_tip.checked{
 	color:rgb(127,39,255);
 }
+li.rom{
+	display: none;
+}
