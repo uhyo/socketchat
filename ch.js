@@ -1,17 +1,12 @@
 var http = require('http'), url = require('url'), fs = require('fs');
 var socketio=require('socket.io'),mongodb=require('mongodb');
 
-var settings=require('./settings');	//DB_NAME, DB_USER, DB_PASS
+var dbsettings=require('./dbsettings');	//DB_SERVER(="127.0.0.1", DB_PORT=27017, DB_NAME="socketchat", DB_USER, DB_PASS
 
 //定数定義
-DB_PORT=27017;
-DB_NAME="socketchat";
 
-DB_USER="test";	//user
-DB_PASS="test";	//pass
-
-CHAT_FIRST_LOG=100;	//最初どれだけログ表示するか
-CHAT_MOTTO_LOG=100;	//HottoMotto時にログをどれだけ表示するか
+CHAT_FIRST_LOG=30;	//最初どれだけログ表示するか
+CHAT_MOTTO_LOG=30;	//HottoMotto時にログをどれだけ表示するか
 
 CHAT_NAME_MAX_LENGTH = 25;
 CHAT_MAX_LENGTH = 1000;
@@ -19,72 +14,42 @@ CHAT_MAX_LENGTH = 1000;
 CHAT_LIMIT_TIME = 10;	//0なら無効
 CHAT_LIMIT_NUMBER=10;	//CHAT_LIMIT_TIME以内にCHAT_LIMIT_NUMBER回発言したらそれ以上発言できない
 
+
 HTTP_PORT = 8080;
 
-var mongoserver = new mongodb.Server("127.0.0.1",DB_PORT,{});
-var db = new mongodb.Db(settings.DB_NAME,mongoserver,{});
+var mongoserver = new mongodb.Server(dbsettings.DB_SERVER,dbsettings.DB_PORT,{});
+var db = new mongodb.Db(dbsettings.DB_NAME,mongoserver,{});
 
 
-var httpserver = http.createServer(function(req, res){
-	var parts=url.parse(req.url,true),path = parts.pathname;
-	switch (path){
-		case '/':
-			path='/index.html';
-		//HTML
-		case '/index.html':
-			fs.readFile(__dirname + path, function(err, data){
-				if (err) return send404(res);
-				res.writeHead(200, {'Content-Type': 'text/html'})
-				res.write(data, 'utf8');
-				res.end();
-			});
-			break;
-		case '/log':case '/list':
-			fs.readFile(__dirname + path+".html", function(err, data){
-				if (err) return send404(res);
-				res.writeHead(200, {'Content-Type': 'text/html'})
-				res.write(data, 'utf8');
-				res.end();
-			});
-			break;
-		//JS
-		case '/line.js':
-			fs.readFile(__dirname + path, function(err, data){
-				if (err) return send404(res);
-				res.writeHead(200, {'Content-Type': 'text/javascript'})
-				res.write(data, 'utf8');
-				res.end();
-			});
-			break;
-		//CSS
-		case '/css.css':
-			fs.readFile(__dirname + path, function(err, data){
-				if (err) return send404(res);
-				res.writeHead(200, {'Content-Type': 'text/css'})
-				res.write(data, 'utf8');
-				res.end();
-			});
-			break;
-		//API
-		case '/chalog':
-			chalog(parts.query,function(resobj){
-				var result=JSON.stringify(resobj);
-				res.writeHead(200,{
-					//"Content-Length":result.length,
-					"Content-Type":"text/javascript; charset=UTF-8",
-				});
-				res.write(result);
-				res.end();
-			});
-			break;
-		default: send404(res);
-	}
-	function send404(res){
-		res.writeHead(404);
-		res.write('404');
-		res.end();
-	}
+var app = require('express').createServer();
+
+app.get(/^\/(index\.html)?$/, function(req, res){
+	res.sendfile(__dirname + '/index.html');
 });
+app.get(/^\/(log|list)$/, function(req, res){
+	res.sendfile(__dirname + "/"+req.params[0]+'.html');
+});
+app.get(/^\/(line\.js|css\.css)$/, function(req, res){
+	res.sendfile(__dirname + "/"+req.params[0]);
+});
+app.get('/chalog', function(req, res){
+	chalog(req.query,function(resobj){
+		res.send(resobj, {
+			//"Content-Length":result.length,
+			"Content-Type":"text/javascript; charset=UTF-8",
+		}, 200);
+	});
+});
+app.get('/api', function(){
+	
+})
+app.get('/show', function(req, res){
+	res.send({
+		users: users,
+		users_next: users_next,
+		users_s: users_s
+	},{"Content-Type":"text/javascript; charset=UTF-8"});
+})
 
 var log;
 //データベース使用準備
@@ -93,9 +58,9 @@ db.open(function(err,_db){
 		console.log("DB Open err: "+err);
 		throw err;
 	}
-	db.authenticate(settings.DB_USER, settings.DB_PASS, function(err){
+	db.authenticate(dbsettings.DB_USER, dbsettings.DB_PASS, function(err){
 		if(err){
-			console.log("DM Auth err: "+err);
+			console.log("DB Auth err: "+err);
 			throw err;
 		}
 		db.collection("log",function(err,collection){
@@ -165,9 +130,9 @@ filters.push(function(logobj){
 });
 
 
-httpserver.listen(HTTP_PORT);
+app.listen(HTTP_PORT);
 
-var io=socketio.listen(httpserver);
+var io=socketio.listen(app);
 
 io.sockets.on('connection',function(socket){
 	//ユーザー登録
@@ -179,6 +144,7 @@ io.sockets.on('connection',function(socket){
 			socket.join("useruser");
 			sendFirstLog(socket);
 			user=addUser(socket);
+			sendFirstUsers(socket);
 
 			//発言
 			socket.on("say",function(data){
@@ -214,7 +180,7 @@ io.sockets.on('connection',function(socket){
 		}else if(data.mode=="userlist"){
 			//ユーザーリスト
 			socket.join("useruser");
-			sendusers(socket);
+			sendFirstUsers(socket);
 		}
 	});
 	
@@ -223,6 +189,14 @@ function sendFirstLog(socket){
 	log.find({},{"sort":[["time","desc"]],"limit":CHAT_FIRST_LOG}).toArray(function(err,docs){
 		socket.emit("init",{"logs":docs});
 	});
+}
+function sendFirstUsers(socket){
+	var roms=users.filter(function(x){return x.rom}).length, p={
+		"users":users,
+		"roms": roms,
+		"actives": users.length-roms
+	};
+	socket.emit("users",p);
 }
 function addUser(socket){
 	var user={"id":users_next,
@@ -233,7 +207,7 @@ function addUser(socket){
 		  };
 	users.push(user);
 	users_s[user.id]=[];
-	sendusers(socket);
+	socket.broadcast.to("useruser").emit("newuser", user);
 	users_next++;
 	return user;
 }
@@ -301,8 +275,8 @@ function inout(socket,user,data){
 	makelog(socket,syslog);
 	if(user.rom)user.name=null;
 
-	sendusers(socket);
-	socket.emit("userinfo",{"rom":user.rom});
+	socket.emit("userinfo",{"rom":user.rom, id: user.id, name: user.name});
+	socket.broadcast.to("useruser").emit("inout",{"rom":user.rom, id: user.id, name: user.name});
 	
 
 }
@@ -317,7 +291,7 @@ function discon(socket,user){
 		makelog(socket,syslog);
 	}
 	delUser(user);
-	sendusers(socket);
+	socket.broadcast.to("useruser").emit("deluser", user.id);
 }
 function motto(socket,user,data){
 	var time=data.time;
@@ -335,12 +309,6 @@ function idrequest(socket,data){
 }
 
 
-function sendusers(socket){
-	var p={"users":users,"roms":users.filter(function(x){return x.rom}).length};
-	socket.emit("users",p);
-	socket.broadcast.to("useruser").emit("users",p);
-	
-}
 
 function chalog(query,callback){
 	var page=parseInt(query.page) || 0;
