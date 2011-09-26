@@ -201,15 +201,18 @@ SocketChat.prototype={
 		}else if(f.name=="comment"){
 			//発言
 			var el=f.elements["comment"];
-			this.say(f);
+			this.sayform(f);
 			el.value="";
 			f.elements["response"].value="";
 			this.responding_tip.parentNode && this.responding_tip.parentNode.removeChild(this.responding_tip);
 		}
 		e.preventDefault();
 	},
-	say:function(f){
-		this.socket.emit("say",{"comment":f.elements["comment"].value,"response":f.elements["response"].value});
+	sayform:function(f){
+		this.say(f.elements["comment"].value,f.elements["response"].value);
+	},
+	say:function(comment,response){
+		this.socket.emit("say",{"comment":comment,"response":response?response:""});
 	},
 	
 	bot:function(func){
