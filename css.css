@@ -34,7 +34,8 @@ dl#log{
 	font-weight:bold;
 }
 #log dt:after{
-	content:'>';
+	content:'> ';
+	font-weight:normal;
 }
 #log dt ~ dt:before{
 	content:"\a";

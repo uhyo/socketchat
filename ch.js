@@ -1,6 +1,8 @@
 var http = require('http'), url = require('url'), fs = require('fs');
 var socketio=require('socket.io'),mongodb=require('mongodb');
 
+var settings=require('./settings');	//DB_NAME, DB_USER, DB_PASS
+
 //定数定義
 DB_PORT=27017;
 DB_NAME="socketchat";
@@ -20,7 +22,7 @@ CHAT_LIMIT_NUMBER=10;	//CHAT_LIMIT_TIME以内にCHAT_LIMIT_NUMBER回発言した
 HTTP_PORT = 8080;
 
 var mongoserver = new mongodb.Server("127.0.0.1",DB_PORT,{});
-var db = new mongodb.Db(DB_NAME,mongoserver,{});
+var db = new mongodb.Db(settings.DB_NAME,mongoserver,{});
 
 
 var httpserver = http.createServer(function(req, res){
@@ -91,7 +93,7 @@ db.open(function(err,_db){
 		console.log("DB Open err: "+err);
 		throw err;
 	}
-	db.authenticate(DB_USER, DB_PASS, function(err){
+	db.authenticate(settings.DB_USER, settings.DB_PASS, function(err){
 		if(err){
 			console.log("DM Auth err: "+err);
 			throw err;

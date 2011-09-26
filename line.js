@@ -129,10 +129,11 @@ HighChatMaker.prototype.make=function(obj){
 				return;
 			}
 			//[small]の解析
-			result=v.match(/^(.+)?\[small\](.*?)(\[\/small\].*)?$/);
-			if(result){						if(result[1]){
-							dff.appendChild(document.createTextNode(result[1]));
-						}
+			result=v.match(/^(.*)\[small\](.*?)(\[\/small\].*)?$/);
+			if(result){
+				if(result[1]){
+					dff.appendChild(document.createTextNode(result[1]));
+				}
 
 				var dff=document.createDocumentFragment();
 				if(result[1]){
@@ -146,7 +147,8 @@ HighChatMaker.prototype.make=function(obj){
 				}
 				if(result[3]){
 					dff.appendChild(document.createTextNode(result[3].slice(8)));
-				}				parse(dff);
+				}
+				parse(dff);
 				node.parentNode.replaceChild(dff,node);
 				return;
 			}
