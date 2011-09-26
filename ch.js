@@ -17,13 +17,6 @@ CHAT_LIMIT_NUMBER=10;	//CHAT_LIMIT_TIME以内にCHAT_LIMIT_NUMBER回発言した
 
 HTTP_PORT = 8080;
 
-function User(){
-}
-
-function SocketUser(){
-}
-
-
 var mongoserver = new mongodb.Server(dbsettings.DB_SERVER,dbsettings.DB_PORT,{});
 var db = new mongodb.Db(dbsettings.DB_NAME,mongoserver,{});
 
@@ -141,6 +134,119 @@ app.listen(HTTP_PORT);
 
 var io=socketio.listen(app);
 
+function User(id,name,ip,rom,ua){
+	this.id=id,this.name=name,this.ip=ip,this.rom=rom,this.ua=ua;
+	
+	this.ss=[];	//最近の発言
+}
+User.prototype.getUserObj=function(){
+	//外部出力用
+	return {"id":this.id,"name":this.name,"ip":this.ip,"rom":this.rom,"ua":this.ua};
+};
+User.prototype.type="user";
+//says,inout,motto,idRequest
+User.prototype.says=function(data){
+	if(this.rom)return;
+	
+	if(data.comment.length>CHAT_MAX_LENGTH){
+		return;
+	}
+	if(data.comment=="")return;
+
+	if(CHAT_LIMIT_TIME>0){
+		var d=Date.now()-1000*CHAT_LIMIT_TIME;
+		if((this.ss=this.ss.filter(function(x){return x>=d})).length>=CHAT_LIMIT_NUMBER){
+			//喋りすぎ
+			return;
+		}
+		this.ss.push(Date.now());
+	}
+
+	var logobj={"name":this.name,
+		    "comment":data.comment,
+		    "ip":this.ip,
+		    "time":Date.now()
+		    };
+	if(data.response)logobj.response=data.response;
+
+
+	makelog(this,logobj);
+};
+User.prototype.inout=function(data){
+	this.rom = !this.rom;
+	if(!this.rom){
+		if(data.name.length>CHAT_NAME_MAX_LENGTH){
+			//文字数超過
+			this.rom=true;
+			return;
+		}
+		this.name=data.name;
+	}
+	//シスログ
+	var syslog={"name" : (this.rom?"■退室通知":"■入室通知"),
+		    "time":Date.now(),
+		    "ip":this.ip,
+		    "comment":"「"+this.name+"」さんが"+(this.rom?"退室":"入室"),
+		    "syslog":true
+	};
+	makelog(this,syslog);
+	if(this.rom)this.name=null;
+	
+	this.inoutSplash();
+
+};
+User.prototype.inoutSplash=function(){
+};
+//mottoの該当レス探す処理
+User.prototype.findMotto=function(data,callback){
+	var time=data.time;
+	if(!time)return;
+		log.find({"time":{$lt:time}},{"sort":[["time","desc"]],"limit":CHAT_MOTTO_LOG}).toArray(callback);	
+};
+//いなくなった！
+User.prototype.discon=function(){
+	if(!this.rom){
+		var syslog={"name" : "■失踪通知",
+			    "time":Date.now(),
+			    "ip":this.ip,
+			    "comment":"「"+this.name+"」さんいない",
+			    "syslog":true
+		};
+		makelog(this,syslog);
+	}
+	delUser(this);
+	this.delUserSplash();
+};
+User.prototype.delUserSplash=function(){
+};
+
+
+function SocketUser(id,name,ip,rom,ua,socket){
+	User.apply(this,arguments);
+	this.socket=socket;
+}
+SocketUser.prototype=new User;
+SocketUser.prototype.type="socket";
+SocketUser.prototype.inoutSplash=function(){
+	this.socket.emit("userinfo",{"rom":this.rom, id: this.id, name: this.name});
+	this.socket.broadcast.to("useruser").emit("inout",{"rom":this.rom, id: this.id, name: this.name});
+};
+SocketUser.prototype.motto=function(data){
+	this.findMotto(data,function(err,docs){
+		var resobj={"logs":docs};
+		this.socket.emit("mottoResponse",resobj);
+	}.bind(this));
+};
+SocketUser.prototype.idrequest=function(data){
+	log.findOne(db.bson_serializer.ObjectID.createFromHexString(data.id),function(err,obj){
+		this.socket.emit("idresponse",obj);
+	}.bind(this));
+};
+SocketUser.prototype.delUserSplash=function(){
+	if(this.socket)this.socket.broadcast.to("useruser").emit("deluser", this.id);
+};
+
+
 io.sockets.on('connection',function(socket){
 	//ユーザー登録
 	var user=null;
@@ -150,32 +256,32 @@ io.sockets.on('connection',function(socket){
 			socket.join("chatuser");
 			socket.join("useruser");
 			sendFirstLog(socket);
-			user=addUser(socket);
+			user=addSocketUser(socket);
 			sendFirstUsers(socket);
 
 			//発言
 			socket.on("say",function(data){
-				says(socket,user,data);
+				user.says(data);
 			});
 
 			//入退室
 			socket.on("inout",function(data){
-				inout(socket,user,data);
+				user.inout(data);
 			});
 	
 			//HottoMotto
 			socket.on("motto",function(data){
-				motto(socket,user,data);
+				user.motto(data);
 			});
 			
 			//IDrequest（返信用）
 			socket.on("idrequest",function(data){
-				idrequest(socket,data);
+				user.idrequest(data);
 			});
 
 			//いなくなった
 			socket.on("disconnect",function(data){
-				discon(socket,user);
+				user.discon();
 			});
 		}else if(data.mode=="chalog"){
 			//Chalog
@@ -199,57 +305,27 @@ function sendFirstLog(socket){
 }
 function sendFirstUsers(socket){
 	var roms=users.filter(function(x){return x.rom}).length, p={
-		"users":users,
+		"users":users.map(function(y){return y.getUserObj()}),
 		"roms": roms,
 		"actives": users.length-roms
 	};
 	socket.emit("users",p);
 }
-function addUser(socket){
-	var user={"id":users_next,
-		  "name":null,
-		  "rom":true,
-		  "ip":socket.handshake.address.address,
-		  "ua":socket.handshake.headers["user-agent"],
-		  };
+function addSocketUser(socket){
+	var user=new SocketUser(users_next,null,
+		  socket.handshake.address.address,true,
+		  socket.handshake.headers["user-agent"],
+		  socket
+		  );
 	users.push(user);
-	users_s[user.id]=[];
-	socket.broadcast.to("useruser").emit("newuser", user);
+	socket.broadcast.to("useruser").emit("newuser", user.getUserObj());
 	users_next++;
 	return user;
 }
 function delUser(user){
 	users=users.filter(function(x){return x!=user});
 }
-function says(socket,user,data){
-	if(user.rom)return;
-	
-	if(data.comment.length>CHAT_MAX_LENGTH){
-		return;
-	}
-	if(data.comment=="")return;
-
-	if(CHAT_LIMIT_TIME>0){
-		var d=Date.now()-1000*CHAT_LIMIT_TIME;
-		console.log(users_s[user.id]);
-		if((users_s[user.id]=users_s[user.id].filter(function(x){return x>=d})).length>=CHAT_LIMIT_NUMBER){
-			//喋りすぎ
-			return;
-		}
-		users_s[user.id].push(Date.now());
-	}
-
-	var logobj={"name":user.name,
-		    "comment":data.comment,
-		    "ip":user.ip,
-		    "time":Date.now()
-		    };
-	if(data.response)logobj.response=data.response;
-
-
-	makelog(socket,logobj);
-}
-function makelog(socket,logobj){
+function makelog(user,logobj){
 	filters.forEach(function(func){
 		func(logobj);
 	});
@@ -258,48 +334,16 @@ function makelog(socket,logobj){
 			console.log(err);
 			throw err;
 		}
-		socket.emit("log",logobj);
-		socket.broadcast.to("chatuser").emit("log",logobj);
+		splashlog(logobj,user.socket);
 	});
-}
-function inout(socket,user,data){
-	user.rom = !user.rom;
-	if(!user.rom){
-		if(data.name.length>CHAT_NAME_MAX_LENGTH){
-			//文字数超過
-			user.rom=true;
-			return;
+	function splashlog(logobj,socket){
+		if(socket){
+			socket.emit("log",logobj);
+			socket.broadcast.to("chatuser").emit("log",logobj);
 		}
-		user.name=data.name;
 	}
-	//シスログ
-	var syslog={"name" : (user.rom?"■退室通知":"■入室通知"),
-		    "time":Date.now(),
-		    "ip":user.ip,
-		    "comment":"「"+user.name+"」さんが"+(user.rom?"退室":"入室"),
-		    "syslog":true
-	};
-	makelog(socket,syslog);
-	if(user.rom)user.name=null;
-
-	socket.emit("userinfo",{"rom":user.rom, id: user.id, name: user.name});
-	socket.broadcast.to("useruser").emit("inout",{"rom":user.rom, id: user.id, name: user.name});
-	
-
 }
-function discon(socket,user){
-	if(!user.rom){
-		var syslog={"name" : "■失踪通知",
-			    "time":Date.now(),
-			    "ip":user.ip,
-			    "comment":"「"+user.name+"」さんいない",
-			    "syslog":true
-		};
-		makelog(socket,syslog);
-	}
-	delUser(user);
-	socket.broadcast.to("useruser").emit("deluser", user.id);
-}
+
 function motto(socket,user,data){
 	var time=data.time;
 	if(!time)return;
