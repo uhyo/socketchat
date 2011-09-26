@@ -17,6 +17,13 @@ CHAT_LIMIT_NUMBER=10;	//CHAT_LIMIT_TIME以内にCHAT_LIMIT_NUMBER回発言した
 
 HTTP_PORT = 8080;
 
+function User(){
+}
+
+function SocketUser(){
+}
+
+
 var mongoserver = new mongodb.Server(dbsettings.DB_SERVER,dbsettings.DB_PORT,{});
 var db = new mongodb.Db(dbsettings.DB_NAME,mongoserver,{});
 

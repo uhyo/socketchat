@@ -5,7 +5,16 @@
 
 *event users:
 
-{"users":[Userobj, Userobj, ...],"roms":Number}
+{"users":[Userobj, Userobj, ...],"roms":Number,"actives":Number}
+
+*event inout:
+{"rom":Boolean, "id":Id,"name":String}
+
+*event newuser:
+Userobj
+
+*event deluser:
+Id
 
 *event log:
 Logobj
