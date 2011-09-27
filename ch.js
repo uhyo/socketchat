@@ -1,27 +1,15 @@
 var http = require('http'), url = require('url'), fs = require('fs');
 var socketio=require('socket.io'),mongodb=require('mongodb');
 
-var dbsettings=require('./dbsettings');	//DB_SERVER(="127.0.0.1", DB_PORT=27017, DB_NAME="socketchat", DB_USER, DB_PASS
-
+var settings=require('./settings');	//DB_SERVER(="127.0.0.1", DB_PORT=27017, DB_NAME="socketchat", DB_USER, DB_PASS
+//CHAT_FIRST_LOG,CHAT_MOTTO_LOG,CHAT_NAME_MAX_LENGTH, CHAT_MAX_LENGTH,
+//CHAT_LIMIT_TIME, CHAT_LIMIT_NUMBER,
+//CHAT_APIUSER_TIMEOUT,CHAT_APIUSER_SESSIONID_LENGTH,
+//HTTP_PORT
 //定数定義
 
-CHAT_FIRST_LOG=30;	//最初どれだけログ表示するか
-CHAT_MOTTO_LOG=30;	//HottoMotto時にログをどれだけ表示するか
-
-CHAT_NAME_MAX_LENGTH = 25;
-CHAT_MAX_LENGTH = 1000;
-
-CHAT_LIMIT_TIME = 10;	//0なら無効
-CHAT_LIMIT_NUMBER=10;	//CHAT_LIMIT_TIME以内にCHAT_LIMIT_NUMBER回発言したらそれ以上発言できない
-
-CHAT_APIUSER_TIMEOUT = 60;	//APIユーザーがいなくなるまでの時間（秒）
-CHAT_APIUSER_SESSIONID_LENGTH = 20;
-
-
-HTTP_PORT = 8080;
-
-var mongoserver = new mongodb.Server(dbsettings.DB_SERVER,dbsettings.DB_PORT,{});
-var db = new mongodb.Db(dbsettings.DB_NAME,mongoserver,{});
+var mongoserver = new mongodb.Server(settings.DB_SERVER,settings.DB_PORT,{});
+var db = new mongodb.Db(settings.DB_NAME,mongoserver,{});
 
 
 var app = require('express').createServer();
@@ -61,7 +49,7 @@ db.open(function(err,_db){
 		console.log("DB Open err: "+err);
 		throw err;
 	}
-	db.authenticate(dbsettings.DB_USER, dbsettings.DB_PASS, function(err){
+	db.authenticate(settings.DB_USER, settings.DB_PASS, function(err){
 		if(err){
 			console.log("DB Auth err: "+err);
 			throw err;
@@ -132,8 +120,7 @@ filters.push(function(logobj){
 	}
 });
 
-
-app.listen(HTTP_PORT);
+app.listen(settings.HTTP_PORT);
 
 var io=socketio.listen(app);
 
@@ -151,14 +138,14 @@ User.prototype.type="user";
 User.prototype.says=function(data){
 	if(this.rom)return;
 	
-	if(data.comment.length>CHAT_MAX_LENGTH){
+	if(data.comment.length>settings.CHAT_MAX_LENGTH){
 		return;
 	}
 	if(data.comment=="")return;
 
-	if(CHAT_LIMIT_TIME>0){
-		var d=Date.now()-1000*CHAT_LIMIT_TIME;
-		if((this.ss=this.ss.filter(function(x){return x>=d})).length>=CHAT_LIMIT_NUMBER){
+	if(settings.CHAT_LIMIT_TIME>0){
+		var d=Date.now()-1000*settings.CHAT_LIMIT_TIME;
+		if((this.ss=this.ss.filter(function(x){return x>=d})).length>=settings.CHAT_LIMIT_NUMBER){
 			//喋りすぎ
 			return;
 		}
@@ -178,7 +165,7 @@ User.prototype.says=function(data){
 User.prototype.inout=function(data){
 	this.rom = !this.rom;
 	if(!this.rom){
-		if(!data.name || data.name.length>CHAT_NAME_MAX_LENGTH){
+		if(!data.name || data.name.length>settings.CHAT_NAME_MAX_LENGTH){
 			//文字数超過
 			this.rom=true;
 			return;
@@ -206,7 +193,7 @@ User.prototype.inoutSplash=function(){
 User.prototype.findMotto=function(data,callback){
 	var time=data.time;
 	if(!time)return;
-		log.find({"time":{$lt:time}},{"sort":[["time","desc"]],"limit":CHAT_MOTTO_LOG}).toArray(callback);	
+		log.find({"time":{$lt:time}},{"sort":[["time","desc"]],"limit":settings.CHAT_MOTTO_LOG}).toArray(callback);	
 };
 //いなくなった！
 User.prototype.discon=function(){
@@ -274,7 +261,6 @@ APIUser.prototype.idrequest=function(data,res){
 	}.bind(this));
 };
 
-
 io.sockets.on('connection',function(socket){
 	//ユーザー登録
 	var user=null;
@@ -326,13 +312,14 @@ io.sockets.on('connection',function(socket){
 	});
 	
 });
-function sendFirstLog(user){
-	log.find({},{"sort":[["time","desc"]],"limit":CHAT_FIRST_LOG}).toArray(function(err,docs){
+function sendFirstLog(user,callback){
+	log.find({},{"sort":[["time","desc"]],"limit":settings.CHAT_FIRST_LOG}).toArray(function(err,docs){
 		if(user.socket){
 			user.socket.emit("init",{"logs":docs});
 		}else if(user.sessionId){
 			user.logs=user.logs.concat(docs);
 		}
+		if(typeof callback=="function")callback();
 	});
 }
 function sendFirstUsers(socket){
@@ -376,7 +363,7 @@ function makelog(user,logobj){
 		var dead=[];
 		users.filter(function(x){return x.sessionId}).forEach(function(x){
 			x.logs.unshift(logobj);
-			if(x.last_time+CHAT_APIUSER_TIMEOUT*1000 < Date.now()){
+			if(x.last_time+settings.CHAT_APIUSER_TIMEOUT*1000 < Date.now()){
 				//いなくなった
 				dead.push(x);
 			}
@@ -391,7 +378,7 @@ function motto(socket,user,data){
 	var time=data.time;
 	if(!time)return;
 	
-	log.find({"time":{$lt:time}},{"sort":[["time","desc"]],"limit":CHAT_MOTTO_LOG}).toArray(function(err,docs){
+	log.find({"time":{$lt:time}},{"sort":[["time","desc"]],"limit":settings.CHAT_MOTTO_LOG}).toArray(function(err,docs){
 		var resobj={"logs":docs};
 		socket.emit("mottoResponse",resobj);
 	});
@@ -409,9 +396,10 @@ function api(mode,req,res){
 	var sessionId=query.sessionId;
 	var user = sessionId ? users.filter(function(x){return x.sessionId==sessionId})[0] : null;
 	if(!user){
+		sessionId=null;
 		while(!sessionId){
 			sessionId="";
-			for(var i=0;i<CHAT_APIUSER_SESSIONID_LENGTH;i++){
+			for(var i=0;i<settings.CHAT_APIUSER_SESSIONID_LENGTH;i++){
 				sessionId+="0123456789abcdefghijklmnopqrstuvwxyz"[Math.floor(Math.random()*36)];
 			}
 			if(users.filter(function(x){return x.sessionId==sessionId}).length)sessionId=null;
@@ -421,12 +409,14 @@ function api(mode,req,res){
 			req.connection.remoteAddress,true,
 			req.header("User-Agent"),
 			sessionId);
-		sendFirstLog(user);
 		users.push(user);
 		var socket=getAvailableSocket();
 		var uob=user.getUserObj();
 		socket && (socket.emit("newuser",uob), socket.broadcast.to("useruser").emit("newuser",uob));
 		users_next++;
+		req.query.sessionId=sessionId;
+		sendFirstLog(user,api.bind(this,mode,req,res));
+		return;
 	}
 	if(mode=="inout"){
 		user.inout(query);
