@@ -178,7 +178,7 @@ User.prototype.says=function(data){
 User.prototype.inout=function(data){
 	this.rom = !this.rom;
 	if(!this.rom){
-		if(data.name.length>CHAT_NAME_MAX_LENGTH){
+		if(!data.name || data.name.length>CHAT_NAME_MAX_LENGTH){
 			//文字数超過
 			this.rom=true;
 			return;
@@ -223,7 +223,11 @@ User.prototype.discon=function(){
 	this.delUserSplash();
 };
 User.prototype.delUserSplash=function(){
-	var socket=this.socket || getAvailableSocket();
+	var socket=this.socket;
+	if(!socket){
+		socket=getAvailableSocket();
+		socket && socket.emit("deluser",this.id);
+	}
 	socket && socket.broadcast.to("useruser").emit("deluser", this.id);
 };
 
@@ -420,7 +424,8 @@ function api(mode,req,res){
 		sendFirstLog(user);
 		users.push(user);
 		var socket=getAvailableSocket();
-		socket && socket.broadcast.to("useruser").emit("newuser", user.getUserObj());
+		var uob=user.getUserObj();
+		socket && (socket.emit("newuser",uob), socket.broadcast.to("useruser").emit("newuser",uob));
 		users_next++;
 	}
 	if(mode=="inout"){
