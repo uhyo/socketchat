@@ -424,6 +424,7 @@ ChatClient.prototype={
 	userinfo:function(obj){
 		var f=document.forms["inout"];
 		f.elements["uname"].disabled=!obj.rom;
+		if(!obj.rom)f.elements["uname"].value=obj.name;
 		
 		var result=document.evaluate('descendant::input[@type="submit"]',f,null,XPathResult.ANY_UNORDERED_NODE_TYPE,null);
 		var bt=result.singleNodeValue;
@@ -591,6 +592,10 @@ APIChat.prototype.response=function(obj){
 		this.recv(x);
 	},this);
 	if(obj.sessionid)this.sessionid=obj.sessionid;
+	
+	if(obj.inout){
+		this.userinfo(obj.inout);
+	}
 	
 };
 APIChat.prototype.check=function(){

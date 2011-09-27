@@ -418,8 +418,10 @@ function api(mode,req,res){
 		sendFirstLog(user,api.bind(this,mode,req,res));
 		return;
 	}
+	var inoutobj;
 	if(mode=="inout"){
 		user.inout(query);
+		inoutobj=user;
 	}else if(mode=="say"){
 		user.says(query);
 	}else if(mode=="motto"){
@@ -432,13 +434,15 @@ function api(mode,req,res){
 
 
 	var newusers = users.filter(function(x){return x.id>user.last_userid}).map(function(x){return x.getUserObj()});
-	res.send({"error":false,
+	var put={"error":false,
 		"newusers":newusers,
 		"userlist":users.map(function(x){return x.id}),
 		"myid":user.id,
 		"logs":user.logs,
 		"sessionid":user.sessionId
-	},{"Content-Type":"text/javascript; charset=UTF-8"});
+	};
+	if(inoutobj)put.inout=inoutobj;
+	res.send(put,{"Content-Type":"text/javascript; charset=UTF-8"});
 	user.last_userid=users_next-1;
 	
 	user.logs.length=0;
