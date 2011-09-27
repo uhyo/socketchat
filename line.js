@@ -266,13 +266,14 @@ HighChatMaker.prototype.gyozamouse=function(e){
 	}
 };
 
-function SocketChat(log,info,infobar){
+
+function ChatClient(log,info,infobar){
 	this.logid=log,this.infoid=info,this.infobarid=infobar;
 	
 	this.oldest_time=null;
 	this.flags={"sound":true};
 }
-SocketChat.prototype={
+ChatClient.prototype={
 	init:function(){
 		this.log=document.getElementById(this.logid);
 		this.info=document.getElementById(this.infoid);
@@ -313,19 +314,8 @@ SocketChat.prototype={
 		this.responding_tip.textContent="⇒";
 		this.responding_tip.classList.add("responding_tip");
 		
-		var socket;
-		socket=this.socket = io.connect(location.origin);
+		this.cominit();
 		
-		socket.on("init",this.loginit.bind(this));
-		socket.on("log",this.recv.bind(this));
-		socket.on("users",this.userinit.bind(this));
-		socket.on("userinfo",this.userinfo.bind(this));
-		socket.on("mottoResponse",this.mottoResponse.bind(this));
-		socket.on("idresponse",this.idresponse.bind(this));
-		socket.on("disconnect",this.disconnect.bind(this));
-		socket.on("newuser",this.newuser.bind(this));
-		socket.on("deluser",this.deluser.bind(this));
-		socket.on("inout",this.inout.bind(this));
 		
 		/*document.forms["inout"].addEventListener("submit",this.submit.bind(this),false);
 		document.forms["comment"].addEventListener("submit",this.submit.bind(this),false);*/
@@ -340,7 +330,9 @@ SocketChat.prototype={
 		var hottomottob=document.getElementsByClassName("logs")[0].getElementsByClassName("hottomottobutton")[0];
 		hottomottob.addEventListener("click",this.HottoMotto.bind(this),false);
 		
-		socket.emit("regist",{"mode":"client"});
+	},
+	cominit:function(){	
+		//通信部分初期化
 	},
 	loginit:function(data){
 		data.logs.reverse().forEach(function(line){
@@ -453,7 +445,7 @@ SocketChat.prototype={
 		if(f.name=="inout"){
 			//入退室
 			var el=f.elements["uname"];
-			this.socket.emit("inout",{"name":el.value});
+			this.inout_notify(el.value);
 			
 			localStorage.socketchat_name=el.value;
 		}else if(f.name=="comment"){
@@ -466,11 +458,12 @@ SocketChat.prototype={
 		}
 		e.preventDefault();
 	},
+	inout_notify:function(name){},
+	
 	sayform:function(f){
 		this.say(f.elements["comment"].value,f.elements["response"].value);
 	},
 	say:function(comment,response){
-		this.socket.emit("say",{"comment":comment,"response":response?response:""});
 	},
 	
 	bot:function(func){
@@ -519,4 +512,93 @@ SocketChat.prototype={
 	disconnect:function(){
 		document.body.classList.add("discon");
 	}
+};
+
+function SocketChat(){
+	ChatClient.apply(this,arguments);
+}
+SocketChat.prototype=new ChatClient;
+SocketChat.prototype.cominit=function(){
+	var socket;
+	socket=this.socket = io.connect(location.origin);
+	
+	socket.on("init",this.loginit.bind(this));
+	socket.on("log",this.recv.bind(this));
+	socket.on("users",this.userinit.bind(this));
+	socket.on("userinfo",this.userinfo.bind(this));
+	socket.on("mottoResponse",this.mottoResponse.bind(this));
+	socket.on("idresponse",this.idresponse.bind(this));
+	socket.on("disconnect",this.disconnect.bind(this));
+	socket.on("newuser",this.newuser.bind(this));
+	socket.on("deluser",this.deluser.bind(this));
+	socket.on("inout",this.inout.bind(this));
+
+	socket.emit("regist",{"mode":"client"});
+	
+};
+SocketChat.prototype.inout_notify=function(name){
+	this.socket.emit("inout",{"name":name});
+};
+SocketChat.prototype.say=function(comment,response){
+	this.socket.emit("say",{"comment":comment,"response":response?response:""});
+};
+
+function APIChat(){
+	ChatClient.apply(this,arguments);
+	
+	this.sessionId=null;
+	this.timerId=null;
+	
+	this.users={};
+}
+APIChat.prototype=new ChatClient;
+APIChat.prototype.send=function(path,query,callback){
+	var http=new XMLHttpRequest();
+	if(!query)query={};
+	
+	http.onreadystatechange = function(){
+		if(this.readyState==4 && this.status==200){
+			callback(JSON.parse(this.responseText));
+		}
+	};
+	var res=[];
+	for(var i in query){
+		res.push(encodeURIComponent(i)+"="+encodeURIComponent(query[i]));
+	}
+	if(this.sessionid){
+		res.push("sessionId="+this.sessionid);
+	}
+	console.log(res);
+	http.open("get",path+(res.length? "?"+res.join("&"):""),true);
+	http.send();
+};
+APIChat.prototype.cominit=function(){
+	this.timerId=setInterval(this.check.bind(this),10000);
+	this.check();
+};
+APIChat.prototype.response=function(obj){
+	console.log(obj);
+	if(obj.error){
+		console.log(obj.errormessage);
+		return;
+	}
+	obj.newusers.forEach(function(x){
+		this.users[x.id]=x;
+	},this);
+	//ユーザーの処理どうしよう
+	
+	obj.logs.reverse().forEach(function(x){
+		this.recv(x);
+	},this);
+	if(obj.sessionid)this.sessionid=obj.sessionid;
+	
+};
+APIChat.prototype.check=function(){
+	this.send("/api/",null,this.response.bind(this));
+};
+APIChat.prototype.inout_notify=function(name){
+	this.send("/api/inout",{"name":name},this.response.bind(this));
+};
+APIChat.prototype.say=function(comment,response){
+	this.send("/api/say",{"comment":comment,"response":response},this.response.bind(this));
 };
