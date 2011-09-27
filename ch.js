@@ -17,7 +17,7 @@ var app = require('express').createServer();
 app.get(/^\/(index\.html)?$/, function(req, res){
 	res.sendfile(__dirname + '/index.html');
 });
-app.get(/^\/(log|list)$/, function(req, res){
+app.get(/^\/(log|list|apiclient)$/, function(req, res){
 	res.sendfile(__dirname + "/"+req.params[0]+'.html');
 });
 app.get(/^\/(line\.js|css\.css)$/, function(req, res){
