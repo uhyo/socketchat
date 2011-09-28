@@ -371,7 +371,7 @@ ChatClient.prototype={
 	getuserelement: function(id){
 		var ul=this.users.childNodes;
 		for(var i=0, l=ul.length; i<l; i++){
-			if(ul[i].dataset.id==id){
+			if(ul[i].dataset && ul[i].dataset.id==id){
 				return ul[i];
 			}
 		}
@@ -583,10 +583,6 @@ APIChat.prototype.response=function(obj){
 		console.log(obj.errormessage);
 		return;
 	}
-	obj.newusers.forEach(function(x){
-		this.users[x.id]=x;
-	},this);
-	//ユーザーの処理どうしよう
 	
 	obj.logs.reverse().forEach(function(x){
 		this.recv(x);
@@ -596,6 +592,22 @@ APIChat.prototype.response=function(obj){
 	if(obj.inout){
 		this.userinfo(obj.inout);
 	}
+	obj.userinfos.forEach(function(x){
+		switch(x.name){
+		case "newuser":
+			this.newuser(x.user);
+			break;
+		case "deluser":
+			this.deluser(x.id);
+			break;
+		case "inout":
+			this.inout(x.user);
+			break;
+		case "users":
+			this.userinit(x.users);
+			break;
+		}
+	},this);
 	
 };
 APIChat.prototype.check=function(){

@@ -188,6 +188,9 @@ User.prototype.inout=function(data){
 User.prototype.inoutSplash=function(){
 	var socket = this.socket || getAvailableSocket(), obj={"rom":this.rom, id: this.id, name: this.name};
 	socket && (socket.emit("userinfo",obj), socket.broadcast.to("useruser").emit("inout",obj));
+	toapi(function(x){
+		x==this || x.userinfos.push({"name":"inout","user":obj});
+	}.bind(this));
 };
 //mottoの該当レス探す処理
 User.prototype.findMotto=function(data,callback){
@@ -216,6 +219,9 @@ User.prototype.delUserSplash=function(){
 		socket && socket.emit("deluser",this.id);
 	}
 	socket && socket.broadcast.to("useruser").emit("deluser", this.id);
+	toapi(function(x){
+		x.userinfos.push({"name":"deluser","id":this.id});
+	}.bind(this));
 };
 
 
@@ -243,8 +249,9 @@ function APIUser(id,name,ip,rom,ua,sessionId){
 	
 	this.logs=[];
 	
-	this.last_userid=-1;	//知っているユーザーIDの最後
-	this.last_time=Date.now();	//最終生存確認時間
+	this.userinfos=[];
+	
+	this.timerid=null;
 }
 APIUser.prototype=new User;
 APIUser.prototype.type="api";
@@ -260,6 +267,10 @@ APIUser.prototype.idrequest=function(data,res){
 		res.send(obj,{"Content-Type":"text/javascript; charset=UTF-8"});
 	}.bind(this));
 };
+APIUser.prototype.oxygen=function(){
+	clearTimeout(this.timerid);
+	this.timerid=setTimeout(this.discon.bind(this),1000*settings.CHAT_APIUSER_TIMEOUT);
+};
 
 io.sockets.on('connection',function(socket){
 	//ユーザー登録
@@ -271,7 +282,7 @@ io.sockets.on('connection',function(socket){
 			socket.join("useruser");
 			user=addSocketUser(socket);
 			sendFirstLog(user);
-			sendFirstUsers(socket);
+			sendFirstUsers(user);
 
 			//発言
 			socket.on("say",function(data){
@@ -307,7 +318,7 @@ io.sockets.on('connection',function(socket){
 		}else if(data.mode=="userlist"){
 			//ユーザーリスト
 			socket.join("useruser");
-			sendFirstUsers(socket);
+			sendFirstUsers(socket,true);
 		}
 	});
 	
@@ -322,13 +333,19 @@ function sendFirstLog(user,callback){
 		if(typeof callback=="function")callback();
 	});
 }
-function sendFirstUsers(socket){
+function sendFirstUsers(user,socket_flg){
 	var roms=users.filter(function(x){return x.rom}).length, p={
 		"users":users.map(function(y){return y.getUserObj()}),
 		"roms": roms,
 		"actives": users.length-roms
 	};
-	socket.emit("users",p);
+	if(socket_flg){
+		user.emit("users",p);
+	}else if(user.socket){
+		user.socket.emit("users",p);
+	}else if(user.sessionId){
+		user.userinfos.push({"name":"users","users":p});
+	}
 }
 function addSocketUser(socket){
 	var user=new SocketUser(users_next,null,
@@ -337,7 +354,11 @@ function addSocketUser(socket){
 		  socket
 		  );
 	users.push(user);
-	socket.broadcast.to("useruser").emit("newuser", user.getUserObj());
+	var uob=user.getUserObj();
+	socket.broadcast.to("useruser").emit("newuser", uob);
+	toapi(function(x){
+		x.userinfos.push({"name":"newuser",user:uob});
+	});
 	users_next++;
 	return user;
 }
@@ -353,25 +374,18 @@ function makelog(user,logobj){
 			console.log(err);
 			throw err;
 		}
-		splashlog(logobj,user.socket || getAvailableSocket());
 	});
+	splashlog(logobj,user.socket || getAvailableSocket());
 	function splashlog(logobj,socket){
 		if(socket){
 			socket.emit("log",logobj);
 			socket.broadcast.to("chatuser").emit("log",logobj);
 		}
-		var dead=[];
-		users.filter(function(x){return x.sessionId}).forEach(function(x){
-			x.logs.unshift(logobj);
-			if(x.last_time+settings.CHAT_APIUSER_TIMEOUT*1000 < Date.now()){
-				//いなくなった
-				dead.push(x);
-			}
-		});
-		dead.forEach(function(x){
-			x.discon();
-		});
+		toapi(function(x){x.logs.unshift(logobj)});
 	}
+}
+function toapi(callback){
+	users.filter(function(x){return x.sessionId}).forEach(callback);
 }
 
 function motto(socket,user,data){
@@ -409,10 +423,14 @@ function api(mode,req,res){
 			req.connection.remoteAddress,true,
 			req.header("User-Agent"),
 			sessionId);
-		users.push(user);
 		var socket=getAvailableSocket();
 		var uob=user.getUserObj();
 		socket && (socket.emit("newuser",uob), socket.broadcast.to("useruser").emit("newuser",uob));
+		toapi(function(x){	//pushの前に行おう！
+			x.userinfos.push({"name":"newuser",user:uob});
+		});
+		users.push(user);
+		sendFirstUsers(user);
 		users_next++;
 		req.query.sessionId=sessionId;
 		sendFirstLog(user,api.bind(this,mode,req,res));
@@ -421,7 +439,7 @@ function api(mode,req,res){
 	var inoutobj;
 	if(mode=="inout"){
 		user.inout(query);
-		inoutobj=user;
+		inoutobj=user.getUserObj();
 	}else if(mode=="say"){
 		user.says(query);
 	}else if(mode=="motto"){
@@ -433,20 +451,17 @@ function api(mode,req,res){
 	}
 
 
-	var newusers = users.filter(function(x){return x.id>user.last_userid}).map(function(x){return x.getUserObj()});
 	var put={"error":false,
-		"newusers":newusers,
-		"userlist":users.map(function(x){return x.id}),
+		"userinfos":user.userinfos,
 		"myid":user.id,
 		"logs":user.logs,
 		"sessionid":user.sessionId
 	};
 	if(inoutobj)put.inout=inoutobj;
 	res.send(put,{"Content-Type":"text/javascript; charset=UTF-8"});
-	user.last_userid=users_next-1;
 	
-	user.logs.length=0;
-	user.last_time=Date.now();
+	user.logs.length=0,user.userinfos.length=0;
+	user.oxygen();
 }
 
 
@@ -492,5 +507,6 @@ function chalog(query,callback){
 	});
 }
 function getAvailableSocket(){
-	return users.filter(function(x){return x.socket})[0].socket || null;
+	var su=users.filter(function(x){return x.socket})[0];
+	return su ? su.socket : null;
 }
