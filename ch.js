@@ -1,12 +1,28 @@
 var http = require('http'), url = require('url'), fs = require('fs');
 var socketio=require('socket.io'),mongodb=require('mongodb');
 
-var settings=require('./settings');	//DB_SERVER(="127.0.0.1", DB_PORT=27017, DB_NAME="socketchat", DB_USER, DB_PASS
-//CHAT_FIRST_LOG,CHAT_MOTTO_LOG,CHAT_NAME_MAX_LENGTH, CHAT_MAX_LENGTH,
-//CHAT_LIMIT_TIME, CHAT_LIMIT_NUMBER,
-//CHAT_APIUSER_TIMEOUT,CHAT_APIUSER_SESSIONID_LENGTH,
-//HTTP_PORT
-//定数定義
+var settings=require('./settings');
+/*
+exports.DB_SERVER="127.0.0.1";
+exports.DB_PORT=27017;
+exports.DB_NAME="socketchat";
+exports.DB_USER="test";
+exports.DB_PASS="test";
+
+exports.CHAT_FIRST_LOG=30;	//最初どれだけログ表示するか
+exports.CHAT_MOTTO_LOG=30;	//HottoMotto時にログをどれだけ表示するか
+
+exports.CHAT_NAME_MAX_LENGTH = 25;
+exports.CHAT_MAX_LENGTH = 1000;
+
+exports.CHAT_LIMIT_TIME = 10;	//0なら無効
+exports.CHAT_LIMIT_NUMBER=10;	//CHAT_LIMIT_TIME以内にCHAT_LIMIT_NUMBER回発言したらそれ以上発言できない
+
+exports.CHAT_APIUSER_TIMEOUT = 60;	//APIユーザーがいなくなるまでの時間（秒）
+exports.CHAT_APIUSER_SESSIONID_LENGTH = 20;
+
+exports.HTTP_PORT = 8080;
+*/
 
 var mongoserver = new mongodb.Server(settings.DB_SERVER,settings.DB_PORT,{});
 var db = new mongodb.Db(settings.DB_NAME,mongoserver,{});
