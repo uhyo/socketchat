@@ -203,7 +203,7 @@ User.prototype.inout=function(data){
 };
 User.prototype.inoutSplash=function(){
 	var socket = this.socket || getAvailableSocket(), obj={"rom":this.rom, id: this.id, name: this.name};
-	socket && (socket.emit("userinfo",obj), socket.broadcast.to("useruser").emit("inout",obj));
+	socket && (socket.emit("inout",obj), socket.broadcast.to("useruser").emit("inout",obj));
 	toapi(function(x){
 		x==this || x.userinfos.push({"name":"inout","user":obj});
 	}.bind(this));
@@ -214,7 +214,7 @@ User.prototype.findMotto=function(data,callback){
 	if(!time)return;
 		log.find({"time":{$lt:time}},{"sort":[["time","desc"]],"limit":settings.CHAT_MOTTO_LOG}).toArray(callback);	
 };
-//いなくなった！
+//いなくなった！❾
 User.prototype.discon=function(){
 	if(!this.rom){
 		var syslog={"name" : "■失踪通知",

@@ -422,6 +422,7 @@ ChatClient.prototype={
 	},
 	//自分が入退室
 	userinfo:function(obj){
+		console.log("userinfo",obj);
 		var f=document.forms["inout"];
 		f.elements["uname"].disabled=!obj.rom;
 		if(!obj.rom)f.elements["uname"].value=obj.name;
