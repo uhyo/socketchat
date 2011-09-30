@@ -8,6 +8,60 @@ WebSocket+MongoDB Chat
 == required ==
 * Socket.IO
 * node-mongodb-native
+* express
 
 == event formats ==
 ->events.txt
+
+== API formats ==
+最初のリクエストでsessionIdを取得した後は、そのsessionIdをリクエストに加えること（sessionId=(String)）
+=== 定期的なリクエスト ===
+GET: /api/
+
+==== 入退室 ====
+GET: /api/inout?name=(String)
+
+==== 発言 ====
+GET: /api/say?comment=(String)
+
+=== レスポンス ===
+==== 通常時 ====
+ {"error":false,
+  "userinfos":[Userinfo, Userinfo, ...],	//前回から新規にあったユーザーの変更
+  "myid": 3,	//自分のID
+  "logs": [Logobj, Logobj, ...]	//前回から新規に加わった発言。time desc
+  "sessionid": "abcdefghijklmnopqrst",	//自分のsessionId
+ ("inout": Userobj, )	//自分が入室したときに自分の状態を通知
+ }
+  
+===== Userinfo =====
+====== ユーザー一覧を完全に取得 ======
+ {"name": "users",
+  "users": {
+            "users": [Userobj, Userobj, ...],
+            "roms":25,	//ROM数
+            "actives":1,//入室者数
+           }
+ }
+====== 新しいユーザーが出現 ======
+ {"name": "newuser",
+  "user": Userobj
+ }
+ 
+====== 既存のユーザーが入退室 ======
+ {"name": "inout",
+  "user": {
+           "rom": false, //ROMかどうか
+           "id": 3,	 //ユーザーのID
+           "name": String, //ユーザーの名前
+          }
+ }
+====== ユーザーが消滅 ======
+ {"name":"deluser",
+  "id": Id	//ユーザーのID
+ }
+==== エラー時 ====
+ {"error":true,
+  "errormessage":String
+ }
+ 
