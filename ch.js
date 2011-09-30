@@ -1,4 +1,3 @@
-var http = require('http'), url = require('url'), fs = require('fs');
 var socketio=require('socket.io'),mongodb=require('mongodb');
 
 var settings=require('./settings');
