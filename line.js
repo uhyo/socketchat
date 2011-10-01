@@ -133,8 +133,14 @@ HighChatMaker.prototype.make=function(obj){
 						node=node.splitText(res[0].length);
 						continue;
 					}
-					var p=node.parentNode;
-					if(p.classList && p.classList.contains(res[1])){
+					//閉じるべきタグを探す
+					var p=node;
+					while(p=p.parentNode){
+						if(p.classList && p.classList.contains(res[1])){
+							break;
+						}
+					}
+					if(p){
 						//タグを閉じる
 						node.nodeValue=node.nodeValue.slice(res[0].length);
 						p.parentNode.appendChild(node);
