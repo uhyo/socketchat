@@ -98,6 +98,7 @@ HighChatMaker.prototype.init=function(){
 HighChatMaker.prototype.make=function(obj){
 	var df=LineMaker.prototype.make.apply(this,arguments);
 	var parse=_parse.bind(this);
+	var allowed_tag=["s","small"];
 	
 	var dd=df.childNodes.item(1);
 	parse(dd);
@@ -106,117 +107,94 @@ HighChatMaker.prototype.make=function(obj){
 	function _parse(node){
 		if(node.nodeType==Node.TEXT_NODE){
 			//テキストノード
-			var v=node.nodeValue;
-			var result;
-			//[s]の解析
-			result=v.match(/^(.*)\[s\](.*?)(\[\/s\].*)?$/);
-			if(result){
-				var dff=document.createDocumentFragment();
-				if(result[1]){
-					dff.appendChild(document.createTextNode(result[1]));
-				}
-				if(result[2]){
-					var span=document.createElement("span");
-					span.textContent=result[2];
-					span.classList.add("s");
-					dff.appendChild(span);
-				}
-				if(result[3]){
-					dff.appendChild(document.createTextNode(result[3].slice(4)));
-				}
-				parse(dff);
-				node.parentNode.replaceChild(dff,node);
-				return;
-			}
-			//[small]の解析
-			result=v.match(/^(.*)\[small\](.*?)(\[\/small\].*)?$/);
-			if(result){
-				if(result[1]){
-					dff.appendChild(document.createTextNode(result[1]));
-				}
-
-				var dff=document.createDocumentFragment();
-				if(result[1]){
-					dff.appendChild(document.createTextNode(result[1]));
-				}
-				if(result[2]){
-					var span=document.createElement("span");
-					span.textContent=result[2];
-					span.classList.add("small");
-					dff.appendChild(span);
-				}
-				if(result[3]){
-					dff.appendChild(document.createTextNode(result[3].slice(8)));
-				}
-				parse(dff);
-				node.parentNode.replaceChild(dff,node);
-				return;
-			}
-			//URLの解析
-			if(!node.parentNode || node.parentNode.nodeName.toLowerCase()!="a"){
-				result=v.match(/^(.*?)(https?:\/\/\S+)(.*)$/);
-				if(result){
-					var dff=document.createDocumentFragment();
-					if(result[1]){
-						dff.appendChild(document.createTextNode(result[1]));
+			if(!node.parentNode)return;
+			var result=document.createDocumentFragment();
+			while(node.nodeValue){
+				//開始タグ
+				var res=node.nodeValue.match(/^\[(\w+?)\]/);
+				if(res){
+					if(allowed_tag.indexOf(res[1])<0){
+						//そんなタグはないよ！
+						node=node.splitText(res[0].length);
+						continue;
 					}
-					var result2=result[2].match(/^http:\/\/gyazo\.com\/([0-9a-f]{32})(?:\.png)?(.*)$/);
-					if(result2){
-						//[Gyazo]
+					var span=document.createElement("span");
+					span.classList.add(res[1]);
+					span.textContent=node.nodeValue.slice(res[0].length);
+					node.parentNode.replaceChild(span,node);
+					node=span.firstChild;
+					continue;
+				}
+				//終了タグ
+				res=node.nodeValue.match(/^\[\/(\w+?)\]/);
+				if(res){
+					if(allowed_tag.indexOf(res[1])<0){
+						//そんなタグはないよ！
+						node=node.splitText(res[0].length);
+						continue;
+					}
+					var p=node.parentNode;
+					if(p.classList && p.classList.contains(res[1])){
+						//タグを閉じる
+						node.nodeValue=node.nodeValue.slice(res[0].length);
+						p.parentNode.appendChild(node);
+					}else{
+						node=node.splitText(res[0].length);
+						continue;
+					}
+					continue;
+				}
+				//リンク
+				res=node.nodeValue.match(/^https?:\/\/\S+/);
+				if(res){
+					var res2=res[0].match(/^http:\/\/gyazo\.com\/([0-9a-f]{32})(?:\.png)?/);
+					if(res2){
+						//Gyazo
 						var a=document.createElement("a");
 						a.target="_blank";
-						a.href="http://gyazo.com/"+result2[1]+".png";
+						a.href="http://gyazo.com/"+res2[1]+".png";
 						a.classList.add("gyoza");
 						if(this.gyoza==2){
 							//餃子常時展開
 							var img=document.createElement("img");
-							img.src="http://img.gyazo.com/a/"+result2[1]+".png";
+							img.src="http://img.gyazo.com/a/"+res2[1]+".png";
 							img.classList.add("thumbnail");
 							a.appendChild(img);
 						}else{
 							a.textContent="[Gyazo]";
 						}
-						dff.appendChild(a);
-						if(result2[2]){
-							dff.appendChild(document.createTextNode(result2[2]));
-						}
+						node=node.splitText(res2[0].length);
+						node.parentNode.replaceChild(a,node.previousSibling);
 					}else{
-					
-						if(result[2]){
-							var a=document.createElement("a");
-							a.target="_blank";
-							a.href=result[2];
-							a.textContent=result[2];
-							dff.appendChild(a);
-						}
-					}
-					if(result[3]){
-						dff.appendChild(document.createTextNode(result[3]));
-					}
-					parse(dff);
-					node.parentNode.replaceChild(dff,node);
-					return;
-				}
-				
-				if(result=v.match(/^(.*)#(\d{4})(.*)$/)){
-					var dff=document.createDocumentFragment();
-					if(result[1]){
-						dff.appendChild(document.createTextNode(result[1]));
-					}
-					if(result[2]){
 						var a=document.createElement("a");
+						a.href=res[0];
 						a.target="_blank";
-						a.href="http://81.la/"+result[2];
-						a.textContent="#"+result[2];
-						dff.appendChild(a);
+						a.textContent=res[0];
+						node=node.splitText(res[0].length);
+						node.parentNode.replaceChild(a,node.previousSibling);
 					}
-					if(result[3]){
-						dff.appendChild(document.createTextNode(result[3]));
-					}
-					parse(dff);
-					node.parentNode.replaceChild(dff,node);
-					return;
+					continue;
 				}
+				//正男リンク
+				res=node.nodeValue.match(/^#(\d{4})/);
+				if(res){
+					var a=document.createElement("a");
+					a.target="_blank";
+					a.href="http://81.la/"+res[1];
+					a.textContent=res[0];
+					node=node.splitText(res[0].length);
+					node.parentNode.replaceChild(a,node.previousSibling);
+					continue;
+				}
+				//その他
+				res=node.nodeValue.match(/^(.+?)(?=\[\/?\w+?\]|https?:\/\/|#\d{4})/)
+				if(res){
+					node=node.splitText(res[0].length);
+					continue;
+				}
+				node=node.splitText(node.nodeValue.length);
+//				throw new Error("parse failed");
+				
 				
 			}
 		}else if(node.childNodes){
