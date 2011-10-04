@@ -85,7 +85,7 @@ var filters=[];
 filters.push(function(logobj){
 	var date=new Date(logobj.time);
 	var minutes=date.getMinutes();
-	if((minutes==0 || minutes==30)&&(date.getSeconds()<30)){
+//	if((minutes==0 || minutes==30)&&(date.getSeconds()<30)){
 		//半角カナに変換
 		var table={
 "ぁ":"ｧ", "あ":"ｱ", "ぃ":"ｨ", "い":"ｲ", "ぅ":"ｩ", "う":"ｳ", "ぇ":"ｪ", "え":"ｴ", "ぉ":"ｫ", "お":"ｵ",
@@ -106,19 +106,19 @@ filters.push(function(logobj){
 		logobj.comment=shabetter(logobj.comment);
 		logobj.name=shabetter(logobj.name);
 		
-	}
+//	}
 	
 	function shabetter(str){
 		return str.replace(/[ァ-ヶ]/g,function(katakana){
 			return String.fromCharCode(katakana.charCodeAt(0)+(0x3040-0x30A0));
-		}).replace(/[ぁ-ゖ゛゜ヷ-ヺ]/g,function(hiragana){
+		}).replace(/[ぁ-ゖ゛゜ヷ-ヺー]/g,function(hiragana){
 			return table[hiragana] || hiragana;
-		}).replace(/([ｦ-ﾟ]+)/g,function(katakanas){
+		}).replace(/(ｦ+|[ｧ-ｮｱ-\uFF9F]+)/g,function(katakanas){	//\uFF9F: 半角半濁点
 			var ato="",last=null;
 			var pt=katakanas.length;
 			while(pt){
 				last=katakanas[--pt];
-				if(last=="ｰ" || last=="ﾞ" || last=="ﾟ"){
+				if(last=="ﾞ" || last=="ﾟ"){
 					continue;
 				}
 				break;
