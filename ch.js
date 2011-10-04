@@ -85,7 +85,7 @@ var filters=[];
 filters.push(function(logobj){
 	var date=new Date(logobj.time);
 	var minutes=date.getMinutes();
-//	if((minutes==0 || minutes==30)&&(date.getSeconds()<30)){
+	if((minutes==0 || minutes==30)&&(date.getSeconds()<30)){
 		//半角カナに変換
 		var table={
 "ぁ":"ｧ", "あ":"ｱ", "ぃ":"ｨ", "い":"ｲ", "ぅ":"ｩ", "う":"ｳ", "ぇ":"ｪ", "え":"ｴ", "ぉ":"ｫ", "お":"ｵ",
@@ -106,7 +106,7 @@ filters.push(function(logobj){
 		logobj.comment=shabetter(logobj.comment);
 		logobj.name=shabetter(logobj.name);
 		
-//	}
+	}
 	
 	function shabetter(str){
 		return str.replace(/[ァ-ヶ]/g,function(katakana){
