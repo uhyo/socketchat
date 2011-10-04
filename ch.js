@@ -81,6 +81,17 @@ var users_s={};
 var filters=[];
 
 //拡張
+//hito-maru-gogo
+filters.push(function(logobj){
+	var tms=["まる","ひと","ふた","さん","よん","GO!","ろく","なな","はち","きゅう"];
+	var date=new Date(logobj.time);
+	if(date.getMinutes()==55){
+		var h=date.getHours();
+		var com=tms[h/10|0]+tms[h%10]+"☆GO!GO!";
+		var add={"name":"span","attributes":{},"style":{"font-size":"2em"},"child":com};
+		logobj.comment=pushLogobj(logobj.comment,add);
+	}
+});
 //ｼｬﾍﾞｯﾀｰ
 filters.push(function(logobj){
 	var date=new Date(logobj.time);
@@ -132,17 +143,6 @@ filters.push(function(logobj){
 			}
 			return katakanas;
 		});
-	}
-});
-//hito-maru-gogo
-filters.push(function(logobj){
-	var tms=["まる","ひと","ふた","さん","よん","GO!","ろく","なな","はち","きゅう"];
-	var date=new Date(logobj.time);
-	if(date.getMinutes()==55){
-		var h=date.getHours();
-		var com=tms[h/10|0]+tms[h%10]+"☆GO!GO!";
-		var add={"name":"span","attributes":{},"style":{"font-size":"2em"},"child":com};
-		logobj.comment=pushLogobj(logobj.comment,add);
 	}
 });
 function pushLogobj(to,logobj){

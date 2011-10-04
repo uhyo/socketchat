@@ -11,12 +11,7 @@ div.forms{
 	height:3em;
 }
 div.logs{
-	position:absolute;
-	top:4em;
-	bottom:0;
-	left:8px;
-	right:0;
-	overflow-y:auto;
+	margin-top:0.4em;
 }
 
 dl#log{
