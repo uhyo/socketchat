@@ -67,7 +67,7 @@ Logobj
 {
 "name":String,
 "time":Number(ms)
-"comment":String,
+"comment":LogString,
 "ip":String,
 ("syslog":Boolean),
 ("response":Id),
@@ -81,6 +81,17 @@ Logobj
 "rom":Boolean,
 "ua":String,
 }
+
+*LogString:
+one of:
+  +String
+  +[LogString, LogString, ...]
+  +{ //HTMLElement
+    "name":String,
+    "attributes":{},
+    "style":{},
+    "child":LogString
+   }
 
 
 [HTTP]

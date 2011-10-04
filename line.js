@@ -34,14 +34,16 @@ LineMaker.prototype={
 		
 		df.appendChild(dt);
 		var dd=el("dd","");
-		var comsp=el("span",obj.comment);
+		var comsp=document.createElement("span");
 		comsp.classList.add("comment");
+		comsp.appendChild(commentHTMLify(obj.comment));
 		dd.appendChild(comsp);
 		var infsp=el("span","(");
 		infsp.classList.add("info");
 		var date=new Date(obj.time);
-		var time=el("time",date.getFullYear()+"-"+(date.getMonth()+1)+"-"+date.getDate()+" "+date.getHours()+":"+date.getMinutes()+":"+date.getSeconds());
-		time.datetime=date.getFullYear()+"-"+(date.getMonth()+1)+"-"+date.getDate()+"T"+date.getHours()+":"+date.getMinutes()+":"+date.getSeconds()+"+09:00";
+		var dat=date.getFullYear()+"-"+zero2(date.getMonth()+1)+"-"+zero2(date.getDate()), tim=zero2(date.getHours())+":"+zero2(date.getMinutes())+":"+zero2(date.getSeconds());
+		var time=el("time",dat+" "+tim);
+		time.datetime=dat+"T"+tim+"+09:00";
 		
 		dd.dataset.id=obj._id;
 		if(obj.response){
@@ -60,6 +62,32 @@ LineMaker.prototype={
 			var ret=document.createElement(name);
 			ret.textContent=text;
 			return ret;
+		}
+		function zero2(str){
+			return ("00"+str).slice(-2);
+		}
+		function commentHTMLify(comment){
+			if(typeof comment=="object"){
+				if(comment instanceof Array){
+					var df=document.createDocumentFragment();
+					comment.forEach(function(x){
+						df.appendChild(commentHTMLify(x));
+					});
+					return df;
+				}else{
+					var elm=document.createElement(comment.name);
+					for(var i in comment.attributes){
+						elm.setAttribute(i,comment.attributes[i]);
+					}
+					for(var i in comment.style){
+						elm.style.setProperty(i,comment.style[i],null);
+					}
+					elm.appendChild(commentHTMLify(comment.child));
+					return elm;
+				}
+			}else{
+				return document.createTextNode(comment);
+			}
 		}
 	},
 	getColor:function(ip){
