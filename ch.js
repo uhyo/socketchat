@@ -239,11 +239,11 @@ User.prototype.inout=function(data){
 
 };
 User.prototype.inoutSplash=function(){
-	var socket = this.socket || getAvailableSocket(), obj={"rom":this.rom, id: this.id, name: this.name};
+/*	var socket = this.socket || getAvailableSocket(), obj={"rom":this.rom, id: this.id, name: this.name};
 	socket && (socket.emit("inout",obj), socket.broadcast.to("useruser").emit("inout",obj));
 	toapi(function(x){
 		x==this || x.userinfos.push({"name":"inout","user":obj});
-	}.bind(this));
+	}.bind(this));*/
 };
 //mottoの該当レス探す処理
 User.prototype.findMotto=function(data,callback){
@@ -295,6 +295,13 @@ SocketUser.prototype.idrequest=function(data){
 		this.socket.emit("idresponse",obj);
 	}.bind(this));
 };
+SocketUser.prototype.inoutSplash=function(){
+	var obj={"rom":this.rom, id: this.id, name: this.name};
+	this.socket.emit("userinfo",obj), this.socket.broadcast.to("useruser").emit("inout",obj);
+	toapi(function(x){
+		x==this || x.userinfos.push({"name":"inout","user":obj});
+	}.bind(this));
+};
 
 function APIUser(id,name,ip,rom,ua,sessionId){
 	User.apply(this,arguments);
@@ -323,6 +330,14 @@ APIUser.prototype.idrequest=function(data,res){
 APIUser.prototype.oxygen=function(){
 	clearTimeout(this.timerid);
 	this.timerid=setTimeout(this.discon.bind(this),1000*settings.CHAT_APIUSER_TIMEOUT);
+};
+APIUser.prototype.inoutSplash=function(){
+	var obj={"rom":this.rom, id: this.id, name: this.name};
+	var socket=getAvailableSocket();
+	this.socket.emit("inout",obj), this.socket.broadcast.to("useruser").emit("inout",obj);
+	toapi(function(x){
+		x==this || x.userinfos.push({"name":"inout","user":obj});
+	}.bind(this));
 };
 
 io.sockets.on('connection',function(socket){
