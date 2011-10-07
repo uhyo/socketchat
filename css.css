@@ -15,39 +15,33 @@ div.logs{
 dl#log{
 	margin:0;
 }
-#log dt.syslog{
+dl#log p{
+	margin:0;
+}
+#log span.name.syslog{
 	color:#0000ff !important;
 }
-#log dd span.info{
+#log span.main span.info{
 	font-size:smaller;
 	color:#cccccc;
+	padding-left:0.8ex;
 }
-#log dt{
-	display:inline;
+#log span.name{
 	font-weight:bold;
 }
-#log dt:after{
+#log span.name:after{
 	content:'> ';
 	font-weight:normal;
 }
-#log dt ~ dt:before{
-	content:"\a";
-	white-space:pre;
-}
-#log dd{
-	display:inline;
-	margin-left:0;
-}
-#log dd.respto:before{
+#log p.respto > span.main:before{
 	color:rgb(255,127,39);
 	content: '⇓';
 }
-#log dd.respto:not([data-open="open"]){
+#log span.respto:not([data-open="open"]){
 	cursor:pointer;
 }
-#log dt ~ dt.resp:before{
-	content:"\a　　　";
-	white-space:pre;
+#log blockquote.resp{
+	margin:0 0 0 3em;
 }
 
 div#info{

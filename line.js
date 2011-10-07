@@ -27,14 +27,16 @@ function LineMaker(parent){
 }
 LineMaker.prototype={
 	make:function(obj){
-		var df=document.createDocumentFragment();
+		var df=document.createElement("p");
 		var color=this.getColor(obj.ip);
-		var dt=el("dt",obj.name);
+		var dt=el("span",obj.name);
 		if(obj.syslog)dt.classList.add("syslog");
-		dt.style.color=color;
+		dt.classList.add("name");
+		df.style.color=color;
 		
 		df.appendChild(dt);
-		var dd=el("dd","");
+		var dd=el("span","");
+		dd.classList.add("main");
 		var comsp=document.createElement("span");
 		comsp.classList.add("comment");
 		comsp.appendChild(commentHTMLify(obj.comment));
@@ -46,10 +48,10 @@ LineMaker.prototype={
 		var time=el("time",dat+" "+tim);
 		time.datetime=dat+"T"+tim+"+09:00";
 		
-		dd.dataset.id=obj._id;
+		df.dataset.id=obj._id;
 		if(obj.response){
-			dd.dataset.respto=obj.response;
-			dd.classList.add("respto");
+			df.dataset.respto=obj.response;
+			df.classList.add("respto");
 		}
 	
 		infsp.appendChild(time);
@@ -505,9 +507,10 @@ ChatClient.prototype={
 			document.forms["comment"].elements["response"].value=this.responding_tip.dataset.to;
 			document.forms["comment"].elements["comment"].focus();
 			this.responding_tip.classList.add("checked");
+			console.log(document.forms["comment"]);
 			return;
 		}
-		var dd=document.evaluate('ancestor-or-self::dd',t,null,XPathResult.ANY_UNORDERED_NODE_TYPE,null).singleNodeValue;
+		var dd=document.evaluate('ancestor-or-self::p',t,null,XPathResult.ANY_UNORDERED_NODE_TYPE,null).singleNodeValue;
 		if(!dd){
 
 			this.responding_tip.parentNode && this.responding_tip.parentNode.removeChild(this.responding_tip);
@@ -530,11 +533,12 @@ ChatClient.prototype={
 	idresponse:function(data){
 		if(!this.responding_to || !data)return;
 		var line=this.line.make(data);
-		for(var i=0,l=line.childNodes.length;i<l;i++){
-			line.childNodes[i].classList && line.childNodes[i].classList.add("resp");
-		}
+		var bq=document.createElement("blockquote");
+		bq.classList.add("resp");
+		bq.appendChild(line);
+
 		var r=this.responding_to;
-		r.parentNode.insertBefore(line,r.nextSibling);
+		r.parentNode.insertBefore(bq,r.nextSibling);
 		
 	},
 	disconnect:function(){
