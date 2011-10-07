@@ -1,5 +1,5 @@
 body{
-	font-family:'Arial';
+	font-family:'Arial', sans-serif;
 }
 body.discon{
 	background-color:#f4f4f4;
@@ -52,7 +52,7 @@ dl#log{
 
 div#info{
 	position:fixed;
-	right:20px;
+	right:10px;
 	bottom:0px;
 	opacity:0.45;
 	text-align:right;

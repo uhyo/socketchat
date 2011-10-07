@@ -22,7 +22,8 @@ if (!Function.prototype.bind) {
 
 }
 
-function LineMaker(){
+function LineMaker(parent){
+	this.parent=parent;
 }
 LineMaker.prototype={
 	make:function(obj){
@@ -99,7 +100,8 @@ LineMaker.prototype={
 }
 
 
-function HighChatMaker(infobar){
+function HighChatMaker(parent,infobar){
+	this.parent=parent;
 	this.gyoza1_on=null;	//mouseoverがonになっているか
 	this.gyozas=["餃子無展開","餃子オンマウス","餃子常時"];
 	this.infobar=infobar;
@@ -122,6 +124,17 @@ HighChatMaker.prototype.init=function(){
 	
 	this.gyozab.addEventListener("click",this.gyozabutton.bind(this),false);
 	this.infobar.appendChild(this.gyozab);
+	
+	//audio
+	var audioc=this.audioc=document.createElement("input");
+	audioc.type="range",audioc.min=0,audioc.max=100,audioc.step=10;
+	audioc.value = (localStorage.soc_highchat_audiovolume!=undefined ? localStorage.soc_highchat_audiovolume : (localStorage.soc_highchat_audiovolume=50));
+	if(this.parent.audio)this.parent.audio.volume=audioc.value/100;
+	audioc.addEventListener("change",function(e){
+		console.log(audioc.value,this.parent.audio);
+		if(audioc.checkValidity() && this.parent.audio)this.parent.audio.volume=(localStorage.soc_highchat_audiovolume=audioc.value)/100;
+	}.bind(this),false);
+	this.infobar.appendChild(audioc);
 };
 HighChatMaker.prototype.make=function(obj){
 	var df=LineMaker.prototype.make.apply(this,arguments);
@@ -291,7 +304,6 @@ ChatClient.prototype={
 		this.info=document.getElementById(this.infoid);
 		this.users=this.info.getElementsByClassName("users")[0];
 		this.usernumber=this.info.getElementsByClassName("usernumber")[0];
-		this.line=new HighChatMaker(document.getElementById(this.infobarid));
 		
 		this.usernumber.dataset.actives=this.usernumber.dataset.roms=0;
 		this.bots=[];
@@ -341,6 +353,8 @@ ChatClient.prototype={
 		
 		var hottomottob=document.getElementsByClassName("logs")[0].getElementsByClassName("hottomottobutton")[0];
 		hottomottob.addEventListener("click",this.HottoMotto.bind(this),false);
+
+		this.line=new HighChatMaker(this,document.getElementById(this.infobarid));
 		
 	},
 	cominit:function(){	
