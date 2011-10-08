@@ -164,6 +164,10 @@ HighChatMaker.prototype.make=function(obj){
 					var span=document.createElement("span");
 					span.classList.add(res[1]);
 					span.textContent=node.nodeValue.slice(res[0].length);
+					if(!span.textContent){
+						node=node.splitText(res[0].length);
+						continue;
+					}
 					node.parentNode.replaceChild(span,node);
 					node=span.firstChild;
 					continue;
