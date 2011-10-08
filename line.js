@@ -225,7 +225,7 @@ HighChatMaker.prototype.make=function(obj){
 						//Gyazo
 						var a=document.createElement("a");
 						a.target="_blank";
-						a.href="http://myazo.net:81/"+res2[1]+".png";
+						a.href="http://myazo.net:81/data/"+res2[1]+".png";
 						/*a.classList.add("gyoza");
 						if(this.gyoza==2){
 							//餃子常時展開
