@@ -20,6 +20,8 @@ exports.CHAT_LIMIT_NUMBER=10;	//CHAT_LIMIT_TIME以内にCHAT_LIMIT_NUMBER回発�
 exports.CHAT_APIUSER_TIMEOUT = 60;	//APIユーザーがいなくなるまでの時間（秒）
 exports.CHAT_APIUSER_SESSIONID_LENGTH = 20;
 
+exports.CHAT_BURY_TIMEOUT = 120;	//ユーザーdeadから消滅までの猶予
+
 exports.HTTP_PORT = 8080;
 */
 
@@ -75,6 +77,7 @@ db.open(function(err,_db){
 	});
 });
 var users=[],users_next=1;
+var dead=[];	//棺桶
 
 var users_s={};
 
@@ -334,7 +337,7 @@ APIUser.prototype.oxygen=function(){
 APIUser.prototype.inoutSplash=function(){
 	var obj={"rom":this.rom, id: this.id, name: this.name};
 	var socket=getAvailableSocket();
-	this.socket.emit("inout",obj), this.socket.broadcast.to("useruser").emit("inout",obj);
+	if(socket)socket.emit("inout",obj), socket.broadcast.to("useruser").emit("inout",obj);
 	toapi(function(x){
 		x==this || x.userinfos.push({"name":"inout","user":obj});
 	}.bind(this));
@@ -348,7 +351,7 @@ io.sockets.on('connection',function(socket){
 			//チャットクライアント
 			socket.join("chatuser");
 			socket.join("useruser");
-			user=addSocketUser(socket);
+			user=addSocketUser(socket,data.lastid);
 			sendFirstLog(user);
 			sendFirstUsers(user);
 
@@ -415,12 +418,22 @@ function sendFirstUsers(user,socket_flg){
 		user.userinfos.push({"name":"users","users":p});
 	}
 }
-function addSocketUser(socket){
-	var user=new SocketUser(users_next,null,
-		  socket.handshake.address.address,true,
-		  socket.handshake.headers["user-agent"],
-		  socket
-		  );
+function addSocketUser(socket,lastid){
+	var zombie=dead.filter(function(x){return x.socket && x.socket.id==lastid})[0];
+	var user, zombie_rom;
+	if(zombie){
+		user=zombie;
+		zombie.socket=socket;
+		zombie_rom=zombie.rom;
+		zombie.rom=true;
+	}else{
+		//新規
+		user=new SocketUser(users_next,null,
+			  socket.handshake.address.address,true,
+			  socket.handshake.headers["user-agent"],
+			  socket
+			  );
+	}
 	users.push(user);
 	var uob=user.getUserObj();
 	socket.broadcast.to("useruser").emit("newuser", uob);
@@ -428,10 +441,18 @@ function addSocketUser(socket){
 		x.userinfos.push({"name":"newuser",user:uob});
 	});
 	users_next++;
+	if(zombie && !zombie_rom){
+		//自動入室
+		zombie.inout({name:zombie.name});
+	}
 	return user;
 }
 function delUser(user){
+	dead.push(user);
 	users=users.filter(function(x){return x!=user});
+	setTimeout(function(){
+		dead=dead.filter(function(x){return x!=user});
+	},settings.CHAT_BURY_TIMEOUT*1000);
 }
 function makelog(user,logobj){
 	filters.forEach(function(func){
@@ -453,7 +474,7 @@ function makelog(user,logobj){
 	}
 }
 function toapi(callback){
-	users.filter(function(x){return x.sessionId}).forEach(callback);
+	users.filter(function(x){return x.type=="api"}).forEach(callback);
 }
 
 function motto(socket,user,data){

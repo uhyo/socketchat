@@ -363,6 +363,14 @@ ChatClient.prototype={
 		//通信部分初期化
 	},
 	loginit:function(data){
+		if(sessionStorage){
+			if(this.socket){
+				sessionStorage.socketid=this.socket.socket.sessionid;
+			}else{
+				sessionStorage.sessionid=this.sessionId;
+			}
+		}
+		console.log(sessionStorage.socketid);
 		data.logs.reverse().forEach(function(line){
 			this.write(line);
 		},this);
@@ -395,6 +403,7 @@ ChatClient.prototype={
 		
 		li.appendChild(sp);
 		this.users.appendChild(li);
+		console.log("newuser out");
 	},
 	getuserelement: function(id){
 		var ul=this.users.childNodes;
@@ -418,6 +427,7 @@ ChatClient.prototype={
 			this.setusernumber(-1, 0);
 		}
 		this.users.removeChild(elem);
+		console.log("deluser out");
 	},
 	//最初にユーザリストを得る
 	userinit:function(obj){
@@ -447,6 +457,7 @@ ChatClient.prototype={
 			elem.classList.remove("rom");
 			this.setusernumber(1, -1);
 		}
+		console.log("inout out");
 	},
 	//自分が入退室
 	userinfo:function(obj){
@@ -565,7 +576,7 @@ SocketChat.prototype.cominit=function(){
 	socket.on("deluser",this.deluser.bind(this));
 	socket.on("inout",this.inout.bind(this));
 
-	socket.emit("regist",{"mode":"client"});
+	socket.emit("regist",{"mode":"client","lastid":sessionStorage.socketid});
 	
 };
 SocketChat.prototype.inout_notify=function(name){
@@ -599,6 +610,8 @@ APIChat.prototype.send=function(path,query,callback){
 	}
 	if(this.sessionid){
 		res.push("sessionId="+this.sessionid);
+	}else if(sessionStorage.sessionid){
+		res.push("sessionId="+sessionStorage.sessionid);
 	}
 	console.log(res);
 	http.open("get",path+(res.length? "?"+res.join("&"):""),true);
@@ -609,7 +622,6 @@ APIChat.prototype.cominit=function(){
 	this.check();
 };
 APIChat.prototype.response=function(obj){
-	console.log(obj);
 	if(obj.error){
 		console.log(obj.errormessage);
 		return;
@@ -618,7 +630,7 @@ APIChat.prototype.response=function(obj){
 	obj.logs.reverse().forEach(function(x){
 		this.recv(x);
 	},this);
-	if(obj.sessionid)this.sessionid=obj.sessionid;
+	if(obj.sessionid)sessionStorage.sessionid=this.sessionid=obj.sessionid;
 	
 	if(obj.inout){
 		this.userinfo(obj.inout);
