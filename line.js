@@ -218,6 +218,28 @@ HighChatMaker.prototype.make=function(obj){
 						}
 						node=node.splitText(res2[0].length);
 						node.parentNode.replaceChild(a,node.previousSibling);
+						continue;
+					}
+					var res2=res[0].match(/^http:\/\/myazo\.net(?:\:81|\:80)?\/data/([0-9a-f]{32})(?:\.png)?/);
+					if(res2){
+						//Gyazo
+						var a=document.createElement("a");
+						a.target="_blank";
+						a.href="http://myazo.net:81/"+res2[1]+".png";
+						/*a.classList.add("gyoza");
+						if(this.gyoza==2){
+							//餃子常時展開
+							var img=document.createElement("img");
+							img.src="http://img.gyazo.com/a/"+res2[1]+".png";
+							img.classList.add("thumbnail");
+							a.appendChild(img);
+						}else{
+							a.textContent="[Gyazo]";
+						}*/
+						a.textContent="[Myazo]";
+						node=node.splitText(res2[0].length);
+						node.parentNode.replaceChild(a,node.previousSibling);
+						continue;
 					}else{
 						var a=document.createElement("a");
 						a.href=res[0];
