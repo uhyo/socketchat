@@ -220,7 +220,7 @@ HighChatMaker.prototype.make=function(obj){
 						node.parentNode.replaceChild(a,node.previousSibling);
 						continue;
 					}
-					var res2=res[0].match(/^http:\/\/myazo\.net(?:\:81|\:80)?\/data/([0-9a-f]{32})(?:\.png)?/);
+					var res2=res[0].match(/^http:\/\/myazo\.net(?:\:81|\:80)?\/data\/([0-9a-f]{32})(?:\.png)?/);
 					if(res2){
 						//Gyazo
 						var a=document.createElement("a");
