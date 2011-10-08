@@ -35,7 +35,7 @@ app.get(/^\/(index\.html)?$/, function(req, res){
 app.get(/^\/(log|list|apiclient)$/, function(req, res){
 	res.sendfile(__dirname + "/"+req.params[0]+'.html');
 });
-app.get(/^\/(line\.js|css\.css)$/, function(req, res){
+app.get(/^\/(line\.js|css\.css|sound\.(mp3|wav|ogg))$/, function(req, res){
 	res.sendfile(__dirname + "/"+req.params[0]);
 });
 app.get('/chalog', function(req, res){
