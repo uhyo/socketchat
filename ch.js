@@ -424,6 +424,8 @@ function addSocketUser(socket,lastid){
 	if(zombie){
 		user=zombie;
 		zombie.socket=socket;
+		zombie.ip=socket.handshake.address.address;
+		zombie.ua=socket.handshake.headers["user-agent"];
 		zombie_rom=zombie.rom;
 		zombie.rom=true;
 	}else{
