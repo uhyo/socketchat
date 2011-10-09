@@ -495,7 +495,7 @@ ChatClient.prototype={
 		var result=document.evaluate('descendant::input[@type="submit"]',f,null,XPathResult.ANY_UNORDERED_NODE_TYPE,null);
 		var bt=result.singleNodeValue;
 		bt.value=obj.rom?"入室":"退室";
-		this.inout(obj);
+		if(!obj.refresh)this.inout(obj);
 	},
 	mottoResponse:function(data){
 		data.logs.forEach(function(line){

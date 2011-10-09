@@ -21,6 +21,7 @@ exports.CHAT_APIUSER_TIMEOUT = 60;	//APIユーザーがいなくなるまでの�
 exports.CHAT_APIUSER_SESSIONID_LENGTH = 20;
 
 exports.CHAT_BURY_TIMEOUT = 120;	//ユーザーdeadから消滅までの猶予
+exports.CHAT_SOCKETUSER_TIMEOUT = 5;	//socketユーザーがいなくなるまでの時間
 
 exports.HTTP_PORT = 8080;
 */
@@ -73,6 +74,13 @@ db.open(function(err,_db){
 		}
 		db.collection("log",function(err,collection){
 			log=collection;
+			var syslog={"name" : "■起動通知",
+				    "time":Date.now(),
+				    "ip":"127.0.0.1",
+				    "comment":"サーバーが起動しました",
+				    "syslog":true
+			};
+			makelog(this,syslog);
 		});
 	});
 });
@@ -284,6 +292,8 @@ User.prototype.delUserSplash=function(){
 function SocketUser(id,name,ip,rom,ua,socket){
 	User.apply(this,arguments);
 	this.socket=socket;
+	
+	this.timerid=null;
 }
 SocketUser.prototype=new User;
 SocketUser.prototype.type="socket";
@@ -377,7 +387,9 @@ io.sockets.on('connection',function(socket){
 
 			//いなくなった
 			socket.on("disconnect",function(data){
-				user.discon();
+				user.timerid=setTimeout(function(){
+					user.discon();
+				},settings.CHAT_SOCKETUSER_TIMEOUT*1000);
 			});
 		}else if(data.mode=="chalog"){
 			//Chalog
@@ -421,6 +433,16 @@ function sendFirstUsers(user,socket_flg){
 function addSocketUser(socket,lastid){
 	var zombie=dead.filter(function(x){return x.socket && x.socket.id==lastid})[0];
 	var user, zombie_rom;
+	user=users.filter(function(x){return x.socket && x.socket.id==lastid})[0];
+	if(user && !user.rom){
+		//音もなく復帰
+		clearTimeout(user.timerid);
+		user.timerid=null;
+		user.socket=socket;
+		var obj={"rom":user.rom, id: user.id, name: user.name};
+		socket.emit("userinfo",obj);
+		return user;
+	}
 	if(zombie){
 		user=zombie;
 		zombie.socket=socket;
