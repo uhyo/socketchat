@@ -135,7 +135,7 @@ filters.push(function(logobj){
 			return String.fromCharCode(katakana.charCodeAt(0)+(0x3040-0x30A0));
 		}).replace(/[ぁ-ゖ゛゜ヷ-ヺー]/g,function(hiragana){
 			return table[hiragana] || hiragana;
-		}).replace(/(ｦ+|[ｧ-ｮｱ-\uFF9F]+)/g,function(katakanas){	//\uFF9F: 半角半濁点
+		}).replace(/((?:ｦ\uFF9E?)+|[ｧ-ｮｱ-\uFF9F]+)/g,function(katakanas){	//\uFF9F: 半角半濁点
 			var ato="",last=null;
 			var pt=katakanas.length;
 			while(pt){
