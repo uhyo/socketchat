@@ -1,12 +1,14 @@
 var socketio=require('socket.io'),mongodb=require('mongodb');
 
 var settings=require('./settings');
-/*
-exports.DB_SERVER="127.0.0.1";
+
+exports={};	//default settings
+/*exports.DB_SERVER="127.0.0.1";
 exports.DB_PORT=27017;
 exports.DB_NAME="socketchat";
 exports.DB_USER="test";
 exports.DB_PASS="test";
+exports.HTTP_PORT = 8080;*/
 
 exports.CHAT_FIRST_LOG=30;	//最初どれだけログ表示するか
 exports.CHAT_MOTTO_LOG=30;	//HottoMotto時にログをどれだけ表示するか
@@ -22,9 +24,10 @@ exports.CHAT_APIUSER_SESSIONID_LENGTH = 20;
 
 exports.CHAT_BURY_TIMEOUT = 120;	//ユーザーdeadから消滅までの猶予
 exports.CHAT_SOCKETUSER_TIMEOUT = 5;	//socketユーザーがいなくなるまでの時間
+for(var i in exports){
+	if(!settings[i])settings[i]=exports[i];
+}
 
-exports.HTTP_PORT = 8080;
-*/
 
 var mongoserver = new mongodb.Server(settings.DB_SERVER,settings.DB_PORT,{});
 var db = new mongodb.Db(settings.DB_NAME,mongoserver,{});
