@@ -25,7 +25,10 @@ exports.CHAT_APIUSER_SESSIONID_LENGTH = 20;
 exports.CHAT_BURY_TIMEOUT = 120;	//ユーザーdeadから消滅までの猶予
 exports.CHAT_SOCKETUSER_TIMEOUT = 5;	//socketユーザーがいなくなるまでの時間
 for(var i in exports){
-	if(!settings[i])settings[i]=exports[i];
+	if(!settings[i]){
+		settings[i]=exports[i];
+		console.log("settings: "+i+" is not defined.");
+	}
 }
 
 

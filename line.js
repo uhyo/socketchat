@@ -118,7 +118,7 @@ function HighChatMaker(parent,infobar){
 HighChatMaker.prototype=new LineMaker();
 HighChatMaker.prototype.init=function(){
 	//infobar
-	while(this.infobar.firstChild)this.infobar.removeChild(this.infobar.firstChild);
+	//while(this.infobar.firstChild)this.infobar.removeChild(this.infobar.firstChild);
 	
 	this.gyozab=document.createElement("button");
 	this.gyozab.textContent=this.gyozas[this.gyoza];
