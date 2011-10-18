@@ -35,7 +35,7 @@ UserList.prototype={
 			this.newuser(user);
 		},this);
 	},
-	newuser:function(user){
+	newuser:function(data){
 		var tbody=this.table.tBodies[0];
 		var row=tbody.insertRow(-1);
 		row.dataset.id=user.id;
