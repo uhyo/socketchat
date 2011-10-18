@@ -102,8 +102,8 @@ var filters=[];
 filters.push(function(logobj,user){
 	switch(user.type){
 		case "socket":
-			if(user.socket.handshake.headers["x-forwarded-for"]){
-				setxff(user.socket.handshake.headers["x-forwarded-for"]);
+			if(user.handshake.headers["x-forwarded-for"]){
+				setxff(user.handshake.headers["x-forwarded-for"]);
 			}
 			break;
 		case "api":
