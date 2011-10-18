@@ -102,8 +102,8 @@ var filters=[];
 filters.push(function(logobj,user){
 	switch(user.type){
 		case "socket":
-			if(user.handshake.headers["x-forwarded-for"]){
-				setxff(user.handshake.headers["x-forwarded-for"]);
+			if(user.socket.handshake.headers["x-forwarded-for"]){
+				setxff(user.socket.handshake.headers["x-forwarded-for"]);
 			}
 			break;
 		case "api":
@@ -114,7 +114,7 @@ filters.push(function(logobj,user){
 			
 	}
 	function setxff(ip){
-		var add={"name":"span","attributes":{"class":"info"},"child":ip};
+		var add={"name":"span","attributes":{"class":"info"},"child":"Forwarded For:"+ip};
 		logobj.comment=pushLogobj(logobj.comment,add);
 	}
 });
