@@ -131,7 +131,7 @@ HighChatMaker.prototype.init=function(){
 	var audioc=this.audioc=document.createElement("input");
 	audioc.type="range",audioc.min=0,audioc.max=100,audioc.step=10;
 	audioc.value = (localStorage.soc_highchat_audiovolume!=undefined ? localStorage.soc_highchat_audiovolume : (localStorage.soc_highchat_audiovolume=50));
-	if(this.parent && this.parent.audio)this.parent.audio.volume=audioc.value/100;
+	if(this.parent.audio)this.parent.audio.volume=audioc.value/100;
 	audioc.addEventListener("change",function(e){
 		console.log(audioc.value,this.parent.audio);
 		if(audioc.checkValidity() && this.parent.audio)this.parent.audio.volume=(localStorage.soc_highchat_audiovolume=audioc.value)/100;
