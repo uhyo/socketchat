@@ -100,9 +100,10 @@ var filters=[];
 //拡張
 //Forwarded For
 filters.push(function(logobj,user){
+	if(!user)return;
 	switch(user.type){
 		case "socket":
-			if(user.socket.handshake.headers["x-forwarded-for"]){
+			if(user.socket && user.socket.handshake && user.socket.handshake.headers["x-forwarded-for"]){
 				setxff(user.socket.handshake.headers["x-forwarded-for"]);
 			}
 			break;
