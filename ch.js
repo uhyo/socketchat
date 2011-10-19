@@ -461,7 +461,7 @@ function sendFirstUsers(user,socket_flg){
 function addSocketUser(socket,lastid){
 	var zombie=dead.filter(function(x){return x.socket && x.socket.id==lastid})[0];
 	var user, zombie_rom;
-	user=users.filter(function(x){return x.socket && x.socket.id==lastid})[0];
+	user=users.filter(function(x){return x.socket && x.socket.id==lastid && !x.timerid})[0];
 	if(user && !user.rom){
 		//音もなく復帰
 		clearTimeout(user.timerid);
