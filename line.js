@@ -210,9 +210,16 @@ HighChatMaker.prototype.make=function(obj){
 						if(this.gyoza==2){
 							//餃子常時展開
 							var img=document.createElement("img");
-							img.src="http://img.gyazo.com/a/"+res2[1]+".png";
 							img.classList.add("thumbnail");
+							img.hidden=true;
 							a.appendChild(img);
+							var temp_node=document.createTextNode("[Gyoza...]");
+							a.appendChild(temp_node);
+							img.addEventListener('load',function(e){
+								a.removeChild(temp_node);
+								img.hidden=false;
+							},false);
+							img.src="http://img.gyazo.com/a/"+res2[1]+".png";							
 						}else{
 							a.textContent="[Gyazo]";
 						}
