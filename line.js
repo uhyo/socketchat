@@ -219,7 +219,7 @@ HighChatMaker.prototype.make=function(obj){
 								a.removeChild(temp_node);
 								img.hidden=false;
 							},false);
-							img.src="http://img.gyazo.com/a/"+res2[1]+".png";							
+							img.src="http://gyazo.com/thumb/"+res2[1]+".png";							
 						}else{
 							a.textContent="[Gyazo]";
 						}
