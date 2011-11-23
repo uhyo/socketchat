@@ -41,7 +41,7 @@ var app = require('express').createServer();
 app.get(/^\/(index\.html)?$/, function(req, res){
 	res.sendfile(__dirname + '/index.html');
 });
-app.get(/^\/(log|list|apiclient)$/, function(req, res){
+app.get(/^\/(log|list|apiclient|com)$/, function(req, res){
 	res.sendfile(__dirname + "/"+req.params[0]+'.html');
 });
 app.get(/^\/(line\.js|css\.css|sound\.(mp3|wav|ogg))$/, function(req, res){
@@ -586,10 +586,10 @@ function api(mode,req,res){
 	}else if(mode=="say"){
 		user.says(query);
 	}else if(mode=="motto"){
-		user.motto(query);
+		user.motto(query,res);
 		return;
 	}else if(mode=="idrequest"){
-		user.idrequest(query);
+		user.idrequest(query,res);
 		return;
 	}
 

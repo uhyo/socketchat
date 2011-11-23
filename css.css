@@ -89,3 +89,34 @@ div.forms p{
 li.rom{
 	display: none;
 }
+/* コンソール風 */
+#console{
+	font-family:'Arial',monospace;
+	background-color:rgba(48,48,48,0.7);
+	color:#ffffff;
+	height:15em;
+	min-height:15em;
+	width:100%;
+	position:fixed;
+	left:0;
+	bottom:-15em;
+	padding:0 2em;
+	
+	-webkit-transition:bottom 0.3s ease;
+	-moz-transition:bottom 0.3s ease;
+	-o-transition:bottom 0.3s ease;
+	transition:bottom 0.3s ease;
+}
+#console.open{
+	bottom:0;
+}
+#console p{
+	margin:0;
+}
+#console input{
+	width:100%;
+	border:none;
+	outline:none;
+	color:#ffffff;
+	background-color:transparent;
+}
