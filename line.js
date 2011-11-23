@@ -382,20 +382,27 @@ ChatClient.prototype={
 		
 		this.log.addEventListener('click',this.click.bind(this),false);
 		
+		this.prepareForm();
+		this.prepareHottoMottoButton();
+		this.line=new HighChatMaker(this,document.getElementById(this.infobarid));
+		
+	},
+	//HottoMottoボタン初期化
+	prepareHottoMottoButton:function(){
+		var hottomottob=document.getElementsByClassName("logs")[0].getElementsByClassName("hottomottobutton")[0];
+		hottomottob.addEventListener("click",this.HottoMotto.bind(this),false);
+	},
+	//フォーム準備
+	prepareForm:function(){
 		if(localStorage.socketchat_name){
 			document.forms["inout"].elements["uname"].value=localStorage.socketchat_name;
 		}
-		
-		var hottomottob=document.getElementsByClassName("logs")[0].getElementsByClassName("hottomottobutton")[0];
-		hottomottob.addEventListener("click",this.HottoMotto.bind(this),false);
-
-		this.line=new HighChatMaker(this,document.getElementById(this.infobarid));
-		
 	},
 	cominit:function(){	
 		//通信部分初期化
 	},
 	loginit:function(data){
+		console.log("loginit",data,this.oldest_time);
 		if(sessionStorage){
 			if(this.socket){
 				sessionStorage.socketid=this.socket.socket.sessionid;
@@ -403,11 +410,12 @@ ChatClient.prototype={
 				sessionStorage.sessionid=this.sessionId;
 			}
 		}
-		console.log(sessionStorage.socketid);
 		data.logs.reverse().forEach(function(line){
 			this.write(line);
 		},this);
-		if(data.logs.length)this.oldest_time=data.logs.shift().time;
+		if(data.logs.length){
+			this.oldest_time=data.logs.shift().time;
+		}
 	},
 	recv:function(obj){
 		this.bots.forEach(function(func){func(obj,this)},this);
@@ -496,6 +504,7 @@ ChatClient.prototype={
 	userinfo:function(obj){
 		console.log("userinfo",obj);
 		var f=document.forms["inout"];
+		if(!f)return;
 		f.elements["uname"].disabled=!obj.rom;
 		if(!obj.rom)f.elements["uname"].value=obj.name;
 		
@@ -509,9 +518,6 @@ ChatClient.prototype={
 			this.log.appendChild(this.line.make(line));
 		},this);
 		if(data.logs.length)this.oldest_time=data.logs.pop().time;
-	},
-	HottoMotto:function(e){
-		this.socket.emit("motto",{"time":this.oldest_time});
 	},
 	
 	submit:function(e){
@@ -570,7 +576,7 @@ ChatClient.prototype={
 		//コメント
 		this.responding_tip.classList.remove("checked");
 
-		document.forms["comment"].elements["response"].value="";
+		if(document.forms["comment"])document.forms["comment"].elements["response"].value="";
 		dd.appendChild(this.responding_tip);
 		this.responding_tip.dataset.to=dd.dataset.id;
 	},
@@ -618,6 +624,9 @@ SocketChat.prototype.inout_notify=function(name){
 SocketChat.prototype.say=function(comment,response){
 	this.socket.emit("say",{"comment":comment,"response":response?response:""});
 };
+SocketChat.prototype.HottoMotto=function(e){
+	this.socket.emit("motto",{"time":this.oldest_time});
+};
 
 function APIChat(){
 	ChatClient.apply(this,arguments);
@@ -646,7 +655,6 @@ APIChat.prototype.send=function(path,query,callback){
 	}else if(sessionStorage.sessionid){
 		res.push("sessionId="+sessionStorage.sessionid);
 	}
-	console.log(res);
 	http.open("get",path+(res.length? "?"+res.join("&"):""),true);
 	http.send();
 };
@@ -659,11 +667,14 @@ APIChat.prototype.response=function(obj){
 		console.log(obj.errormessage);
 		return;
 	}
-	
-	obj.logs.reverse().forEach(function(x){
-		this.recv(x);
-	},this);
-	if(obj.sessionid)sessionStorage.sessionid=this.sessionid=obj.sessionid;
+	if(!this.oldest_time){
+		this.loginit(obj);
+	}else{
+		obj.logs.reverse().forEach(function(x){
+			this.recv(x);
+		},this);
+		if(obj.sessionid)sessionStorage.sessionid=this.sessionid=obj.sessionid;
+	}
 	
 	if(obj.inout){
 		this.userinfo(obj.inout);
@@ -695,3 +706,121 @@ APIChat.prototype.inout_notify=function(name){
 APIChat.prototype.say=function(comment,response){
 	this.send("/api/say",{"comment":comment,"response":response},this.response.bind(this));
 };
+APIChat.prototype.HottoMotto=function(){
+	this.send("/api/motto",{"time":this.oldest_time},function(data){
+		console.log(data);
+		this.mottoResponse(data)
+	}.bind(this));
+//	this.send("/api/motto",{"time":this.oldest_time},this.mottoResponse.bind(this));
+};
+
+//コマンドライン風
+function CommandLineChat(log,info,con){
+	var infobar=document.createElement("div");
+	infobar.id="aaaaaaaaa____aa_a_a_a_a_a_a_a___aa_a";
+	SocketChat.call(this,log,info,infobar.id);
+	
+	this.consoleid=con;
+	this.cmode="up";	//新しいログは上へ
+}
+CommandLineChat.prototype=new SocketChat;
+CommandLineChat.prototype.prepareHottoMottoButton=function(){};
+CommandLineChat.prototype.prepareForm=function(){};
+CommandLineChat.prototype.init=function(){
+	SocketChat.prototype.init.apply(this);
+	
+	
+	this.console=document.getElementById(this.consoleid);
+	this.command=document.createElement("input");
+	var p=document.createElement("p");
+	p.appendChild(this.command);
+	this.console.appendChild(p);
+	this.console.addEventListener("click",function(e){
+		this.command.focus();
+	}.bind(this),false);
+	
+	document.addEventListener("keydown",keydown.bind(this),false);
+	
+	function keydown(e){
+		if(e.keyCode==13 || e.keyCode==27){
+			//Enter,Esc
+			if(!this.console.classList.contains("open")){
+				//開く
+				this.openConsole();
+			}else if(this.command.value==""){
+				this.closeConsole();
+				return;
+			}
+		}
+		if(e.keyCode==13){
+			this.doCommand(this.command.value);
+			this.command.value="";
+		}
+	}
+};
+CommandLineChat.prototype.openConsole=function(){
+	this.console.classList.add("open");
+	this.command.focus();
+};
+CommandLineChat.prototype.closeConsole=function(){
+	this.console.classList.remove("open");
+	this.command.blur();
+};
+CommandLineChat.prototype.doCommand=function(str){
+	this.cprint(str);
+	var result;
+	result=str.match(/^\\(\S+)(?:\s+)?/);
+	if(!result){
+		//通常の発言
+		this.say(str);
+		return;
+	}
+	str=str.slice(result[0].length);
+	switch(result[1]){
+	case "in":case "out":
+		// 入室
+		this.inout_notify(str);
+		break;
+	case "motto":
+		// HottoMotto
+		this.HottoMotto();
+		break;
+	default:
+		this.cprint(result[1]+": No such command");
+	}
+	
+	//スペース区切り
+	function parse(str){
+		var ret=[],result;
+		while(str){
+			result=str.match(/^\s*([^\"\s]+)\s*/);
+			if(result){
+				ret.push(result[1]);
+				str=str.slice(result[0].length);
+				continue;
+			}
+			result=str.match(/^\s*\"((?:\\\"|[^\"])+)\"\s*/);
+			if(result){
+				ret.push(result[1].replace("\\\"","\""));
+				str=str.slice(result[0].length);
+				continue;
+			}
+			ret.push(str);
+			break;
+		}
+		return ret;
+	}
+};
+CommandLineChat.prototype.cprint=function(str){
+	str.split("\n").forEach(function(line){
+		var p=document.createElement("p");
+		p.textContent=line;
+		if(this.cmode=="up"){
+			//上へ
+			this.console.insertBefore(p,this.command.parentNode.nextSibling);
+		}else{
+			this.console.insertBefore(p,this.command.parentNode);
+		}
+	},this);
+};
+

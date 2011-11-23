@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>socket chat</title>
+    <link href="/css.css" rel="stylesheet">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/line.js"></script>
+
+    <script>
+Chat=new CommandLineChat("log","info","console");
+window.addEventListener('load',function(){
+	Chat.init();
+},false);
+    </script>
+  </head>
+  <body>
+<!--  <div class="forms">
+    <form name="inout">
+      <p><input name="uname" size="20" maxlength="25" required><input type="submit" value="入室"></p>
+    </form>
+    <form name="comment">
+      <p><input name="comment" size="70" autocomplete="off" required><input type="submit" value="発言"></p>
+      <input type="hidden" name="response" value="">
+    </form>
+  </div>-->
+  <div id="console">
+  </div>
+  <div class="logs">
+    <dl id="log">
+    </dl>
+  </div>
+  <div id="info">
+    <span class="usernumber"></span>
+    <ul class="users">
+    </ul>
+  </div>
+  <p style="font-size:xx-small"><a href="https://github.com/uhyo/socketchat" target="_blank">github</a></p>
+  </body>
+</html>
