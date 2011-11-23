@@ -12,10 +12,10 @@ div.logs{
 	margin-top:0.4em;
 }
 
-dl#log{
+#log{
 	margin:0;
 }
-dl#log p{
+#log p{
 	margin:0;
 }
 #log span.name.syslog{
@@ -91,14 +91,14 @@ li.rom{
 }
 /* コンソール風 */
 #console{
-	font-family:'Arial',monospace;
+	font-family:monospace;
 	background-color:rgba(48,48,48,0.7);
 	color:#ffffff;
-	height:15em;
+	height:30em;
 	width:100%;
 	position:fixed;
 	left:0;
-	bottom:-15em;
+	bottom:-30em;
 	padding:0 2em;
 	overflow-y:scroll;
 	

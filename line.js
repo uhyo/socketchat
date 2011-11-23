@@ -312,7 +312,7 @@ HighChatMaker.prototype.gyozamouse=function(e){
 		var result=t.href.match(/^http:\/\/gyazo\.com\/([0-9a-f]{32})\.png$/);
 		if(!result)return;
 		var img=document.createElement("img");
-		img.src="http://img.gyazo.com/a/"+result[1]+".png";
+		img.src="http://gyazo.com/thumb/"+result[1]+".png";
 		
 		img.addEventListener("load",ev,false);
 		img.style.display="none";
@@ -737,7 +737,7 @@ CommandLineChat.prototype.init=function(){
 	p.appendChild(this.command);
 	this.console.appendChild(p);
 	this.console.addEventListener("click",function(e){
-		this.command.focus();
+		this.cfocus();
 	}.bind(this),false);
 	
 	document.addEventListener("keydown",keydown.bind(this),false);
@@ -756,20 +756,19 @@ CommandLineChat.prototype.init=function(){
 		if(e.keyCode==13){
 			this.doCommand(this.command.value);
 			this.command.value="";
-			this.command.focus();
+			this.cfocus();
 		}
 	}
 };
 CommandLineChat.prototype.openConsole=function(){
 	this.console.classList.add("open");
-	this.command.focus();
+	this.cfocus();
 };
 CommandLineChat.prototype.closeConsole=function(){
 	this.console.classList.remove("open");
 	this.command.blur();
 };
 CommandLineChat.prototype.doCommand=function(str){
-	this.cprint("> "+str);
 	var result;
 	var syschar=localStorage.syschar || "\\";
 	result=str.match(new RegExp("^\\"+syschar+"(\\S+)(?:\\s+)?"));
@@ -778,6 +777,7 @@ CommandLineChat.prototype.doCommand=function(str){
 		this.say(str);
 		return;
 	}
+	this.cprint("> "+str);
 	str=str.slice(result[0].length);
 	switch(result[1]){
 	case "in":case "out":
@@ -898,5 +898,16 @@ CommandLineChat.prototype.cprint=function(str){
 			this.console.insertBefore(p,this.command.parentNode);
 		}
 	},this);
+	this.cscrollDown();
+};
+CommandLineChat.prototype.cfocus=function(){
+	var sc=document.documentElement.scrollTop || document.body.scrollTop;
+	this.command.focus();
+	document.documentElement.scrollTop && (document.documentElement.scrollTop=sc);
+	document.body.scrollTop && (document.body.scrollTop=sc);
+};
+CommandLineChat.prototype.cscrollDown=function(){
+	this.console.scrollTop= this.console.scrollHeight - this.console.clientHeight;
+	
 };
 
