@@ -721,7 +721,7 @@ function CommandLineChat(log,info,con){
 	SocketChat.call(this,log,info,infobar.id);
 	
 	this.consoleid=con;
-	this.cmode="up";	//新しいログは上へ
+	this.cmode="down";	//新しいログは上へ
 }
 CommandLineChat.prototype=new SocketChat;
 CommandLineChat.prototype.prepareHottoMottoButton=function(){};
@@ -733,6 +733,7 @@ CommandLineChat.prototype.init=function(){
 	this.console=document.getElementById(this.consoleid);
 	this.command=document.createElement("input");
 	var p=document.createElement("p");
+	p.textContent="> ";
 	p.appendChild(this.command);
 	this.console.appendChild(p);
 	this.console.addEventListener("click",function(e){
@@ -755,6 +756,7 @@ CommandLineChat.prototype.init=function(){
 		if(e.keyCode==13){
 			this.doCommand(this.command.value);
 			this.command.value="";
+			this.command.focus();
 		}
 	}
 };
@@ -767,9 +769,10 @@ CommandLineChat.prototype.closeConsole=function(){
 	this.command.blur();
 };
 CommandLineChat.prototype.doCommand=function(str){
-	this.cprint(str);
+	this.cprint("> "+str);
 	var result;
-	result=str.match(/^\\(\S+)(?:\s+)?/);
+	var syschar=localStorage.syschar || "\\";
+	result=str.match(new RegExp("^\\"+syschar+"(\\S+)(?:\\s+)?"));
 	if(!result){
 		//通常の発言
 		this.say(str);
@@ -798,14 +801,72 @@ CommandLineChat.prototype.doCommand=function(str){
 			location.href=str;
 		}
 		break;
+	case "volume":
+		if(str){
+			vo=parseInt(str);
+			if(isNaN(vo) || vo<0 || 100<vo){
+				this.cprint("volume: invalid volume "+str);
+				break;
+			}
+			localStorage.soc_highchat_audiovolume=vo;
+			this.audio.volume=vo/100;
+		}else{
+			this.cprint(localStorage.soc_highchat_audiovolume);
+		}
+		break;
+	case "set":
+		var args=parse(str,2);
+		switch(args[0]){
+		case "syschar":case "systemchar":	//命令文字
+			if(args[1].length!=1){
+				this.cprint("set "+args[0]+": invalid char "+args[1]);
+				break;
+			}
+			localStorage.syschar=args[1];
+			break;
+		default:
+			this.cprint("set: unknown settings: "+args[0]);
+			break;
+		}
+		break;
+	case "gyazo":case "gyoza":
+		if(str){
+			vo=parseInt(str);
+			if(isNaN(vo) || vo<0 || 2<vo){
+				this.cprint("gyazo: invalid value "+str);
+			}else{
+				localStorage.soc_highchat_gyoza=vo;
+			}
+		}
+		["餃子無展開","餃子オンマウス","餃子常時"].forEach(function(x,i){
+			this.cprint( (localStorage.soc_highchat_gyoza==i ? "*"+i : i+" ")+
+				": "+x);
+		},this);
+		break;
+	case "help":
+		this.cprint([
+"command usage: "+localStorage.syschar+"command",
+"in, out",
+"    inout the chatroom",
+"motto",
+"    HottoMotto",
+"volume [number]",
+"    show/set volume",
+"set (param) (value)",
+"    set options",
+"gyazo [num], gyoza [num]",
+"    show/set gyoza mode",
+		].join("\n"));
+		break;
 	default:
 		this.cprint(result[1]+": No such command");
 	}
 	
 	//スペース区切り
-	function parse(str){
+	function parse(str,maxlen){
 		var ret=[],result;
-		while(str){
+		if(!maxlen)maxlen=1/0;
+		while(str && ret.length+1<maxlen){
 			result=str.match(/^\s*([^\"\s]+)\s*/);
 			if(result){
 				ret.push(result[1]);
@@ -818,8 +879,10 @@ CommandLineChat.prototype.doCommand=function(str){
 				str=str.slice(result[0].length);
 				continue;
 			}
-			ret.push(str);
 			break;
+		}
+		if(str){
+			ret.push(str);
 		}
 		return ret;
 	}
