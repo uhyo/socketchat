@@ -504,13 +504,14 @@ ChatClient.prototype={
 	userinfo:function(obj){
 		console.log("userinfo",obj);
 		var f=document.forms["inout"];
-		if(!f)return;
-		f.elements["uname"].disabled=!obj.rom;
-		if(!obj.rom)f.elements["uname"].value=obj.name;
+		if(f){
+			f.elements["uname"].disabled=!obj.rom;
+			if(!obj.rom)f.elements["uname"].value=obj.name;
 		
-		var result=document.evaluate('descendant::input[@type="submit"]',f,null,XPathResult.ANY_UNORDERED_NODE_TYPE,null);
-		var bt=result.singleNodeValue;
-		bt.value=obj.rom?"入室":"退室";
+			var result=document.evaluate('descendant::input[@type="submit"]',f,null,XPathResult.ANY_UNORDERED_NODE_TYPE,null);
+			var bt=result.singleNodeValue;
+			bt.value=obj.rom?"入室":"退室";
+		}
 		if(!obj.refresh)this.inout(obj);
 	},
 	mottoResponse:function(data){
@@ -739,6 +740,7 @@ CommandLineChat.prototype.init=function(){
 	this.console.addEventListener("click",function(e){
 		this.cfocus();
 	}.bind(this),false);
+	if(localStorage.consoleheight)this.setConsoleHeight();
 	
 	document.addEventListener("keydown",keydown.bind(this),false);
 	
@@ -824,6 +826,14 @@ CommandLineChat.prototype.doCommand=function(str){
 			}
 			localStorage.syschar=args[1];
 			break;
+		case "height":	//コンソール高さ
+			if(isNaN(args[1]) || parseInt(args[1])<0){
+				this.cprint("set "+args[0]+": invalid value "+args[1]);
+				break;
+			}
+			localStorage.consoleheight=args[1]+"em";
+			this.setConsoleHeight();
+			break;
 		default:
 			this.cprint("set: unknown settings: "+args[0]);
 			break;
@@ -843,6 +853,11 @@ CommandLineChat.prototype.doCommand=function(str){
 				": "+x);
 		},this);
 		break;
+	case "clear":case "clean":
+		var spc=this.command.parentNode;
+		while(this.console.firstChild)this.console.removeChild(this.console.firstChild);
+		this.console.appendChild(spc);
+		break;
 	case "help":
 		this.cprint([
 "command usage: "+localStorage.syschar+"command",
@@ -854,8 +869,12 @@ CommandLineChat.prototype.doCommand=function(str){
 "    show/set volume",
 "set (param) (value)",
 "    set options",
+"        systemchar",
+"        height",
 "gyazo [num], gyoza [num]",
 "    show/set gyoza mode",
+"clear, clean",
+"    clean the console",
 		].join("\n"));
 		break;
 	default:
@@ -909,5 +928,14 @@ CommandLineChat.prototype.cfocus=function(){
 CommandLineChat.prototype.cscrollDown=function(){
 	this.console.scrollTop= this.console.scrollHeight - this.console.clientHeight;
 	
+};
+CommandLineChat.prototype.userinfo=function(obj){
+	SocketChat.prototype.userinfo.apply(this,arguments);
+	if(!obj.rom)this.cprint("Hello, "+obj.name);
+	
+};
+CommandLineChat.prototype.setConsoleHeight=function(){
+	var st=document.styleSheets.item(0);
+	st.insertRule("#console { height: "+localStorage.consoleheight+"; bottom:-"+localStorage.consoleheight+"}",st.cssRules.length);
 };
 
