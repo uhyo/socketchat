@@ -779,11 +779,24 @@ CommandLineChat.prototype.doCommand=function(str){
 	switch(result[1]){
 	case "in":case "out":
 		// 入室
-		this.inout_notify(str);
+		if(str){
+			localStorage.socketchat_name=str;
+		}
+		this.inout_notify(str ? str : localStorage.socketchat_name);
 		break;
 	case "motto":
 		// HottoMotto
 		this.HottoMotto();
+		break;
+	case "go":
+		//移動
+		switch(str){
+		case "log":case "apiclient":case "list":
+			location.href="/"+str;
+			break;
+		default:
+			location.href=str;
+		}
 		break;
 	default:
 		this.cprint(result[1]+": No such command");
