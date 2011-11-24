@@ -331,6 +331,7 @@ SocketUser.prototype.motto=function(data){
 	}.bind(this));
 };
 SocketUser.prototype.idrequest=function(data){
+	if(data.id.length!=24 && data.id.length!=12)return;
 	log.findOne(db.bson_serializer.ObjectID.createFromHexString(data.id),function(err,obj){
 		this.socket.emit("idresponse",obj);
 	}.bind(this));
@@ -364,6 +365,7 @@ APIUser.prototype.motto=function(data,res){
 	}.bind(this));
 };
 APIUser.prototype.idrequest=function(data,res){
+	if(data.id.length!=24 && data.id.length!=12)return;
 	log.findOne(db.bson_serializer.ObjectID.createFromHexString(data.id),function(err,obj){
 		res.send(obj,{"Content-Type":"text/javascript; charset=UTF-8"});
 	}.bind(this));
@@ -419,17 +421,18 @@ io.sockets.on('connection',function(socket){
 					user.discon();
 				},settings.CHAT_SOCKETUSER_TIMEOUT*1000);
 			});
-		}else if(data.mode=="chalog"){
+		}else if(data.mode=="userlist"){
+			//ユーザーリスト
+			socket.join("useruser");
+			sendFirstUsers(socket,true);
+		}
+		if(data.mode=="client" || data.mode=="chalog"){
 			//Chalog
 			socket.on("query",function(data){
 				chalog(data,function(resobj){
 					socket.emit("result",resobj);
 				});
 			});
-		}else if(data.mode=="userlist"){
-			//ユーザーリスト
-			socket.join("useruser");
-			sendFirstUsers(socket,true);
 		}
 	});
 	
@@ -540,6 +543,8 @@ function motto(socket,user,data){
 	});
 }
 function idrequest(socket,data){
+	console.log(data.id);
+	if(data.id.length!=24 && data.id.length!=12)return;
 	log.findOne(db.bson_serializer.ObjectID.createFromHexString(data.id),function(err,obj){
 		socket.emit("idresponse",obj);
 	});

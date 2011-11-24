@@ -8,7 +8,7 @@
     <script src="/line.js"></script>
 
     <script>
-Chat=new CommandLineChat("log","info","console");
+Chat=new CommandLineChat("log","info","console","findlog");
 window.addEventListener('load',function(){
 	Chat.init();
 },false);
@@ -29,6 +29,8 @@ window.addEventListener('load',function(){
   </div>
   <div class="logs">
     <div id="log">
+    </div>
+    <div id="findlog">
     </div>
   </div>
   <div id="info">

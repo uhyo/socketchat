@@ -716,12 +716,13 @@ APIChat.prototype.HottoMotto=function(){
 };
 
 //コマンドライン風
-function CommandLineChat(log,info,con){
+function CommandLineChat(log,info,con,fnd){
 	var infobar=document.createElement("div");
 	infobar.id="aaaaaaaaa____aa_a_a_a_a_a_a_a___aa_a";
 	SocketChat.call(this,log,info,infobar.id);
 	
 	this.consoleid=con;
+	this.findlogid=fnd;
 	this.cmode="down";	//新しいログは上へ
 	
 	this.commandlog=[];	// コマンド履歴
@@ -737,6 +738,8 @@ CommandLineChat.prototype.prepareHottoMottoButton=function(){};
 CommandLineChat.prototype.prepareForm=function(){};
 CommandLineChat.prototype.init=function(){
 	SocketChat.prototype.init.apply(this);
+	
+	this.findlog=document.getElementById(this.findlogid);
 	
 	
 	this.console=document.getElementById(this.consoleid);
