@@ -723,6 +723,14 @@ function CommandLineChat(log,info,con){
 	
 	this.consoleid=con;
 	this.cmode="down";	//新しいログは上へ
+	
+	this.commandlog=[];	// コマンド履歴
+	this.commandlogindex=null;	//basho
+	
+	this.process=null;	//プロセス数
+//	this.accept=true;//プロセスの入力
+
+	this.isrom=null;	//ROMかどうか
 }
 CommandLineChat.prototype=new SocketChat;
 CommandLineChat.prototype.prepareHottoMottoButton=function(){};
@@ -732,17 +740,30 @@ CommandLineChat.prototype.init=function(){
 	
 	
 	this.console=document.getElementById(this.consoleid);
+	this.consoleo=this.console.getElementsByClassName("consoleoutput")[0];
 	this.command=document.createElement("input");
 	var p=document.createElement("p");
-	p.textContent="> ";
+	this.commandtopelement=document.createElement("span");
+	this.commandtopelement.textContent="> ";
+	p.appendChild(this.commandtopelement);
 	p.appendChild(this.command);
-	this.console.appendChild(p);
+	if(this.cmode=="up"){
+		//上へ進む
+		this.console.insertBefore(p,this.consoleo);
+	}else{
+		this.console.appendChild(p);
+	}
 	this.console.addEventListener("click",function(e){
 		this.cfocus();
 	}.bind(this),false);
 	if(localStorage.consoleheight)this.setConsoleHeight();
 	
+	// コンソール環境
+	var focus=false;
+	
 	document.addEventListener("keydown",keydown.bind(this),false);
+	this.command.addEventListener("focus",function(){focus=true},false);
+	this.command.addEventListener("blur",function(){focus=false},false);
 	
 	function keydown(e){
 		if(e.keyCode==13 || e.keyCode==27){
@@ -755,10 +776,33 @@ CommandLineChat.prototype.init=function(){
 				return;
 			}
 		}
-		if(e.keyCode==13){
+		if(e.keyCode==13 && !this.process){
 			this.doCommand(this.command.value);
 			this.command.value="";
 			this.cfocus();
+			return;
+		}
+/*		if(focus && this.process>0 && !this.accept){
+			e.preventDefault();
+			return;
+		}*/
+		if(focus && this.process && this.process.key){
+			if(!this.process.key(e))return;
+		}
+		if(focus && (e.keyCode==38 || e.keyCode==40)){
+			//上下
+			if(this.commandlogindex==null){
+				this.commandlogindex=this.commandlog.length-1;
+			}else if(e.keyCode==38){
+				this.commandlogindex--;
+				if(this.commandlogindex<0)this.commandlogindex=0;
+			}else{
+				this.commandlogindex++;
+				if(this.commandlogindex>=this.commandlog.length)this.commandlogindex=this.commandlog.length-1;
+			}
+			if(this.commandlog[this.commandlogindex]){
+				this.command.value=this.commandlog[this.commandlogindex];
+			}
 		}
 	}
 };
@@ -779,110 +823,43 @@ CommandLineChat.prototype.doCommand=function(str){
 		this.say(str);
 		return;
 	}
+	//履歴
+	this.commandlog.push(str);
+	this.commandlogindex=null;
+	
 	this.cprint("> "+str);
 	str=str.slice(result[0].length);
-	switch(result[1]){
-	case "in":case "out":
-		// 入室
-		if(str){
-			localStorage.socketchat_name=str;
-		}
-		this.inout_notify(str ? str : localStorage.socketchat_name);
-		break;
-	case "motto":
-		// HottoMotto
-		this.HottoMotto();
-		break;
-	case "go":
-		//移動
-		switch(str){
-		case "log":case "apiclient":case "list":
-			location.href="/"+str;
-			break;
-		default:
-			location.href=str;
-		}
-		break;
-	case "volume":
-		if(str){
-			vo=parseInt(str);
-			if(isNaN(vo) || vo<0 || 100<vo){
-				this.cprint("volume: invalid volume "+str);
-				break;
-			}
-			localStorage.soc_highchat_audiovolume=vo;
-			this.audio.volume=vo/100;
-		}else{
-			this.cprint(localStorage.soc_highchat_audiovolume);
-		}
-		break;
-	case "set":
-		var args=parse(str,2);
-		switch(args[0]){
-		case "syschar":case "systemchar":	//命令文字
-			if(args[1].length!=1){
-				this.cprint("set "+args[0]+": invalid char "+args[1]);
-				break;
-			}
-			localStorage.syschar=args[1];
-			break;
-		case "height":	//コンソール高さ
-			if(isNaN(args[1]) || parseInt(args[1])<0){
-				this.cprint("set "+args[0]+": invalid value "+args[1]);
-				break;
-			}
-			localStorage.consoleheight=args[1]+"em";
-			this.setConsoleHeight();
-			break;
-		default:
-			this.cprint("set: unknown settings: "+args[0]);
-			break;
-		}
-		break;
-	case "gyazo":case "gyoza":
-		if(str){
-			vo=parseInt(str);
-			if(isNaN(vo) || vo<0 || 2<vo){
-				this.cprint("gyazo: invalid value "+str);
-			}else{
-				localStorage.soc_highchat_gyoza=vo;
-			}
-		}
-		["餃子無展開","餃子オンマウス","餃子常時"].forEach(function(x,i){
-			this.cprint( (localStorage.soc_highchat_gyoza==i ? "*"+i : i+" ")+
-				": "+x);
-		},this);
-		break;
-	case "clear":case "clean":
-		var spc=this.command.parentNode;
-		while(this.console.firstChild)this.console.removeChild(this.console.firstChild);
-		this.console.appendChild(spc);
-		break;
-	case "help":
-		this.cprint([
-"command usage: "+localStorage.syschar+"command",
-"in, out",
-"    inout the chatroom",
-"motto",
-"    HottoMotto",
-"volume [number]",
-"    show/set volume",
-"set (param) (value)",
-"    set options",
-"        systemchar",
-"        height",
-"gyazo [num], gyoza [num]",
-"    show/set gyoza mode",
-"clear, clean",
-"    clean the console",
-		].join("\n"));
-		break;
-	default:
+	if(!this.commands[result[1]]){
 		this.cprint(result[1]+": No such command");
+		return;
 	}
+	this.commands[result[1]](new CommandLineChat.Process(this,str));
 	
+	
+};
+CommandLineChat.prototype.chideinput=function(){
+	this.command.disabled=true;
+	this.command.parentNode.hidden=true;
+};
+CommandLineChat.prototype.copeninput=function(topstr){
+	if(topstr!=null){
+		this.commandtopelement.textContent=topstr ? topstr+" " : "";
+	}
+	this.command.disabled=false;
+	this.command.parentNode.hidden=false;
+
+};
+CommandLineChat.Process=function(chat,arg){
+	this.chat=chat;
+	this.arg=arg;
+	
+	this.chat.chideinput();
+	
+	chat.process=this;
+}
+CommandLineChat.Process.prototype={
 	//スペース区切り
-	function parse(str,maxlen){
+	parse:function(str,maxlen){
 		var ret=[],result;
 		if(!maxlen)maxlen=1/0;
 		while(str && ret.length+1<maxlen){
@@ -904,19 +881,201 @@ CommandLineChat.prototype.doCommand=function(str){
 			ret.push(str);
 		}
 		return ret;
-	}
+	},
+	//出力
+	put:function(str){
+		this.chat.cprint(str);
+	},
+	print:function(str){
+		this.chat.cprint(str);
+	},
+	//入力
+	input:function(cb){
+		//複数行対応
+		this.chat.copeninput("");
+		var result=""
+		//入力
+		this.key=function(e){
+			if(e.keyCode==13){
+				//Shift+Enter
+				this.print(this.chat.command.value);
+				result+=this.chat.command.value+"\n";
+				this.chat.command.value="";
+				this.chat.cfocus();
+				if(!e.shiftKey){
+					//終了
+					this.chat.chideinput();
+					this.key=null;
+					cb(result);
+				}
+			}
+		}.bind(this);
+	},
+	//終了
+	die:function(chat){
+		this.chat.process=null;
+		this.chat.copeninput("> ");
+	},
 };
-CommandLineChat.prototype.cprint=function(str){
-	str.split("\n").forEach(function(line){
-		var p=document.createElement("p");
-		p.textContent=line;
-		if(this.cmode=="up"){
-			//上へ
-			this.console.insertBefore(p,this.command.parentNode.nextSibling);
-		}else{
-			this.console.insertBefore(p,this.command.parentNode);
+
+CommandLineChat.prototype.commands=(function(){
+	var obj={};
+	obj["in"]=function(process){
+		if(!process.chat.isrom){
+			process.print("You are already in the room.");
+			process.die();
+			return;
 		}
-	},this);
+		var str;
+		if(str=process.arg){
+			localStorage.socketchat_name=str;
+		}
+		process.chat.inout_notify(str ? str : localStorage.socketchat_name);
+		process.die();
+	};
+	obj.out=function(process){
+		if(process.chat.isrom){
+			process.print("You are not in the room.");
+			process.die();
+			return;
+		}
+		var str;
+		if(str=process.arg){
+			localStorage.socketchat_name=str;
+		}
+		process.chat.inout_notify(str ? str : localStorage.socketchat_name);
+		process.die();
+	};
+	obj.motto=function(process){
+		process.chat.HottoMotto();
+		process.die();
+	};
+	obj.volume=function(process){
+		if(process.arg){
+			var vo=parseInt(process.arg);
+			if(isNaN(vo) || vo<0 || 100<vo){
+				process.print("volume: invalid volume "+process.arg);
+			}else{
+				localStorage.soc_highchat_audiovolume=vo;
+				process.chat.audio.volume=vo/100;
+			}
+		}else{
+			process.print(localStorage.soc_highchat_audiovolume);
+		}
+		process.die();
+		
+	};
+	obj.set=function(process){
+		var args=process.parse(process.arg,2);
+		switch(args[0]){
+		case "syschar":case "systemchar":	//命令文字
+			if(args[1].length!=1){
+				process.print("set "+args[0]+": invalid char "+args[1]);
+				break;
+			}
+			localStorage.syschar=args[1];
+			break;
+		case "height":	//コンソール高さ
+			if(isNaN(args[1]) || parseInt(args[1])<0){
+				process.print("set "+args[0]+": invalid value "+args[1]);
+				break;
+			}
+			localStorage.consoleheight=args[1]+"em";
+			process.chat.setConsoleHeight();
+			break;
+		default:
+			process.print("set: unknown settings: "+args[0]);
+			break;
+		}
+		process.die();
+	};
+	obj.gyazo=obj.gyoza=function(process){
+		if(process.arg){
+			vo=parseInt(process.arg);
+			if(isNaN(vo) || vo<0 || 2<vo){
+				process.print("gyazo: invalid value "+process.arg);
+			}else{
+				localStorage.soc_highchat_gyoza=vo;
+			}
+		}
+		["餃子無展開","餃子オンマウス","餃子常時"].forEach(function(x,i){
+			process.print( (localStorage.soc_highchat_gyoza==i ? "*"+i : i+" ")+
+				": "+x);
+		});
+		process.die();
+	};
+	obj.clean=obj.clear=function(process){
+		var spc=process.chat.command.parentNode;
+		while(process.chat.console.firstChild)process.chat.console.removeChild(process.chat.console.firstChild);
+		process.chat.console.appendChild(spc);
+		process.die();
+	};
+	obj.help=function(process){
+		process.print([
+"command usage: "+localStorage.syschar+"command",
+"in, out",
+"    inout the chatroom",
+"motto",
+"    HottoMotto",
+"volume [number]",
+"    show/set volume",
+"set (param) (value)",
+"    set options",
+"        systemchar",
+"        height",
+"gyazo [num], gyoza [num]",
+"    show/set gyoza mode",
+"clear, clean",
+"    clean the console",
+"js",
+"    JavaScript console",
+		].join("\n"));
+		process.die();
+	};
+	obj.js=function(process){
+		process.print("Type '//bye' to finish the console.");
+		
+		waitforline();
+		
+		function waitforline(){
+			process.input(function(line){
+				if(line=="//bye" || line=="//bye\n"){
+					process.die();
+					return;
+				}
+				var console={log:function(){
+					Array.prototype.forEach.call(arguments,function(x){
+						process.put(x.toString()+" ");
+					});
+				}};
+				try{
+					process.print(eval(line));
+				}catch(e){
+					process.print(e);
+				}
+				waitforline();
+			});
+		}
+	};
+	return obj;
+
+/*	case "go":
+		//移動
+		switch(str){
+		case "log":case "apiclient":case "list":
+			location.href="/"+str;
+			break;
+		default:
+			location.href=str;
+		}
+		break;*/
+})();
+
+CommandLineChat.prototype.cprint=function(str){
+	this.cput(str+"\n");
+};
+CommandLineChat.prototype.cput=function(str){
+	this.consoleo.textContent+=str;
 	this.cscrollDown();
 };
 CommandLineChat.prototype.cfocus=function(){
@@ -931,6 +1090,7 @@ CommandLineChat.prototype.cscrollDown=function(){
 };
 CommandLineChat.prototype.userinfo=function(obj){
 	SocketChat.prototype.userinfo.apply(this,arguments);
+	this.isrom=obj.rom;
 	if(!obj.rom)this.cprint("Hello, "+obj.name);
 	
 };

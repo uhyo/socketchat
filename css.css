@@ -107,6 +107,10 @@ li.rom{
 	-o-transition:bottom 0.3s ease;
 	transition:bottom 0.3s ease;
 }
+pre.consoleoutput{
+	margin:0;
+	padding:0;
+}
 #console.open{
 	bottom:0;
 }
@@ -120,4 +124,5 @@ li.rom{
 	outline:none;
 	color:#ffffff;
 	background-color:transparent;
+	font-family:monospace;
 }
