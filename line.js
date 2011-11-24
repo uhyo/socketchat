@@ -945,7 +945,7 @@ CommandLineChat.Process.prototype={
 CommandLineChat.prototype.commands=(function(){
 	var obj={};
 	obj["in"]=function(process){
-		if(!process.chat.isrom){
+		if(process.chat.isrom===false){
 			process.print("You are already in the room.");
 			process.die();
 			return;
@@ -958,7 +958,7 @@ CommandLineChat.prototype.commands=(function(){
 		process.die();
 	};
 	obj.out=function(process){
-		if(process.chat.isrom){
+		if(process.chat.isrom===true){
 			process.print("You are not in the room.");
 			process.die();
 			return;
