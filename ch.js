@@ -10,8 +10,8 @@ exports.DB_USER="test";
 exports.DB_PASS="test";
 exports.HTTP_PORT = 8080;*/
 
-exports.CHAT_FIRST_LOG=30;	//最初どれだけログ表示するか
-exports.CHAT_MOTTO_LOG=30;	//HottoMotto時にログをどれだけ表示するか
+exports.CHAT_FIRST_LOG=50;	//最初どれだけログ表示するか
+exports.CHAT_MOTTO_LOG=5;	//HottoMotto時にログをどれだけ表示するか
 
 exports.CHAT_NAME_MAX_LENGTH = 25;
 exports.CHAT_MAX_LENGTH = 1000;
@@ -248,10 +248,24 @@ User.prototype.says=function(data){
 		    "ip":this.ip,
 		    "time":Date.now()
 		    };
-	if(data.response)logobj.response=data.response;
+	var say=makelog.bind(null,this,logobj);
+	if(data.response){
+		try{
+			log.findOne(db.bson_serializer.ObjectID.createFromHexString(data.response),function(err,obj){
+				if(obj){
+					logobj.response=data.response;
+					say();
+				}
+			}.bind(this));
+		}catch(e){
+		}
+	}else{
+		say();
+	}
+	
 
 
-	makelog(this,logobj);
+	//makelog(this,logobj);
 };
 User.prototype.inout=function(data){
 	this.rom = !this.rom;
