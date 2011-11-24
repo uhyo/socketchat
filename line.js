@@ -765,6 +765,11 @@ CommandLineChat.prototype.init=function(){
 	this.command.addEventListener("focus",function(){focus=true},false);
 	this.command.addEventListener("blur",function(){focus=false},false);
 	
+	//移動用フォーム
+	this.form=document.createElement("form");
+	this.form.method="get";
+	this.form.target="_blank";
+	
 	function keydown(e){
 		if(this.process && this.process.key){
 			if(!this.process.key(e))return;
@@ -1096,6 +1101,13 @@ CommandLineChat.prototype.commands=(function(){
 			});
 		}
 	};
+	obj.go=function(process){
+		process.chat.newwin(process.arg);
+		process.die();
+	};
+/*	obj.g=function(process){
+		process.chat.newwin("http://www.google.co.jp/search?q="+encodeURIComponent(process.arg));
+	};*/
 	
 	
 	obj.sl=function(process){
@@ -1223,5 +1235,9 @@ CommandLineChat.prototype.userinfo=function(obj){
 CommandLineChat.prototype.setConsoleHeight=function(){
 	var st=document.styleSheets.item(0);
 	st.insertRule("#console { height: "+localStorage.consoleheight+"; bottom:-"+localStorage.consoleheight+"}",st.cssRules.length);
+};
+CommandLineChat.prototype.newwin=function(url){
+	this.form.action=url;
+	this.form.submit();
 };
 
