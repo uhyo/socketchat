@@ -766,6 +766,10 @@ CommandLineChat.prototype.init=function(){
 	this.command.addEventListener("blur",function(){focus=false},false);
 	
 	function keydown(e){
+		if(this.process && this.process.key){
+			if(!this.process.key(e))return;
+		}
+		if(this.process && !this.process.key)return;
 		if(e.keyCode==13 || e.keyCode==27){
 			//Enter,Esc
 			if(!this.console.classList.contains("open")){
@@ -786,9 +790,6 @@ CommandLineChat.prototype.init=function(){
 			e.preventDefault();
 			return;
 		}*/
-		if(focus && this.process && this.process.key){
-			if(!this.process.key(e))return;
-		}
 		if(focus && (e.keyCode==38 || e.keyCode==40)){
 			//上下
 			if(this.commandlogindex==null){
@@ -917,6 +918,18 @@ CommandLineChat.Process.prototype={
 			}
 		}.bind(this);
 	},
+	//キーひとつ trueを返すと続行
+	getkey:function(cb){
+		this.chat.copeninput("");
+		this.key=function(e){
+			e.preventDefault();
+			if(!cb(e)){
+				//this.chat.chideinput();
+				this.key=null;
+			}
+			return false;
+		}.bind(this);
+	},
 	//終了
 	die:function(chat){
 		this.chat.process=null;
@@ -1035,6 +1048,8 @@ CommandLineChat.prototype.commands=(function(){
 "    clean the console",
 "js",
 "    JavaScript console",
+"sc, scroll",
+"    Scroll with arrow keys",
 		].join("\n"));
 		process.die();
 	};
@@ -1063,6 +1078,26 @@ CommandLineChat.prototype.commands=(function(){
 			});
 		}
 	};
+	obj.sc=obj.scroll=function(process){
+		waitforkey();
+		function waitforkey(){
+			process.getkey(function(e){
+				if(e.keyCode==27){
+					//Esc
+					process.die();
+					return false;
+				}
+				if(e.keyCode==38){
+					window.scrollBy(0,-120);
+				}else if(e.keyCode==40){
+					window.scrollBy(0,120);
+				}
+				return true;
+			});
+		}
+	};
+	
+	
 	obj.sl=function(process){
 		var sl_steam=[
 ["                      (@@) (  ) (@)  ( )  @@    ()    @     O     @     O      @",
