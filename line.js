@@ -739,6 +739,8 @@ function CommandLineChat(log,info,con,fnd){
 //	this.accept=true;//プロセスの入力
 
 	this.isrom=null;	//ROMかどうか
+	
+	this.autoin_flg=false;	//autoin処理が行われたかどうか
 }
 CommandLineChat.prototype=new SocketChat;
 CommandLineChat.prototype.prepareHottoMottoButton=function(){};
@@ -779,9 +781,6 @@ CommandLineChat.prototype.init=function(){
 	this.form=document.createElement("form");
 	this.form.method="get";
 	this.form.target="_blank";
-	
-	//ファイルシステム
-	this.fs=new StorageFS("socketchat");
 	
 	function keydown(e){
 		if(this.process && this.process.key){
@@ -894,7 +893,7 @@ CommandLineChat.Process.prototype={
 			}
 			result=str.match(/^\s*\"((?:\\\"|[^\"])+)\"\s*/);
 			if(result){
-				ret.push(result[1].replace("\\\"","\""));
+				ret.push(result[1].replace(/\\\"/g,"\""));
 				str=str.slice(result[0].length);
 				continue;
 			}
@@ -965,14 +964,26 @@ CommandLineChat.Process.prototype={
 CommandLineChat.prototype.commands=(function(){
 	var obj={};
 	obj["in"]=function(process){
+		var pr=process.parse(process.arg);
+		var str=pr.arg[0];	//名前
+		var oauto=pr.opt.indexOf("--auto")>=0;	// autoオプション
+		if(!str && oauto){
+			// autoフラグ解除
+			localStorage.removeItem("socketchat_autoin");
+			process.die();
+			return;
+		}
 		if(process.chat.isrom===false){
 			process.print("You are already in the room.");
 			process.die();
 			return;
 		}
-		var str;
-		if(str=process.arg){
+		if(str=pr.arg[0]){
 			localStorage.socketchat_name=str;
+			if(oauto){
+				// 次から自動入室
+				localStorage.socketchat_autoin=str;
+			}
 		}
 		process.chat.inout_notify(str ? str : localStorage.socketchat_name);
 		process.die();
@@ -1057,8 +1068,12 @@ CommandLineChat.prototype.commands=(function(){
 	obj.help=function(process){
 		process.print([
 "command usage: "+localStorage.syschar+"command",
-"in, out",
-"    inout the chatroom",
+"in [name] [--auto]",
+"    enter the chatroom",
+"    --auto(with name): auto-enter at the next time",
+"    --auto(with no name): don't auto-enter",
+"out",
+"    quit the chatroom",
 "motto",
 "    HottoMotto",
 "volume [number]",
@@ -1270,9 +1285,14 @@ CommandLineChat.prototype.cscrollDown=function(){
 	
 };
 CommandLineChat.prototype.userinfo=function(obj){
+	console.log("userinfo",obj);
 	SocketChat.prototype.userinfo.apply(this,arguments);
 	this.isrom=obj.rom;
 	if(!obj.rom)this.cprint("Hello, "+obj.name);
+	if(obj.rom && !this.autoin_flg && localStorage.socketchat_autoin){
+		this.inout_notify(localStorage.socketchat_autoin);
+	}
+	this.autoin_flg=true;
 	
 };
 CommandLineChat.prototype.setConsoleHeight=function(){
