@@ -342,6 +342,9 @@ ChatClient.prototype={
 		
 		this.usernumber.dataset.actives=this.usernumber.dataset.roms=0;
 		this.bots=[];
+		this.disip=[];	//IP list
+		if(localStorage.socketchat_disip)this.disip=JSON.parse(localStorage.socketchat_disip);
+		
 		
 		this.responding_to=null;	//dd
 		
@@ -418,6 +421,10 @@ ChatClient.prototype={
 		}
 	},
 	recv:function(obj){
+		if(this.disip.indexOf(obj.ip)>=0){
+			// disip
+			return;
+		}
 		this.bots.forEach(function(func){func(obj,this)},this);
 		if(this.flags.sound){
 			this.audio.play();
@@ -773,6 +780,9 @@ CommandLineChat.prototype.init=function(){
 	this.form.method="get";
 	this.form.target="_blank";
 	
+	//ファイルシステム
+	this.fs=new StorageFS("socketchat");
+	
 	function keydown(e){
 		if(this.process && this.process.key){
 			if(!this.process.key(e))return;
@@ -869,12 +879,16 @@ CommandLineChat.Process=function(chat,arg){
 CommandLineChat.Process.prototype={
 	//スペース区切り
 	parse:function(str,maxlen){
-		var ret=[],result;
+		var ret=[],opt=[],result;
 		if(!maxlen)maxlen=1/0;
 		while(str && ret.length+1<maxlen){
 			result=str.match(/^\s*([^\"\s]+)\s*/);
 			if(result){
-				ret.push(result[1]);
+				if(/^-/.test(result[1])){
+					opt.push(result[1]);
+				}else{
+					ret.push(result[1]);
+				}
 				str=str.slice(result[0].length);
 				continue;
 			}
@@ -889,7 +903,10 @@ CommandLineChat.Process.prototype={
 		if(str){
 			ret.push(str);
 		}
-		return ret;
+		return {
+			arg:ret,
+			opt:opt,
+		};
 	},
 	//出力
 	put:function(str){
@@ -993,7 +1010,7 @@ CommandLineChat.prototype.commands=(function(){
 		
 	};
 	obj.set=function(process){
-		var args=process.parse(process.arg,2);
+		var args=process.parse(process.arg,2).arg;
 		switch(args[0]){
 		case "syschar":case "systemchar":	//命令文字
 			if(args[1].length!=1){
@@ -1058,6 +1075,8 @@ CommandLineChat.prototype.commands=(function(){
 "    JavaScript console",
 "sc, scroll",
 "    Scroll with arrow keys",
+"disip [-d] [ip] ",
+"    set/remove ip into/from disip list",
 		].join("\n"));
 		process.die();
 	};
@@ -1106,6 +1125,27 @@ CommandLineChat.prototype.commands=(function(){
 	};
 	obj.go=function(process){
 		process.chat.newwin(process.arg);
+		process.die();
+	};
+	obj.disip=function(process){
+		var pr=process.parse(process.arg);
+		var ip=pr.arg[0];
+		if(ip){
+			if(pr.opt.indexOf("-d")>=0){
+				//削除
+				process.chat.disip=process.chat.disip.filter(function(x){
+					return x!=ip;
+				});
+			}else{
+				if(process.chat.disip.some(function(x){return x==ip})){
+					process.print("disip: already exists:"+ip);
+				}else{
+					process.chat.disip.push(ip);
+				}
+			}
+			localStorage.socketchat_disip=JSON.stringify(process.chat.disip);
+		}
+		process.chat.disip.forEach(process.print,process);
 		process.die();
 	};
 /*	obj.g=function(process){
