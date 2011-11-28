@@ -233,17 +233,23 @@ HighChatMaker.prototype.make=function(obj){
 						var a=document.createElement("a");
 						a.target="_blank";
 						a.href="http://myazo.net:81/data/"+res2[1]+".png";
-						/*a.classList.add("gyoza");
+						a.classList.add("gyoza");
 						if(this.gyoza==2){
 							//餃子常時展開
 							var img=document.createElement("img");
-							img.src="http://img.gyazo.com/a/"+res2[1]+".png";
 							img.classList.add("thumbnail");
+							img.hidden=true;
 							a.appendChild(img);
+							var temp_node=document.createTextNode("[Myoza...]");
+							a.appendChild(temp_node);
+							img.addEventListener('load',function(e){
+								a.removeChild(temp_node);
+								img.hidden=false;
+							},false);
+							img.src="http://myazo.net:81/small.php?img="+res2[1];							
 						}else{
-							a.textContent="[Gyazo]";
-						}*/
-						a.textContent="[Myazo]";
+							a.textContent="[Myazo]";
+						}
 						node=node.splitText(res2[0].length);
 						node.parentNode.replaceChild(a,node.previousSibling);
 						continue;
@@ -310,14 +316,27 @@ HighChatMaker.prototype.gyozamouse=function(e){
 	var t=e.target;
 	if(t.classList.contains("gyoza")){
 		var result=t.href.match(/^http:\/\/gyazo\.com\/([0-9a-f]{32})\.png$/);
-		if(!result)return;
-		var img=document.createElement("img");
-		img.src="http://gyazo.com/thumb/"+result[1]+".png";
+		if(result){
+			var img=document.createElement("img");
+			img.src="http://gyazo.com/thumb/"+result[1]+".png";
 		
-		img.addEventListener("load",ev,false);
-		img.style.display="none";
-		t.textContent="[Gyoza...]";
-		t.appendChild(img);
+			img.addEventListener("load",ev,false);
+			img.style.display="none";
+			t.textContent="[Gyoza...]";
+			t.appendChild(img);
+			return;
+		}
+		result=t.href.match(/^http:\/\/myazo.net:81\/data\/([0-9a-fA-F]{32})\.png$/);
+		if(result){
+			var img=document.createElement("img");
+			img.src="http://myazo.net:81/small.php?img="+result[1];
+		
+			img.addEventListener("load",ev,false);
+			img.style.display="none";
+			t.textContent="[Myoza...]";
+			t.appendChild(img);
+			return;
+		}
 	}
 	
 	function ev(e){
