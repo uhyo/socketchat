@@ -514,6 +514,10 @@ function addSocketUser(socket,lastid){
 	if(zombie && !zombie_rom){
 		//自動入室
 		zombie.inout({name:zombie.name});
+	}else{
+		//情報を送ってあげる
+		var obj={"rom":user.rom, id: user.id, name: user.name};
+		socket.emit("userinfo",obj);
 	}
 	return user;
 }
