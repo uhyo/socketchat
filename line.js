@@ -893,6 +893,7 @@ CommandLineChat.Process=function(chat,arg){
 	this.chat.chideinput();
 	
 	chat.process=this;
+	this.saves=[];
 }
 CommandLineChat.Process.prototype={
 	//スペース区切り
@@ -939,6 +940,15 @@ CommandLineChat.Process.prototype={
 			this.chat.consoleo.textContent=this.chat.consoleo.textContent.replace(/.*\n?$/,"");
 		}
 	},
+	//新しいコンテキスト
+	newContext:function(){
+		this.saves.push(this.chat.consoleo.textContent);
+		this.chat.consoleo.textContent="";
+	},
+	//もとに戻す
+	restoreContext:function(){
+		this.chat.consoleo.textContent=this.saves.pop();
+	},
 	//入力
 	input:function(cb){
 		//複数行対応
@@ -977,6 +987,10 @@ CommandLineChat.Process.prototype={
 	die:function(chat){
 		this.chat.process=null;
 		this.chat.copeninput(">");
+	},
+	//松尾の改行
+	chomp:function(str){
+		return str.replace(/\n+$/,"");
 	},
 };
 
@@ -1182,6 +1196,64 @@ CommandLineChat.prototype.commands=(function(){
 		process.chat.disip.forEach(process.print,process);
 		process.die();
 	};
+	obj.resp=function(process){
+		//返信を行う
+		
+		var index=0,maxlen=10;
+		
+		process.newContext();
+
+		process.getkey(function(e){
+			if(e.keyCode==38){
+				index--;
+				if(index<0)index=0;
+				process.deletelines(maxlen);
+				view();
+			}else if(e.keyCode==40){
+				index++;
+				process.deletelines(maxlen);
+				view();
+			}else if(e.keyCode==27){
+				//Esc
+				end();
+				return false;
+			}else if(e.keyCode==13){
+				//Enter
+				var lc=process.chat.log.childNodes;
+				var c=lc[index];
+				if(!c){
+					end();
+					return false;
+				}
+				respto=c.dataset.id;
+				process.input(function(inp){
+					inp=process.chomp(inp);
+					if(inp){
+						process.chat.say(inp,respto);
+					}
+					end();
+				});
+				return true;	//input側で新たなkeyを設定するから（暫定処置）
+			}
+			return true;
+		});
+		view();
+		
+		function view(){
+			var lc=process.chat.log.childNodes;
+			var st=Math.max(0,Math.floor(index-maxlen/2));
+			for(var i=0;i<maxlen;i++){
+				var m=st+i;
+				if(m>=lc.length)break;
+				process.print((m==index?"* ":"")+ lc[m].textContent);
+			}
+		}
+		function end(){
+			//終了
+			process.restoreContext();
+			process.die();
+		}	
+	};
 /*	obj.g=function(process){
 		process.chat.newwin("http://www.google.co.jp/search?q="+encodeURIComponent(process.arg));
 	};*/
@@ -1247,6 +1319,7 @@ CommandLineChat.prototype.commands=(function(){
 			spaces+=" ";	//スペースを作る
 		}
 		var le=0;	//減った
+		process.newContext();
 		sl_move();
 		function sl_move(){
 			if(counter){
@@ -1266,24 +1339,14 @@ CommandLineChat.prototype.commands=(function(){
 			if(le<sl_length){
 				setTimeout(sl_move,sl_speed);
 			}else{
-				process.deletelines(16);
+				//process.deletelines(16);
+				process.restoreContext();
 				process.die();
 			}
 		}
 		
 	};
 	return obj;
-
-/*	case "go":
-		//移動
-		switch(str){
-		case "log":case "apiclient":case "list":
-			location.href="/"+str;
-			break;
-		default:
-			location.href=str;
-		}
-		break;*/
 })();
 
 CommandLineChat.prototype.cprint=function(str){
