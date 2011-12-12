@@ -1125,6 +1125,8 @@ CommandLineChat.prototype.commands=(function(){
 "    Scroll with arrow keys",
 "disip [-d] [ip] ",
 "    set/remove ip into/from disip list",
+"resp",
+"    response to a comment",
 		].join("\n"));
 		process.die();
 	};
