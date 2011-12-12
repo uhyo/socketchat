@@ -227,12 +227,12 @@ HighChatMaker.prototype.make=function(obj){
 						node.parentNode.replaceChild(a,node.previousSibling);
 						continue;
 					}
-					var res2=res[0].match(/^http:\/\/myazo\.net(?:\:81|\:80)?\/data\/([0-9a-f]{32})(?:\.png)?/);
+					var res2=res[0].match(/^http:\/\/myazo\.net\/([0-9a-f]{32})(?:\.png)?/);
 					if(res2){
 						//Gyazo
 						var a=document.createElement("a");
 						a.target="_blank";
-						a.href="http://myazo.net:81/data/"+res2[1]+".png";
+						a.href="http://myazo.net/"+res2[1]+".png";
 						a.classList.add("gyoza");
 						if(this.gyoza==2){
 							//餃子常時展開
@@ -246,7 +246,7 @@ HighChatMaker.prototype.make=function(obj){
 								a.removeChild(temp_node);
 								img.hidden=false;
 							},false);
-							img.src="http://myazo.net:81/small.php?img="+res2[1];							
+							img.src="http://myazo.net/s/"+res2[1]+".png";							
 						}else{
 							a.textContent="[Myazo]";
 						}
@@ -326,10 +326,10 @@ HighChatMaker.prototype.gyozamouse=function(e){
 			t.appendChild(img);
 			return;
 		}
-		result=t.href.match(/^http:\/\/myazo.net:81\/data\/([0-9a-fA-F]{32})\.png$/);
+		result=t.href.match(/^http:\/\/myazo.net\/([0-9a-fA-F]{32})\.png$/);
 		if(result){
 			var img=document.createElement("img");
-			img.src="http://myazo.net:81/small.php?img="+result[1];
+			img.src="http://myazo.net/s/"+result[1]+".png";
 		
 			img.addEventListener("load",ev,false);
 			img.style.display="none";
