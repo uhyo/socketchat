@@ -228,11 +228,11 @@ User.prototype.type="user";
 //says,inout,motto,idRequest
 User.prototype.says=function(data){
 	if(this.rom)return;
+	if(!data || !data.comment || !data.comment.length)return;
 	
 	if(data.comment.length>settings.CHAT_MAX_LENGTH){
 		return;
 	}
-	if(data.comment=="")return;
 
 	if(settings.CHAT_LIMIT_TIME>0){
 		var d=Date.now()-1000*settings.CHAT_LIMIT_TIME;

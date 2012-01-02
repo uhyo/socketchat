@@ -190,7 +190,9 @@ HighChatMaker.prototype.make=function(obj){
 					if(p){
 						//タグを閉じる
 						node.nodeValue=node.nodeValue.slice(res[0].length);
-						p.parentNode.appendChild(node);
+						//うしろにひとまるGOGOとかがあると挟まってしまうので修正
+						//p.parentNode.appendChild(node);
+						p.parentNode.insertBefore(node,p.nextSibling);
 					}else{
 						node=node.splitText(res[0].length);
 						continue;
