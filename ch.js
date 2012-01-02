@@ -11,7 +11,9 @@ exports.DB_PASS="test";
 exports.HTTP_PORT = 8080;*/
 
 exports.CHAT_FIRST_LOG=50;	//最初どれだけログ表示するか
-exports.CHAT_MOTTO_LOG=5;	//HottoMotto時にログをどれだけ表示するか
+exports.CHAT_MOTTO_LOG=50;	//HottoMotto時デフォルト時にログをどれだけ表示するか
+
+exports.CHAT_MOTTO_MAX_LOG=500;	//1回のHttoMottoで最大どれだけ表示するか
 
 exports.CHAT_NAME_MAX_LENGTH = 25;
 exports.CHAT_MAX_LENGTH = 1000;
@@ -300,8 +302,14 @@ User.prototype.inoutSplash=function(){
 //mottoの該当レス探す処理
 User.prototype.findMotto=function(data,callback){
 	var time=data.time;
+	var until=data.until;
 	if(!time)return;
-		log.find({"time":{$lt:time}},{"sort":[["time","desc"]],"limit":settings.CHAT_MOTTO_LOG}).toArray(callback);	
+	if(typeof until=="number"){
+		log.find({"time":{$lt:time,$gt:until}},{"sort":[["time","desc"]],"limit":settings.CHAT_MOTTO_MAX_LOG}).toArray(callback);
+	}else{
+	
+		log.find({"time":{$lt:time}},{"sort":[["time","desc"]],"limit":settings.CHAT_MOTTO_LOG}).toArray(callback);
+	}
 };
 //いなくなった！❾
 User.prototype.discon=function(){

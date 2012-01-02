@@ -653,8 +653,12 @@ SocketChat.prototype.inout_notify=function(name){
 SocketChat.prototype.say=function(comment,response){
 	this.socket.emit("say",{"comment":comment,"response":response?response:""});
 };
-SocketChat.prototype.HottoMotto=function(e){
-	this.socket.emit("motto",{"time":this.oldest_time});
+SocketChat.prototype.HottoMotto=function(e,until){
+	if(until){
+		this.socket.emit("motto",{"time":this.oldest_time,"until":until});
+	}else{
+		this.socket.emit("motto",{"time":this.oldest_time});
+	}
 };
 
 function APIChat(){
@@ -1037,6 +1041,19 @@ CommandLineChat.prototype.commands=(function(){
 		process.die();
 	};
 	obj.motto=function(process){
+		if(process.arg){
+			var pr=process.parse(process.arg);
+			var until=new Date(pr.arg[0]).getTime();
+			if(!isNaN(until)){
+				if(!(pr.opt.indexOf("--gmt")>=0 || pr.opt.indexOf("--utc")>=0)){
+					//ローカルで書いてあるからずらす
+					until+=(new Date).getTimezoneOffset()*60000
+				}
+				process.chat.HottoMotto(null,until);
+				process.die();
+				return;
+			}
+		}
 		process.chat.HottoMotto();
 		process.die();
 	};
@@ -1109,8 +1126,9 @@ CommandLineChat.prototype.commands=(function(){
 "    --auto(with no name): don't auto-enter",
 "out",
 "    quit the chatroom",
-"motto",
+"motto [until] [--gmt] [--utc]",
 "    HottoMotto",
+"      until(is exists): ex) 2012-01-01",
 "volume [number]",
 "    show/set volume",
 "set (param) (value)",
