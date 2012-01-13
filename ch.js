@@ -59,14 +59,14 @@ app.get('/chalog', function(req, res){
 });
 app.get(/^\/api\/(.*)$/, function(req,res){
 	api(req.params[0],req,res);
-})
+});
 app.get('/show', function(req, res){
 	res.send({
 		users: users,
 		users_next: users_next,
 		users_s: users_s
 	},{"Content-Type":"text/javascript; charset=UTF-8"});
-})
+});
 
 var log;
 //データベース使用準備
@@ -640,6 +640,7 @@ function api(mode,req,res){
 
 
 function chalog(query,callback){
+	console.log(query);
 	var page=parseInt(query.page) || 0;
 	var value=parseInt(query.value) || 500;
 	if(value>5000)value=5000;
@@ -650,14 +651,14 @@ function chalog(query,callback){
 	if(page)optobj.skip=page*value;
 	optobj.limit=value;
 	
-	if(query.starttime){
-		queryobj.time={$gte:query.starttime};
+	if(!isNaN(query.starttime)){
+		queryobj.time={$gte:parseInt(query.starttime)};
 	}
-	if(query.endtime){
+	if(!isNaN(query.endtime)){
 		if(queryobj.time){
-			queryobj.time["$lte"]=query.endtime;
+			queryobj.time["$lte"]=parseInt(query.endtime);
 		}else{
-			queryobj.time={$lte:query.endtime};
+			queryobj.time={$lte:parseInt(query.endtime)};
 		}
 	}
 	if(query.name){
