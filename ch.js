@@ -640,7 +640,6 @@ function api(mode,req,res){
 
 
 function chalog(query,callback){
-	console.log(query);
 	var page=parseInt(query.page) || 0;
 	var value=parseInt(query.value) || 500;
 	if(value>5000)value=5000;
