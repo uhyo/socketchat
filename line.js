@@ -211,17 +211,19 @@ HighChatMaker.prototype.make=function(obj){
 						a.classList.add("gyoza");
 						if(this.gyoza==2){
 							//餃子常時展開
-							var img=document.createElement("img");
-							img.classList.add("thumbnail");
-							img.hidden=true;
-							a.appendChild(img);
-							var temp_node=document.createTextNode("[Gyoza...]");
-							a.appendChild(temp_node);
-							img.addEventListener('load',function(e){
-								a.removeChild(temp_node);
-								img.hidden=false;
-							},false);
-							img.src="http://gyazo.com/thumb/"+res2[1]+".png";							
+							(function(a){
+								var img=document.createElement("img");
+								img.classList.add("thumbnail");
+								img.hidden=true;
+								a.appendChild(img);
+								var temp_node=document.createTextNode("[Gyoza...]");
+								a.appendChild(temp_node);
+								img.addEventListener('load',function(e){
+									a.removeChild(temp_node);
+									img.hidden=false;
+								},false);
+								img.src="http://gyazo.com/thumb/"+res2[1]+".png";
+							})(a);
 						}else{
 							a.textContent="[Gyazo]";
 						}
@@ -238,17 +240,19 @@ HighChatMaker.prototype.make=function(obj){
 						a.classList.add("gyoza");
 						if(this.gyoza==2){
 							//餃子常時展開
-							var img=document.createElement("img");
-							img.classList.add("thumbnail");
-							img.hidden=true;
-							a.appendChild(img);
-							var temp_node=document.createTextNode("[Myoza...]");
-							a.appendChild(temp_node);
-							img.addEventListener('load',function(e){
-								a.removeChild(temp_node);
-								img.hidden=false;
-							},false);
-							img.src="http://myazo.net/s/"+res2[1]+".png";							
+							(function(a){
+								var img=document.createElement("img");
+								img.classList.add("thumbnail");
+								img.hidden=true;
+								a.appendChild(img);
+								var temp_node=document.createTextNode("[Myoza...]");
+								a.appendChild(temp_node);
+								img.addEventListener('load',function(e){
+									a.removeChild(temp_node);
+									img.hidden=false;
+								},false);
+								img.src="http://myazo.net/s/"+res2[1]+".png";
+							})(a);
 						}else{
 							a.textContent="[Myazo]";
 						}
