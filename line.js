@@ -297,7 +297,7 @@ HighChatMaker.prototype.make=function(obj){
 				nodes.push(node.childNodes[i]);
 			}
 			nodes.forEach(function(x){
-				if(x.parentNode.isSameNode(node))
+				if(x.parentNode===node)
 					parse(x);
 			});
 		}
@@ -584,7 +584,7 @@ ChatClient.prototype={
 	},
 	click:function(e){
 		var t=e.target;
-		if(t.isSameNode(this.responding_tip)){
+		if(t===this.responding_tip){
 			e.stopPropagation();
 			
 			document.forms["comment"].elements["response"].value=this.responding_tip.dataset.to;
