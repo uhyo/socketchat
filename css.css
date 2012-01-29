@@ -67,6 +67,9 @@ span.s{
 span.small{
 	font-size:smaller;
 }
+span.code{
+	font-family:monospace;
+}
 
 div.forms form{
 	display:inline-block;
