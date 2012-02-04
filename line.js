@@ -141,7 +141,7 @@ HighChatMaker.prototype.init=function(){
 HighChatMaker.prototype.make=function(obj){
 	var df=LineMaker.prototype.make.apply(this,arguments);
 	var parse=_parse.bind(this);
-	var allowed_tag=["s","small"];
+	var allowed_tag=["s","small","code"];
 	
 	var dd=df.childNodes.item(1);
 	parse(dd);
