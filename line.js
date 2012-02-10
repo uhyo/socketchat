@@ -138,6 +138,41 @@ HighChatMaker.prototype.init=function(){
 	}.bind(this),false);
 	this.infobar.appendChild(audioc);
 };
+HighChatMaker.gyazoSetting = [
+	{
+		thumb: true,
+		url: {
+			image: "http://gyazo.com/",
+			thumb: "http://gyazo.com/thumb/",
+		},
+		text: {
+			normal: "[Gyazo]",
+			opening: "[Gyoza…]"
+		}
+	},
+	{
+		thumb: true,
+		url: {
+			image: "http://myazo.net/",
+			thumb: "http://myazo.net/s/",
+		},
+		text: {
+			normal: "[Myazo]",
+			opening: "[Myoza…]"
+		}
+	},
+	{
+		thumb: false,
+		url: {
+			image: "http://g.81.la/",
+			thumb: null,
+		},
+		text: {
+			normal: "[81g]",
+			opening: "[81kg…]"
+		}
+	}
+];
 HighChatMaker.prototype.make=function(obj){
 	var df=LineMaker.prototype.make.apply(this,arguments);
 	var parse=_parse.bind(this);
@@ -202,71 +237,48 @@ HighChatMaker.prototype.make=function(obj){
 				//リンク
 				res=node.nodeValue.match(/^https?:\/\/\S+/);
 				if(res){
-					var res2=res[0].match(/^http:\/\/gyazo\.com\/([0-9a-f]{32})(?:\.png)?/);
-					if(res2){
+					var matched=false;
+					for(var i=0, l=HighChatMaker.gyazoSetting.length; i<l; i++){
+						var settingObj = HighChatMaker.gyazoSetting[i];
+						var res2=res[0].match(new RegExp("^"+settingObj.url.image.replace(".", "\\.")+"([0-9a-f]{32})(?:\\.png)?$"));
+						if(!res2) continue;
+						
 						//Gyazo
 						var a=document.createElement("a");
 						a.target="_blank";
-						a.href="http://gyazo.com/"+res2[1]+".png";
+						a.href=settingObj.url.image+res2[1]+".png";
 						a.classList.add("gyoza");
-						if(this.gyoza==2){
+						if(settingObj.thumb && this.gyoza==2){
 							//餃子常時展開
 							(function(a){
 								var img=document.createElement("img");
 								img.classList.add("thumbnail");
 								img.hidden=true;
 								a.appendChild(img);
-								var temp_node=document.createTextNode("[Gyoza...]");
+								var temp_node=document.createTextNode(settingObj.text.opening);
 								a.appendChild(temp_node);
 								img.addEventListener('load',function(e){
 									a.removeChild(temp_node);
 									img.hidden=false;
 								},false);
-								img.src="http://gyazo.com/thumb/"+res2[1]+".png";
+								img.src=settingObj.url.thumb+res2[1]+".png";
 							})(a);
 						}else{
-							a.textContent="[Gyazo]";
+							a.textContent=settingObj.text.normal;
 						}
 						node=node.splitText(res2[0].length);
 						node.parentNode.replaceChild(a,node.previousSibling);
-						continue;
+						matched=true;
+						break;
 					}
-					var res2=res[0].match(/^http:\/\/myazo\.net\/([0-9a-f]{32})(?:\.png)?/);
-					if(res2){
-						//Gyazo
-						var a=document.createElement("a");
-						a.target="_blank";
-						a.href="http://myazo.net/"+res2[1]+".png";
-						a.classList.add("gyoza");
-						if(this.gyoza==2){
-							//餃子常時展開
-							(function(a){
-								var img=document.createElement("img");
-								img.classList.add("thumbnail");
-								img.hidden=true;
-								a.appendChild(img);
-								var temp_node=document.createTextNode("[Myoza...]");
-								a.appendChild(temp_node);
-								img.addEventListener('load',function(e){
-									a.removeChild(temp_node);
-									img.hidden=false;
-								},false);
-								img.src="http://myazo.net/s/"+res2[1]+".png";
-							})(a);
-						}else{
-							a.textContent="[Myazo]";
-						}
-						node=node.splitText(res2[0].length);
-						node.parentNode.replaceChild(a,node.previousSibling);
-						continue;
-					}else{
-						var a=document.createElement("a");
-						a.href=res[0];
-						a.target="_blank";
-						a.textContent=res[0];
-						node=node.splitText(res[0].length);
-						node.parentNode.replaceChild(a,node.previousSibling);
-					}
+					if(matched) continue;
+						
+					var a=document.createElement("a");
+					a.href=res[0];
+					a.target="_blank";
+					a.textContent=res[0];
+					node=node.splitText(res[0].length);
+					node.parentNode.replaceChild(a,node.previousSibling);
 					continue;
 				}
 				//正男リンク
@@ -321,27 +333,20 @@ HighChatMaker.prototype.gyozabutton=function(e){
 HighChatMaker.prototype.gyozamouse=function(e){
 	var t=e.target;
 	if(t.classList.contains("gyoza")){
-		var result=t.href.match(/^http:\/\/gyazo\.com\/([0-9a-f]{32})\.png$/);
-		if(result){
-			var img=document.createElement("img");
-			img.src="http://gyazo.com/thumb/"+result[1]+".png";
-		
-			img.addEventListener("load",ev,false);
-			img.style.display="none";
-			t.textContent="[Gyoza...]";
-			t.appendChild(img);
-			return;
-		}
-		result=t.href.match(/^http:\/\/myazo.net\/([0-9a-fA-F]{32})\.png$/);
-		if(result){
-			var img=document.createElement("img");
-			img.src="http://myazo.net/s/"+result[1]+".png";
-		
-			img.addEventListener("load",ev,false);
-			img.style.display="none";
-			t.textContent="[Myoza...]";
-			t.appendChild(img);
-			return;
+		for(var i=0, l=HighChatMaker.gyazoSetting.length; i<l; i++){
+			var settingObj = HighChatMaker.gyazoSetting[i];
+			if(!settingObj.thumb) continue;
+			var result=t.href.match(new RegExp("^"+settingObj.url.image.replace(".", "\\.")+"([0-9a-f]{32})(?:\\.png)?$"));
+			if(result){
+				var img=document.createElement("img");
+				img.src=settingObj.url.thumb+result[1]+".png";
+			
+				img.addEventListener("load",ev,false);
+				img.style.display="none";
+				t.textContent=settingObj.text.opening;
+				t.appendChild(img);
+				return;
+			}
 		}
 	}
 	
