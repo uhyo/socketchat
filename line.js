@@ -240,7 +240,7 @@ HighChatMaker.prototype.make=function(obj){
 					var matched=false;
 					for(var i=0, l=HighChatMaker.gyazoSetting.length; i<l; i++){
 						var settingObj = HighChatMaker.gyazoSetting[i];
-						var res2=res[0].match(new RegExp("^"+settingObj.url.image.replace(".", "\\.")+"([0-9a-f]{32})(?:\\.png)?$"));
+						var res2=res[0].match(new RegExp("^"+settingObj.url.image.replace(".", "\\.")+"([0-9a-f]{32})(?:\\.png)?"));
 						if(!res2) continue;
 						
 						//Gyazo
