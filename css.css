@@ -69,6 +69,7 @@ span.small{
 }
 span.code{
 	font-family:monospace;
+	white-space: pre;
 }
 
 div.forms form{
