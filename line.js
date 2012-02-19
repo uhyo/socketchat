@@ -419,6 +419,7 @@ ChatClient.prototype={
 		this.prepareHottoMottoButton();
 		this.line=new HighChatMaker(this,document.getElementById(this.infobarid));
 		
+		this.loadBot();
 	},
 	//HottoMottoボタン初期化
 	prepareHottoMottoButton:function(){
@@ -586,6 +587,16 @@ ChatClient.prototype={
 	
 	bot:function(func){
 		this.bots.push(func);
+	},
+	saveBot: function(){
+		localStorage.socketchat_bot="["+this.bots.map(function(func){
+			return func.toString();
+		}).join(",")+"]";
+	},
+	loadBot: function(){
+		try{
+			this.bots=eval(localStorage.socketchat_bot)||[];
+		}catch(e){}
 	},
 	click:function(e){
 		var t=e.target;
