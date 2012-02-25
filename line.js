@@ -276,7 +276,11 @@ HighChatMaker.prototype.make=function(obj){
 					var a=document.createElement("a");
 					a.href=res[0];
 					a.target="_blank";
-					a.textContent=decodeURIComponent(res[0]);
+					try{
+						a.textContent=decodeURIComponent(res[0]);
+					}catch(e){
+						a.textContent=res[0];
+					}
 					node=node.splitText(res[0].length);
 					node.parentNode.replaceChild(a,node.previousSibling);
 					continue;
