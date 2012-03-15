@@ -455,6 +455,12 @@ io.sockets.on('connection',function(socket){
 					socket.emit("result",resobj);
 				});
 			});
+			if(data.mode=="chalog"){
+				//IDrequest（返信用）
+				socket.on("idrequest",function(data){
+					idrequest(socket,data);
+				});
+			}
 		}
 	});
 	
@@ -569,7 +575,6 @@ function motto(socket,user,data){
 	});
 }
 function idrequest(socket,data){
-	console.log(data.id);
 	if(data.id.length!=24 && data.id.length!=12)return;
 	log.findOne(db.bson_serializer.ObjectID.createFromHexString(data.id),function(err,obj){
 		socket.emit("idresponse",obj);

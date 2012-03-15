@@ -42,7 +42,9 @@ ChalogViewer.prototype={
 				this.pager.elements["forward"].disabled=false;
 			}
 		}.bind(this));
+		socket.on("idresponse",this.idresponse.bind(this));
 		
+		this.log.addEventListener('click',this.click.bind(this),false);
 		socket.emit("regist",{"mode":"chalog"});
 	},
 	write:function(obj){
@@ -117,6 +119,28 @@ ChalogViewer.prototype={
 			return t.checked?t.value:null;
 		}
 		return null;
+	},
+	click:function(e){
+		var t=e.target;
+		var dd=document.evaluate('ancestor-or-self::p',t,null,XPathResult.ANY_UNORDERED_NODE_TYPE,null).singleNodeValue;
+		if(dd.classList.contains("respto") && dd.dataset.open!="open"){
+			//開く
+			this.responding_to=dd;
+			this.socket.emit("idrequest",{"id":dd.dataset.respto});
+			dd.dataset.open="open";
+			return;
+		}
+	},
+	idresponse:function(data){
+		if(!this.responding_to || !data)return;
+		var line=this.line.make(data);
+		var bq=document.createElement("blockquote");
+		bq.classList.add("resp");
+		bq.appendChild(line);
+
+		var r=this.responding_to;
+		r.parentNode.insertBefore(bq,r.nextSibling);
+		
 	},
 };
     </script>
