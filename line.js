@@ -162,10 +162,10 @@ HighChatMaker.gyazoSetting = [
 		}
 	},
 	{
-		thumb: false,
+		thumb: true,
 		url: {
 			image: "http://g.81.la/",
-			thumb: null,
+			thumb: "http://g.81.la/thumbnail.php?id=",
 		},
 		text: {
 			normal: "[81g]",
