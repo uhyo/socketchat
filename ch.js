@@ -83,7 +83,7 @@ db.open(function(err,_db){
 		db.collection("log",function(err,collection){
 			log=collection;
 			var syslog={"name" : "■起動通知",
-				    "time":Date.now(),
+				    "time":new Date(),
 				    "ip":"127.0.0.1",
 				    "comment":"「サーバー」さんが起動",
 				    "syslog":true
@@ -248,7 +248,7 @@ User.prototype.says=function(data){
 	var logobj={"name":this.name,
 		    "comment":data.comment,
 		    "ip":this.ip,
-		    "time":Date.now()
+		    "time":new Date()
 		    };
 	var say=makelog.bind(null,this,logobj);
 	if(data.response){
@@ -281,7 +281,7 @@ User.prototype.inout=function(data){
 	}
 	//シスログ
 	var syslog={"name" : (this.rom?"■退室通知":"■入室通知"),
-		    "time":Date.now(),
+		    "time":new Date(),
 		    "ip":this.ip,
 		    "comment":"「"+this.name+"」さんが"+(this.rom?"退室":"入室"),
 		    "syslog":true
@@ -315,7 +315,7 @@ User.prototype.findMotto=function(data,callback){
 User.prototype.discon=function(){
 	if(!this.rom){
 		var syslog={"name" : "■失踪通知",
-			    "time":Date.now(),
+			    "time":new Date(),
 			    "ip":this.ip,
 			    "comment":"「"+this.name+"」さんいない",
 			    "syslog":true
