@@ -305,10 +305,9 @@ User.prototype.findMotto=function(data,callback){
 	var until=data.until;
 	if(!time)return;
 	if(typeof until=="number"){
-		log.find({"time":{$lt:time,$gt:until}},{"sort":[["time","desc"]],"limit":settings.CHAT_MOTTO_MAX_LOG}).toArray(callback);
+		log.find({"time":{$lt:new Date(time),$gt:new Date(until)}},{"sort":[["time","desc"]],"limit":settings.CHAT_MOTTO_MAX_LOG}).toArray(callback);
 	}else{
-	
-		log.find({"time":{$lt:time}},{"sort":[["time","desc"]],"limit":settings.CHAT_MOTTO_LOG}).toArray(callback);
+		log.find({"time":{$lt:new Date(time)}},{"sort":[["time","desc"]],"limit":settings.CHAT_MOTTO_LOG}).toArray(callback);
 	}
 };
 //いなくなった！❾
@@ -564,16 +563,6 @@ function makelog(user,logobj){
 function toapi(callback){
 	users.filter(function(x){return x.type=="api"}).forEach(callback);
 }
-
-function motto(socket,user,data){
-	var time=data.time;
-	if(!time)return;
-	
-	log.find({"time":{$lt:time}},{"sort":[["time","desc"]],"limit":settings.CHAT_MOTTO_LOG}).toArray(function(err,docs){
-		var resobj={"logs":docs};
-		socket.emit("mottoResponse",resobj);
-	});
-}
 function idrequest(socket,data){
 	if(data.id.length!=24 && data.id.length!=12)return;
 	log.findOne(db.bson_serializer.ObjectID.createFromHexString(data.id),function(err,obj){
@@ -656,13 +645,13 @@ function chalog(query,callback){
 	optobj.limit=value;
 	
 	if(!isNaN(query.starttime)){
-		queryobj.time={$gte:parseInt(query.starttime)};
+		queryobj.time={$gte:new Date(parseInt(query.starttime))};
 	}
 	if(!isNaN(query.endtime)){
 		if(queryobj.time){
-			queryobj.time["$lte"]=parseInt(query.endtime);
+			queryobj.time["$lte"]=new Date(parseInt(query.endtime));
 		}else{
-			queryobj.time={$lte:parseInt(query.endtime)};
+			queryobj.time={$lte:new Date(parseInt(query.endtime))};
 		}
 	}
 	if(query.name){
