@@ -262,6 +262,7 @@ HighChatMaker.prototype.make=function(obj){
 									img.hidden=false;
 								},false);
 								img.src=settingObj.url.thumb+res2[1]+".png";
+								img.alt=settingObj.url.image+res2[1]+".png";
 							})(a);
 						}else{
 							a.textContent=settingObj.text.normal;
@@ -344,6 +345,7 @@ HighChatMaker.prototype.gyozamouse=function(e){
 			if(result){
 				var img=document.createElement("img");
 				img.src=settingObj.url.thumb+result[1]+".png";
+				img.alt=settingObj.url.image+result[1]+".png";
 			
 				img.addEventListener("load",ev,false);
 				img.style.display="none";
