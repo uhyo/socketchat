@@ -338,6 +338,8 @@ HighChatMaker.prototype.gyozabutton=function(e){
 HighChatMaker.prototype.gyozamouse=function(e){
 	var t=e.target;
 	if(t.classList.contains("gyoza")){
+		if(t.dataset.gyazoloaded) return;
+		t.dataset.gyazoloaded=true;
 		for(var i=0, l=HighChatMaker.gyazoSetting.length; i<l; i++){
 			var settingObj = HighChatMaker.gyazoSetting[i];
 			if(!settingObj.thumb) continue;
