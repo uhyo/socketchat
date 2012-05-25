@@ -37,15 +37,21 @@ LineMaker.prototype={
 		df.appendChild(dt);
 		var dd=el("span","");
 		dd.classList.add("main");
-		var comsp=document.createElement("span");
+		var comsp=el("span");
 		comsp.classList.add("comment");
 		comsp.appendChild(commentHTMLify(obj.comment));
 		dd.appendChild(comsp);
-		var infsp=el("span","(");
+		var infsp=el("span");
 		infsp.classList.add("info");
 		var date=new Date(obj.time);
 		var dat=date.getFullYear()+"-"+zero2(date.getMonth()+1)+"-"+zero2(date.getDate()), tim=zero2(date.getHours())+":"+zero2(date.getMinutes())+":"+zero2(date.getSeconds());
-		var time=el("time",dat+" "+tim);
+		var time=el("time");
+		var datelement=el("span",dat+" "), timelement=el("span",tim);
+		datelement.classList.add("date");
+		timelement.classList.add("time");
+		time.appendChild(datelement);
+		time.appendChild(timelement);
+		time.appendChild(document.createTextNode("; "));
 		time.datetime=dat+"T"+tim+"+09:00";
 		
 		df.dataset.id=obj._id;
@@ -53,9 +59,12 @@ LineMaker.prototype={
 			df.dataset.respto=obj.response;
 			df.classList.add("respto");
 		}
+		dt.title=dat+" "+tim+", "+obj.ip;
 	
+		var ipelement = el("span",obj.ip+"; ");
+		ipelement.classList.add("ip");
 		infsp.appendChild(time);
-		infsp.appendChild(document.createTextNode(", "+obj.ip+")"));
+		infsp.appendChild(ipelement);
 		dd.appendChild(infsp);
 		dd.style.color=color;
 		df.appendChild(dd);
@@ -63,7 +72,7 @@ LineMaker.prototype={
 
 		function el(name,text){
 			var ret=document.createElement(name);
-			ret.textContent=text;
+			if(typeof text!="undefined") ret.textContent=text;
 			return ret;
 		}
 		function zero2(str){
@@ -383,6 +392,10 @@ ChatClient.prototype={
 		this.disip=[];	//IP list
 		if(localStorage.socketchat_disip)this.disip=JSON.parse(localStorage.socketchat_disip);
 		
+		if(localStorage.socketchat_displaynone){
+			document.styleSheets[0].insertRule(localStorage.socketchat_displaynone+"{display:none}", 0)
+		}
+
 		
 		this.responding_to=null;	//dd
 		
