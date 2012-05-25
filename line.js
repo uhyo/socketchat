@@ -691,8 +691,8 @@ SocketChat.prototype.cominit=function(){
 SocketChat.prototype.inout_notify=function(name){
 	this.socket.emit("inout",{"name":name});
 };
-SocketChat.prototype.say=function(comment,response){
-	this.socket.emit("say",{"comment":comment,"response":response?response:""});
+SocketChat.prototype.say=function(comment,response,channel){
+	this.socket.emit("say",{"comment":comment,"response":response?response:"","channel":channel?channel:""});
 };
 SocketChat.prototype.HottoMotto=function(e,until){
 	if(until){
@@ -777,8 +777,8 @@ APIChat.prototype.check=function(){
 APIChat.prototype.inout_notify=function(name){
 	this.send("/api/inout",{"name":name},this.response.bind(this));
 };
-APIChat.prototype.say=function(comment,response){
-	this.send("/api/say",{"comment":comment,"response":response},this.response.bind(this));
+APIChat.prototype.say=function(comment,response,channel){
+	this.send("/api/say",{"comment":comment,"response":response,"channel":channel},this.response.bind(this));
 };
 APIChat.prototype.HottoMotto=function(){
 	this.send("/api/motto",{"time":this.oldest_time},function(data){

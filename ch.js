@@ -250,6 +250,7 @@ User.prototype.says=function(data){
 		    "ip":this.ip,
 		    "time":new Date()
 		    };
+	if(data.channel) logobj.channel = data.channel;
 	var say=makelog.bind(null,this,logobj);
 	if(data.response){
 		try{
@@ -665,6 +666,9 @@ function chalog(query,callback){
 	if(query.comment){
 		//服務
 		queryobj.comment=new RegExp(query.comment.replace(/(\W)/g,"\\$1"));
+	}
+	if(query.channel){
+		queryobj.channel = query.channel;
 	}
 	
 	var result=log.find(queryobj,optobj).toArray(function(err,docs){
