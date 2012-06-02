@@ -8,7 +8,8 @@ exports.DB_PORT=27017;
 exports.DB_NAME="socketchat";
 exports.DB_USER="test";
 exports.DB_PASS="test";
-exports.HTTP_PORT = 8080;*/
+exports.HTTP_PORT = 8080;
+exports.SOCKET_HOST_NAME = null;*/
 
 exports.CHAT_FIRST_LOG=50;	//最初どれだけログ表示するか
 exports.CHAT_MOTTO_LOG=50;	//HottoMotto時デフォルト時にログをどれだけ表示するか
@@ -48,6 +49,13 @@ app.get(/^\/(log|list|apiclient|com)$/, function(req, res){
 });
 app.get(/^\/((?:line|storagefs)\.js|css\.css|sound\.(mp3|wav|ogg))$/, function(req, res){
 	res.sendfile(__dirname + "/"+req.params[0]);
+});
+
+app.get(/^\/settings.js$/, function(req, res){
+	res.send("settings="+JSON.stringify({SOCKET_HOST_NAME:settings.SOCKET_HOST_NAME}), {
+			//"Content-Length":result.length,
+			"Content-Type":"text/javascript; charset=UTF-8",
+		}, 200);
 });
 app.get('/chalog', function(req, res){
 	chalog(req.query,function(resobj){

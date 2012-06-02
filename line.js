@@ -672,7 +672,7 @@ function SocketChat(){
 SocketChat.prototype=new ChatClient;
 SocketChat.prototype.cominit=function(){
 	var socket;
-	socket=this.socket = io.connect(location.origin);
+	socket=this.socket = io.connect(settings.SOCKET_HOST_NAME||location.origin);
 	
 	socket.on("init",this.loginit.bind(this));
 	socket.on("log",this.recv.bind(this));
