@@ -18,7 +18,7 @@ div.logs{
 #log p{
 	margin:0;
 }
-#log span.name.syslog{
+#log .name.syslog{
 	color:#0000ff !important;
 }
 #log span.main span.info{
@@ -26,10 +26,10 @@ div.logs{
 	color:#cccccc;
 	padding-left:0.8ex;
 }
-#log span.name{
+#log .name{
 	font-weight:bold;
 }
-#log span.name:after{
+#log .name:after{
 	content:'> ';
 	font-weight:normal;
 }

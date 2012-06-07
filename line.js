@@ -29,7 +29,7 @@ LineMaker.prototype={
 	make:function(obj){
 		var df=document.createElement("p");
 		var color=this.getColor(obj.ip);
-		var dt=el("span",obj.name);
+		var dt=el("bdi",obj.name);
 		if(obj.syslog)dt.classList.add("syslog");
 		dt.classList.add("name");
 		df.style.color=color;
@@ -52,7 +52,8 @@ LineMaker.prototype={
 		time.appendChild(datelement);
 		time.appendChild(timelement);
 		time.appendChild(document.createTextNode("; "));
-		time.datetime=dat+"T"+tim+"+09:00";
+		//time.datetime=dat+"T"+tim+"+09:00";
+		time.dateTime=date.toISOString();
 		
 		df.dataset.id=obj._id;
 		if(obj.response){
