@@ -17,7 +17,7 @@ UserList.prototype={
 		this.line=new HighChatMaker(null);
 		
 		var socket;
-		socket=this.socket=io.connect(location.orogin);
+		socket=this.socket=io.connect(settings.SOCKET_HOSTNAME||location.orogin);
 		
 		socket.on("users",this.users.bind(this));
 		socket.on("newuser",this.newuser.bind(this));

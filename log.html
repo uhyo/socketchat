@@ -25,7 +25,7 @@ ChalogViewer.prototype={
 		this.query=null;
 		
 		var socket;
-		socket=this.socket=io.connect(location.orogin);
+		socket=this.socket=io.connect(settings.SOCKET_HOSTNAME||location.orogin);
 		
 		socket.on("result",function(data){
 			if(data.logs.length){
