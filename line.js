@@ -161,7 +161,9 @@ HighChatMaker.gyazoSetting = [
 		}
 	},
 	{
-		thumb: true,
+//		thumb: true,
+//Myazoがサムネイル機能を撤廃したため
+		thumb: false,
 		url: {
 			image: "http://myazo.net/",
 			thumb: "http://myazo.net/s/",
