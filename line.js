@@ -469,6 +469,13 @@ ChatStream.prototype.setSessionid=function(id){
 };
 //発言する
 ChatStream.prototype.say=function(comment,response,channel){
+	//コメントからハッシュタグを探す
+	if(!channel){
+		var result=comment.match(/(?:^|\s+)#(\S+)/);
+		if(result){
+			channel=result[1];
+		}
+	}
 	this.emit("say",{"comment":comment,"response":response?response:"","channel":channel?channel:""});
 };
 //発言をサーバーに問い合わせる
