@@ -43,11 +43,13 @@ LineMaker.prototype={
 		dd.appendChild(comsp);
 		//チャンネル
 		if(obj.channel){
-			var chnsp=el("span");
-			chnsp.classList.add("channel");
-			chnsp.textContent="#"+obj.channel;
-			chnsp.dataset.channel=obj.channel;
-			dd.appendChild(chnsp);
+			if(obj.comment.indexOf("#"+obj.channel)===-1){
+				var chnsp=el("span");
+				chnsp.classList.add("channel");
+				chnsp.textContent="#"+obj.channel;
+				chnsp.dataset.channel=obj.channel;
+				dd.appendChild(chnsp);
+			}
 		}
 		var infsp=el("span");
 		infsp.classList.add("info");
@@ -469,6 +471,13 @@ ChatStream.prototype.setSessionid=function(id){
 };
 //発言する
 ChatStream.prototype.say=function(comment,response,channel){
+	//コメントからハッシュタグを探す
+	if(!channel){
+		var result=comment.match(/(?:^|\s+)#(\S+)/);
+		if(result){
+			channel=result[1];
+		}
+	}
 	this.emit("say",{"comment":comment,"response":response?response:"","channel":channel?channel:""});
 };
 //発言をサーバーに問い合わせる
