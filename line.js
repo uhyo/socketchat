@@ -376,15 +376,34 @@ HighChatMaker.prototype.gyozamouse=function(e){
 	}
 };
 //通信を担当するオブジェクト
-function ChatStream(chat){
+function ChatStream(){
 	io.EventEmitter.apply(this);
-	this.chat=chat;	//ChatClientオブジェクト
-	this.sessionid = sessionStorage.sessionid || void 0;
-	this.init();
 }
 ChatStream.prototype=new io.EventEmitter;
-ChatStream.prototype.init=function(){};
-ChatStream.prototype.$emit=io.EventEmitter.prototype.emit;
+ChatStream.prototype.init=function(chat){
+	this.chat=chat;	//ChatClientオブジェクト
+	this.sessionid = sessionStorage.sessionid || void 0;
+	//子供たち(ports)
+	this.children=[];
+};
+ChatStream.prototype.addChild=function(port){
+	//こども
+	this.children.push(port);
+};
+ChatStream.prototype.$emit=function(name){
+	//本体
+	var em=io.EventEmitter.prototype.emit;
+	em.apply(this,arguments);
+	//子供たちにも送ってあげる
+	var c=this.children;
+	for(var i=0,l=c.length;i<l;i++){
+		var port=c[i];
+		port.postMessage({
+			name:name,
+			args:Array.prototype.slice.call(arguments,1),
+		});
+	}
+};
 ChatStream.prototype.regist=function(){
 	//自分をサーバーに登録する
 };
@@ -396,7 +415,9 @@ function SocketChatStream(){
 	ChatStream.apply(this,arguments);
 }
 SocketChatStream.prototype=new ChatStream;
-SocketChatStream.prototype.init=function(){
+SocketChatStream.prototype.init=function(chat){
+	ChatStream.prototype.init.apply(this,arguments);
+
 	var socket;
 	var t=this;
 	socket=this.socket = io.connect(settings.SOCKET_HOST_NAME||(location.protocol+"//"+location.host));
@@ -419,6 +440,53 @@ SocketChatStream.prototype.emit=function(){
 SocketChatStream.prototype.regist=function(){
 	this.socket.emit("regist",{"mode":"client","lastid":this.sessionid});
 };
+//メインストリームからもらってくる
+function ChannelStream(){
+	ChatStream.apply(this,arguments);
+}
+ChannelStream.prototype=new ChatStream;
+ChannelStream.prototype.init=function(){
+	ChatStream.prototype.init.apply(this,arguments);
+	var t=this;
+	this.port=null;
+	window.addEventListener("message",function(ev){
+		//メッセージ
+		var d=ev.data;
+		//通信を確立したい
+		if(d.name==="init"){
+			t.port=ev.ports[0];
+			if(!t.port){
+				throw new Error("no port");
+			}
+			t.initPort(t.port);
+			document.title+=" #"+d.channelname;
+		}else if(d.name==="ping"){
+			d.name="pong";
+			//送り返す
+			ev.source.postMessage(d,ev.origin);
+		}
+	},false);
+};
+ChannelStream.prototype.initPort=function(port){
+	//ポートが届いた
+	var t=this;
+	port.start();
+	port.addEventListener("message",function(ev){
+		var d=ev.data;
+		//d.name: event name; d.args: event args;
+		t.emit.apply(t,[d.name].concat(d.args));
+	},false);
+};
+ChannelStream.prototype.emit=function(name){
+	this.$emit.apply(this,arguments);
+	if(this.port){
+		//ポートへ送る
+		this.port.postMessage({
+			name:name,
+			args:Array.prototype.slice.call(arguments,1),
+		},"/");
+	}
+};
 
 
 
@@ -429,7 +497,20 @@ function ChatClient(log,info,infobar){
 	this.flags={"sound":true};
 }
 ChatClient.prototype={
+	//使用するChatStream
+	useStream:function(){return ChatStream},
+	getStream:function(){
+		var s= new (this.useStream())();
+		s.init(this);
+		return s;
+	},
 	init:function(){
+		//ハッシュによってストリームを切り替えられる
+		if(location.hash==="#channel"){
+			this.useStream=function(){
+				return ChannelStream;
+			};
+		}
 		this.log=document.getElementById(this.logid);
 		this.info=document.getElementById(this.infoid);
 		this.users=this.info.getElementsByClassName("users")[0];
@@ -711,17 +792,56 @@ ChatClient.prototype={
 	},
 	disconnect:function(){
 		document.body.classList.add("discon");
-	}
+	},
+	//サブチャンネルをオープンする
+	openChannel:function(channelname){
+		var win=window.open(location.pathname+"#channel");
+		//まず通信を確立する
+		var wait=300, count=0;
+		var timerid=null;
+		var t=this;
+		window.addEventListener("message",listener);
+		ping();
+		function ping(){
+			//送る
+			win.postMessage({
+				name:"ping",
+			},"*");
+			console.log(++count);
+			timerid=setTimeout(ping,wait);
+		}
+		//pongリスナ
+		function listener(ev){
+			var d=ev.data;
+			console.log("recv",d);
+			if(d.name==="pong"){
+				//データが帰ってきた
+				clearTimeout(timerid);
+				window.removeEventListener("message",listener);
+				//情報を送る
+				var channel=new MessageChannel();
+				channel.port1.start();
+				win.postMessage({
+					name:"init",
+					channelname:"channelname",
+				},"*",[channel.port2]);
+				t.stream.addChild(channel.port1);
+			}
+		}
+	},
 };
 
 function SocketChat(){
 	ChatClient.apply(this,arguments);
 }
 SocketChat.prototype=new ChatClient;
+SocketChat.prototype.useStream=function(){
+	return SocketChatStream;
+};
 SocketChat.prototype.cominit=function(){
 	var stream;
 	//socket=this.socket = io.connect(settings.SOCKET_HOST_NAME||location.origin);
-	this.stream=stream=new SocketChatStream();
+	this.stream=stream=this.getStream();
 	
 	stream.on("init",this.loginit.bind(this));
 	stream.on("log",this.recv.bind(this));
