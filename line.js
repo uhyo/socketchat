@@ -43,11 +43,13 @@ LineMaker.prototype={
 		dd.appendChild(comsp);
 		//チャンネル
 		if(obj.channel){
-			var chnsp=el("span");
-			chnsp.classList.add("channel");
-			chnsp.textContent="#"+obj.channel;
-			chnsp.dataset.channel=obj.channel;
-			dd.appendChild(chnsp);
+			if(obj.comment.indexOf("#"+obj.channel)===-1){
+				var chnsp=el("span");
+				chnsp.classList.add("channel");
+				chnsp.textContent="#"+obj.channel;
+				chnsp.dataset.channel=obj.channel;
+				dd.appendChild(chnsp);
+			}
 		}
 		var infsp=el("span");
 		infsp.classList.add("info");
