@@ -319,6 +319,22 @@ User.prototype.findMotto=function(data,callback){
 		log.find({"time":{$lt:new Date(time)}},{"sort":[["time","desc"]],"limit":settings.CHAT_MOTTO_LOG}).toArray(callback);
 	}
 };
+//何か探してあげる
+User.prototype.find=function(query,callback){
+	var q={};
+	if(query.channel){
+		q.channel=query.channel;
+	}
+	var number=parseInt(query.number) || settings.CHAT_MOTTO_LOG;
+	number=Math.min(number, settings.CHAT_MOTTO_MAX_LOG);
+	log.find(q,{"sort":[["time","desc"]],"limit":number}).toArray(function(err,arr){
+		if(err){
+			callback({error:err});
+		}else{
+			callback(arr);
+		}
+	});
+};
 //いなくなった！❾
 User.prototype.discon=function(){
 	if(!this.rom){
@@ -439,6 +455,15 @@ io.sockets.on('connection',function(socket){
 			socket.on("motto",function(data){
 				user.motto(data);
 			});
+			//ログ検索
+			socket.on("find",function(query,func){
+				user.find(query,func);
+			});
+			//ユーザー情報
+			socket.on("users",function(func){
+				//即返す
+				func(getUsersData());
+			});
 			
 			//IDrequest（返信用）
 			socket.on("idrequest",function(data){
@@ -484,11 +509,7 @@ function sendFirstLog(user,callback){
 	});
 }
 function sendFirstUsers(user,socket_flg){
-	var roms=users.filter(function(x){return x.rom}).length, p={
-		"users":users.map(function(y){return y.getUserObj()}),
-		"roms": roms,
-		"actives": users.length-roms
-	};
+	var p=getUsersData();
 	if(socket_flg){
 		user.emit("users",p);
 	}else if(user.socket){
@@ -496,6 +517,14 @@ function sendFirstUsers(user,socket_flg){
 	}else if(user.sessionId){
 		user.userinfos.push({"name":"users","users":p});
 	}
+}
+function getUsersData(){
+	var roms=users.filter(function(x){return x.rom}).length, p={
+		"users":users.map(function(y){return y.getUserObj()}),
+		"roms": roms,
+		"actives": users.length-roms
+	};
+	return p;
 }
 function addSocketUser(socket,lastid){
 	var zombie=dead.filter(function(x){return x.socket && x.socket.id==lastid})[0];

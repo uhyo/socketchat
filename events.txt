@@ -46,6 +46,12 @@ Logobj
 *event idrequest:
 {"id":Id}
 
+*event find:
+{"channel"?:String,"number"?:Number},function(arr){}
+
+*event users:
+function(usersdata){}
+
 [LogViewer->Srv]
 *event regist:
  {"mode":"chalog"}

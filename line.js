@@ -410,6 +410,19 @@ ChatStream.prototype.regist=function(){
 ChatStream.prototype.setSessionid=function(id){
 	this.sessionid=sessionStorage.sessionid=id;
 };
+//発言をサーバーに問い合わせる
+ChatStream.prototype.find=function(query,cb){
+	//query:  channel?:"foo"
+	cb([]);
+};
+//ユーザーをサーバーに問い合わせる
+ChatStream.prototype.users=function(cb){
+	cb({
+		"users":[],
+		"roms":0,
+		"actives":0,
+	});
+};
 
 function SocketChatStream(){
 	ChatStream.apply(this,arguments);
@@ -440,6 +453,17 @@ SocketChatStream.prototype.emit=function(){
 SocketChatStream.prototype.regist=function(){
 	this.socket.emit("regist",{"mode":"client","lastid":this.sessionid});
 };
+SocketChatStream.prototype.find=function(query,cb){
+	this.socket.emit("find",query,function(arr){
+		if(!Array.isArray(arr))cb([]);
+		cb(arr);
+	});
+};
+SocketChatStream.prototype.users=function(cb){
+	this.socket.emit("users",function(obj){
+		cb(obj);
+	});
+};
 //メインストリームからもらってくる
 function ChannelStream(){
 	ChatStream.apply(this,arguments);
@@ -460,6 +484,10 @@ ChannelStream.prototype.init=function(){
 			}
 			t.initPort(t.port);
 			document.title+=" #"+d.channelname;
+			//準備ができたので伝える
+			t.port.postMessage({
+				name:"ready",
+			});
 		}else if(d.name==="ping"){
 			d.name="pong";
 			//送り返す
@@ -484,7 +512,7 @@ ChannelStream.prototype.emit=function(name){
 		this.port.postMessage({
 			name:name,
 			args:Array.prototype.slice.call(arguments,1),
-		},"/");
+		});
 	}
 };
 
@@ -505,6 +533,12 @@ ChatClient.prototype={
 		return s;
 	},
 	init:function(){
+		this.me={
+			//自分の情報
+			name:null,
+			rom:null,
+		};
+	
 		//ハッシュによってストリームを切り替えられる
 		if(location.hash==="#channel"){
 			this.useStream=function(){
@@ -561,6 +595,7 @@ ChatClient.prototype={
 		
 		/*document.forms["inout"].addEventListener("submit",this.submit.bind(this),false);
 		document.forms["comment"].addEventListener("submit",this.submit.bind(this),false);*/
+		console.log("init!");
 		document.addEventListener("submit",this.submit.bind(this),false);
 		
 		this.log.addEventListener('click',this.click.bind(this),false);
@@ -691,6 +726,10 @@ ChatClient.prototype={
 	//自分が入退室
 	userinfo:function(obj){
 		console.log("userinfo",obj);
+		this.me={
+			name:obj.name,
+			rom:obj.rom,
+		};
 		var f=document.forms["inout"];
 		if(f){
 			f.elements["uname"].disabled=!obj.rom;
@@ -807,13 +846,13 @@ ChatClient.prototype={
 			win.postMessage({
 				name:"ping",
 			},"*");
-			console.log(++count);
+			//console.log(++count);
 			timerid=setTimeout(ping,wait);
 		}
 		//pongリスナ
 		function listener(ev){
 			var d=ev.data;
-			console.log("recv",d);
+			//console.log("recv",d);
 			if(d.name==="pong"){
 				//データが帰ってきた
 				clearTimeout(timerid);
@@ -821,11 +860,53 @@ ChatClient.prototype={
 				//情報を送る
 				var channel=new MessageChannel();
 				channel.port1.start();
+				channel.port1.addEventListener("message",function ls(ev){
+					var d=ev.data;
+					if(d.name==="ready"){
+						//できた
+						channel.port1.removeEventListener("message",ls);
+						t.stream.addChild(channel.port1);
+						t.initChild(channel.port1,channelname);
+					}
+				});
+
 				win.postMessage({
 					name:"init",
-					channelname:"channelname",
+					channelname:channelname,
 				},"*",[channel.port2]);
-				t.stream.addChild(channel.port1);
+
+			}
+		}
+	},
+	initChild:function(port,channelname){
+		//子供に最初のメッセージを送る
+		//initメッセージ
+		var t=this;
+		this.stream.find({
+			channel:channelname,
+		},function(arr){
+			send("init",{logs:arr});
+		});
+		this.stream.users(function(obj){
+			send("users",obj);
+			send("userinfo",{
+				name:t.me.name,
+				rom:t.me.rom,
+			});
+		});
+
+
+		function send(name,obj){
+			if(Array.isArray(obj)){
+				port.postMessage({
+					name:name,
+					args:obj,
+				});
+			}else{
+				port.postMessage({
+					name:name,
+					args:[obj],
+				});
 			}
 		}
 	},
@@ -973,8 +1054,6 @@ function CommandLineChat(log,info,con,fnd){
 	this.process=null;	//プロセス数
 //	this.accept=true;//プロセスの入力
 
-	this.isrom=null;	//ROMかどうか
-	
 	this.autoin_flg=false;	//autoin処理が行われたかどうか
 }
 CommandLineChat.prototype=new SocketChat;
@@ -1222,7 +1301,7 @@ CommandLineChat.prototype.commands=(function(){
 			process.die();
 			return;
 		}
-		if(process.chat.isrom===false){
+		if(process.chat.me.rom===false){
 			process.print("You are already in the room.");
 			process.die();
 			return;
@@ -1238,7 +1317,7 @@ CommandLineChat.prototype.commands=(function(){
 		process.die();
 	};
 	obj.out=function(process){
-		if(process.chat.isrom===true){
+		if(process.chat.me.rom===true){
 			process.print("You are not in the room.");
 			process.die();
 			return;
@@ -1599,9 +1678,7 @@ CommandLineChat.prototype.cscrollDown=function(){
 	
 };
 CommandLineChat.prototype.userinfo=function(obj){
-	console.log("userinfo",obj);
 	SocketChat.prototype.userinfo.apply(this,arguments);
-	this.isrom=obj.rom;
 	if(!obj.rom)this.cprint("Hello, "+obj.name);
 	if(obj.rom && !this.autoin_flg && localStorage.socketchat_autoin){
 		this.inout_notify(localStorage.socketchat_autoin);
