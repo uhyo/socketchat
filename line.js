@@ -396,7 +396,7 @@ function ChatStream(){
 ChatStream.prototype=new io.EventEmitter;
 ChatStream.prototype.init=function(chat){
 	this.chat=chat;	//ChatClientオブジェクト
-	this.sessionid = sessionStorage.sessionid || void 0;
+	this.lastid = this.sessionid = sessionStorage.sessionid || void 0;
 	//子供たち(ports)
 	this.children=[];
 	//終了時に子どもも消す
@@ -531,7 +531,7 @@ SocketChatStream.prototype.emit=function(){
 	this.$emit.apply(this,arguments);
 };
 SocketChatStream.prototype.regist=function(){
-	this.socket.emit("regist",{"mode":"client","lastid":this.sessionid});
+	this.socket.emit("regist",{"mode":"client","lastid":this.lastid});
 };
 SocketChatStream.prototype.find=function(query,cb){
 	this.emit("find",query,function(arr){
@@ -727,13 +727,6 @@ ChatClient.prototype={
 	},
 	loginit:function(data){
 		//console.log("loginit",data,this.oldest_time);
-		if(sessionStorage){
-			if(this.socket){
-				sessionStorage.socketid=this.socket.socket.sessionid;
-			}else{
-				sessionStorage.sessionid=this.sessionId;
-			}
-		}
 		data.logs.reverse().forEach(function(line){
 			this.write(line);
 		},this);
