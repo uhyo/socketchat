@@ -1589,7 +1589,19 @@ CommandLineChat.prototype.commands=(function(){
 		}
 	};
 	obj.go=function(process){
-		process.chat.newwin(process.arg);
+		var dest=process.arg;
+		if(dest==="wiki"){
+			//wikiへ飛ぶ
+			dest="http://shogiwiki.81.la/shogiwiki/";
+		}else{
+			var result=dest.match(/^#(\S+)$/);
+			if(result){
+				process.chat.openChannel(result[1]);
+				process.die();
+				return;
+			}
+		}
+		process.chat.newwin(dest);
 		process.die();
 	};
 	obj.disip=function(process){
@@ -1617,6 +1629,7 @@ CommandLineChat.prototype.commands=(function(){
 		//返信を行う
 		
 		var index=0,maxlen=10;
+		var choosing=true;
 		
 		process.newContext();
 
@@ -1636,6 +1649,7 @@ CommandLineChat.prototype.commands=(function(){
 				return false;
 			}else if(e.keyCode==13){
 				//Enter
+				if(!choosing)return false;
 				var lc=process.chat.log.childNodes;
 				var c=lc[index];
 				if(!c){
@@ -1650,6 +1664,7 @@ CommandLineChat.prototype.commands=(function(){
 					}
 					end();
 				});
+				choosing=false;
 				return true;	//input側で新たなkeyを設定するから（暫定処置）
 			}
 			return true;
