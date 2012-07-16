@@ -22,12 +22,6 @@ Logobj
 *event userinfo:
 {"name":String,"rom":Boolean}
 
-*event mottoResponse:
-{"logs":[Logobj, Logobj, ...](time desc)}
-
-*event idresponse:
-Logobj
-
 [Client->Srv]
 *event regist:
  {"mode":"client"}
@@ -40,14 +34,8 @@ Logobj
 
 {"name":String/null}
 
-*event motto:
-{"time":Number}
-
-*event idrequest:
-{"id":Id}
-
 *event find:
-{"channel"?:String,"number"?:Number},function(arr){}
+{"channel"?:String,"id"?:String,"number"?:Number},function(arr){}
 
 *event users:
 function(usersdata){}

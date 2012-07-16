@@ -224,6 +224,7 @@ function forEachTextLogobj(logobj,callback){
 app.listen(settings.HTTP_PORT);
 
 var io=socketio.listen(app);
+io.set('log level',1);
 
 function User(id,name,ip,rom,ua){
 	this.id=id,this.name=name,this.ip=ip,this.rom=rom,this.ua=ua;
@@ -235,7 +236,7 @@ User.prototype.getUserObj=function(){
 	return {"id":this.id,"name":this.name,"ip":this.ip,"rom":this.rom,"ua":this.ua};
 };
 User.prototype.type="user";
-//says,inout,motto,idRequest
+//says,inout
 User.prototype.says=function(data){
 	if(this.rom)return;
 	if(!data || !data.comment || typeof data.comment != "string")return;
@@ -308,32 +309,49 @@ User.prototype.inoutSplash=function(){
 		x==this || x.userinfos.push({"name":"inout","user":obj});
 	}.bind(this));*/
 };
-//mottoの該当レス探す処理
-User.prototype.findMotto=function(data,callback){
-	var time=data.time;
-	var until=data.until;
-	if(!time)return;
-	if(typeof until=="number"){
-		log.find({"time":{$lt:new Date(time),$gt:new Date(until)}},{"sort":[["time","desc"]],"limit":settings.CHAT_MOTTO_MAX_LOG}).toArray(callback);
-	}else{
-		log.find({"time":{$lt:new Date(time)}},{"sort":[["time","desc"]],"limit":settings.CHAT_MOTTO_LOG}).toArray(callback);
-	}
-};
 //何か探してあげる
 User.prototype.find=function(query,callback){
 	var q={};
+	var one_flag=false;
+	var number=parseInt(query.number) || settings.CHAT_MOTTO_LOG;
 	if(query.channel){
 		q.channel=query.channel;
 	}
-	var number=parseInt(query.number) || settings.CHAT_MOTTO_LOG;
-	number=Math.min(number, settings.CHAT_MOTTO_MAX_LOG);
-	log.find(q,{"sort":[["time","desc"]],"limit":number}).toArray(function(err,arr){
-		if(err){
-			callback({error:err});
-		}else{
-			callback(arr);
+	if(query.motto){
+		//time:この時間より前 until:この時間まで
+		var m=query.motto;
+		q.time={$lt:new Date(m.time)};
+		if(m.until){
+			console.log("untilmotto!",m.until);
+			q.time.$gte=new Date(m.until);
+			//最大までにしてあげる
+			if(!query.number)number=settings.CHAT_MOTTO_MAX_LOG;
 		}
-	});
+	}
+	number=Math.min(number, settings.CHAT_MOTTO_MAX_LOG);
+	if(query.id){
+		one_flag=true;
+		if(query.id.length!=24 && query.id.length!=12){
+			callback([]);
+			return;
+		}
+		q=db.bson_serializer.ObjectID.createFromHexString(query.id);
+	}
+
+	if(one_flag){
+		//1件
+		log.findOne(q,function(err,obj){
+			callback([obj]);
+		});
+	}else{
+		log.find(q,{"sort":[["time","desc"]],"limit":number}).toArray(function(err,arr){
+			if(err){
+				callback({error:err});
+			}else{
+				callback(arr);
+			}
+		});
+	}
 };
 //いなくなった！❾
 User.prototype.discon=function(){
@@ -370,18 +388,6 @@ function SocketUser(id,name,ip,rom,ua,socket){
 }
 SocketUser.prototype=new User;
 SocketUser.prototype.type="socket";
-SocketUser.prototype.motto=function(data){
-	this.findMotto(data,function(err,docs){
-		var resobj={"logs":docs};
-		this.socket.emit("mottoResponse",resobj);
-	}.bind(this));
-};
-SocketUser.prototype.idrequest=function(data){
-	if(data.id.length!=24 && data.id.length!=12)return;
-	log.findOne(db.bson_serializer.ObjectID.createFromHexString(data.id),function(err,obj){
-		this.socket.emit("idresponse",obj);
-	}.bind(this));
-};
 SocketUser.prototype.inoutSplash=function(){
 	var obj={"rom":this.rom, id: this.id, name: this.name};
 	this.socket.emit("userinfo",obj), this.socket.broadcast.to("useruser").emit("inout",obj);
@@ -403,19 +409,6 @@ function APIUser(id,name,ip,rom,ua,sessionId){
 }
 APIUser.prototype=new User;
 APIUser.prototype.type="api";
-APIUser.prototype.motto=function(data,res){
-	this.findMotto(data,function(err,docs){
-		res.send({"error":false,
-			"logs":docs,
-		},{"Content-Type":"text/javascript; charset=UTF-8"});
-	}.bind(this));
-};
-APIUser.prototype.idrequest=function(data,res){
-	if(data.id.length!=24 && data.id.length!=12)return;
-	log.findOne(db.bson_serializer.ObjectID.createFromHexString(data.id),function(err,obj){
-		res.send(obj,{"Content-Type":"text/javascript; charset=UTF-8"});
-	}.bind(this));
-};
 APIUser.prototype.oxygen=function(){
 	clearTimeout(this.timerid);
 	this.timerid=setTimeout(this.discon.bind(this),1000*settings.CHAT_APIUSER_TIMEOUT);
@@ -451,10 +444,6 @@ io.sockets.on('connection',function(socket){
 				user.inout(data);
 			});
 	
-			//HottoMotto
-			socket.on("motto",function(data){
-				user.motto(data);
-			});
 			//ログ検索
 			socket.on("find",function(query,func){
 				user.find(query,func);
@@ -465,10 +454,6 @@ io.sockets.on('connection',function(socket){
 				func(getUsersData());
 			});
 			
-			//IDrequest（返信用）
-			socket.on("idrequest",function(data){
-				user.idrequest(data);
-			});
 
 			//いなくなった
 			socket.on("disconnect",function(data){
@@ -488,12 +473,6 @@ io.sockets.on('connection',function(socket){
 					socket.emit("result",resobj);
 				});
 			});
-			if(data.mode=="chalog"){
-				//IDrequest（返信用）
-				socket.on("idrequest",function(data){
-					idrequest(socket,data);
-				});
-			}
 		}
 	});
 	
@@ -601,12 +580,6 @@ function makelog(user,logobj){
 function toapi(callback){
 	users.filter(function(x){return x.type=="api"}).forEach(callback);
 }
-function idrequest(socket,data){
-	if(data.id.length!=24 && data.id.length!=12)return;
-	log.findOne(db.bson_serializer.ObjectID.createFromHexString(data.id),function(err,obj){
-		socket.emit("idresponse",obj);
-	});
-}
 
 //HTTP API
 function api(mode,req,res){
@@ -648,15 +621,7 @@ function api(mode,req,res){
 		inoutobj=user.getUserObj();
 	}else if(mode=="say"){
 		user.says(query);
-	}else if(mode=="motto"){
-		user.motto(query,res);
-		return;
-	}else if(mode=="idrequest"){
-		user.idrequest(query,res);
-		return;
 	}
-
-
 	var put={"error":false,
 		"userinfos":user.userinfos,
 		"myid":user.id,

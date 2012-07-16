@@ -41,6 +41,14 @@ LineMaker.prototype={
 		comsp.classList.add("comment");
 		comsp.appendChild(commentHTMLify(obj.comment));
 		dd.appendChild(comsp);
+		//チャンネル
+		if(obj.channel){
+			var chnsp=el("span");
+			chnsp.classList.add("channel");
+			chnsp.textContent="#"+obj.channel;
+			chnsp.dataset.channel=obj.channel;
+			dd.appendChild(chnsp);
+		}
 		var infsp=el("span");
 		infsp.classList.add("info");
 		var date=new Date(obj.time);
@@ -143,7 +151,7 @@ HighChatMaker.prototype.init=function(){
 	audioc.value = (localStorage.soc_highchat_audiovolume!=undefined ? localStorage.soc_highchat_audiovolume : (localStorage.soc_highchat_audiovolume=50));
 	if(this.parent && this.parent.audio)this.parent.audio.volume=audioc.value/100;
 	audioc.addEventListener("change",function(e){
-		console.log(audioc.value,this.parent.audio);
+		//console.log(audioc.value,this.parent.audio);
 		if(audioc.checkValidity() && this.parent.audio)this.parent.audio.volume=(localStorage.soc_highchat_audiovolume=audioc.value)/100;
 	}.bind(this),false);
 	this.infobar.appendChild(audioc);
@@ -190,7 +198,8 @@ HighChatMaker.prototype.make=function(obj){
 	var parse=_parse.bind(this);
 	var allowed_tag=["s","small","code"];
 	
-	var dd=df.childNodes.item(1);
+	//var dd=df.childNodes.item(1);
+	var dd=df.querySelector("span.comment");
 	parse(dd);
 	return df;
 	
@@ -298,19 +307,22 @@ HighChatMaker.prototype.make=function(obj){
 					node.parentNode.replaceChild(a,node.previousSibling);
 					continue;
 				}
-				//正男リンク
-				res=node.nodeValue.match(/^#(\d{4})/);
+				//チャネルリンク
+				res=node.nodeValue.match(/^(\s*)#(\S+)/);
 				if(res){
-					var a=document.createElement("a");
-					a.target="_blank";
-					a.href="http://81.la/"+res[1];
-					a.textContent=res[0];
-					node=node.splitText(res[0].length);
-					node.parentNode.replaceChild(a,node.previousSibling);
+					if(res[1]){
+						node=node.splitText(res[1].length);
+					}
+					var span=document.createElement("span");
+					span.classList.add("channel");
+					span.dataset.channel=res[2];
+					span.textContent="#"+res[2];
+					node=node.splitText(res[0].length-res[1].length);
+					node.parentNode.replaceChild(span,node.previousSibling);
 					continue;
 				}
 				//その他
-				res=node.nodeValue.match(/^(.+?)(?=\[\/?\w+?\]|https?:\/\/|#\d{4})/)
+				res=node.nodeValue.match(/^(.+?)(?=\[\/?\w+?\]|https?:\/\/|\s+#\S+)/)
 				if(res){
 					node=node.splitText(res[0].length);
 					continue;
@@ -386,18 +398,63 @@ ChatStream.prototype.init=function(chat){
 	//子供たち(ports)
 	this.children=[];
 };
-ChatStream.prototype.addChild=function(port){
+ChatStream.prototype.addChild=function(obj){
 	//こども
-	this.children.push(port);
+	this.children.push(obj);
+	//メッセージを受け取る
+	var t=this;
+	var port=obj.port, channel=obj.channel;
+	port.addEventListener("message",message);
+
+	function message(ev){
+		var d=ev.data;
+		if(d.name==="unload"){
+			//閉じられた
+			port.close();
+			t.children.splice(t.children.indexOf(obj),1);
+			return;
+		}
+
+		var obj1=d.args[0];
+		//フィルターをかける
+		if(d.name==="say"){
+			//発言
+			obj1.channel=channel;//チャンネルを与える
+		}else if(d.name==="find"){
+			//サブウィンドウのほうへ流す
+			//d.args[1]:func
+			//motto時はチャンネル限定してあげる
+			if(obj1.motto)obj1.channel=channel;
+			t.find(obj1,function(arr){
+				port.postMessage({
+					name:"findresponse",
+					arr:arr,
+				});
+			});
+			return;
+		}
+		//そしてそのまま流す
+		t.emit.apply(t,[d.name].concat(d.args));
+	}
 };
-ChatStream.prototype.$emit=function(name){
+ChatStream.prototype.$emit=function(name,obj1){
 	//本体
 	var em=io.EventEmitter.prototype.emit;
 	em.apply(this,arguments);
 	//子供たちにも送ってあげる
 	var c=this.children;
 	for(var i=0,l=c.length;i<l;i++){
-		var port=c[i];
+		//フィルタリングする
+		if(name==="log"){
+			if(obj1.channel!==c[i].channel){
+				//合わない
+				continue;
+			}
+		}else if(name==="find"){
+			//関数が含まれるのでブロック
+			continue;
+		}
+		var port=c[i].port;
 		port.postMessage({
 			name:name,
 			args:Array.prototype.slice.call(arguments,1),
@@ -410,12 +467,19 @@ ChatStream.prototype.regist=function(){
 ChatStream.prototype.setSessionid=function(id){
 	this.sessionid=sessionStorage.sessionid=id;
 };
+//発言する
+ChatStream.prototype.say=function(comment,response,channel){
+	this.emit("say",{"comment":comment,"response":response?response:"","channel":channel?channel:""});
+};
 //発言をサーバーに問い合わせる
 ChatStream.prototype.find=function(query,cb){
-	//query:  channel?:"foo"
-	cb([]);
+	//query:  channel?:"foo", id?:"deadbeef...", motto:{time,until}
+	this.emit("find",query,function(arr){
+		if(!Array.isArray(arr))cb([]);
+		cb(arr);
+	});
 };
-//ユーザーをサーバーに問い合わせる
+//ユーザーをサーバーに問い合わせる*/
 ChatStream.prototype.users=function(cb){
 	cb({
 		"users":[],
@@ -454,7 +518,7 @@ SocketChatStream.prototype.regist=function(){
 	this.socket.emit("regist",{"mode":"client","lastid":this.sessionid});
 };
 SocketChatStream.prototype.find=function(query,cb){
-	this.socket.emit("find",query,function(arr){
+	this.emit("find",query,function(arr){
 		if(!Array.isArray(arr))cb([]);
 		cb(arr);
 	});
@@ -494,6 +558,12 @@ ChannelStream.prototype.init=function(){
 			ev.source.postMessage(d,ev.origin);
 		}
 	},false);
+	//クローズを検知
+	window.addEventListener("unload",function(ev){
+		t.port.postMessage({
+			name:"unload",
+		});
+	},false);
 };
 ChannelStream.prototype.initPort=function(port){
 	//ポートが届いた
@@ -502,7 +572,7 @@ ChannelStream.prototype.initPort=function(port){
 	port.addEventListener("message",function(ev){
 		var d=ev.data;
 		//d.name: event name; d.args: event args;
-		t.emit.apply(t,[d.name].concat(d.args));
+		t.$emit.apply(t,[d.name].concat(d.args));
 	},false);
 };
 ChannelStream.prototype.emit=function(name){
@@ -513,6 +583,25 @@ ChannelStream.prototype.emit=function(name){
 			name:name,
 			args:Array.prototype.slice.call(arguments,1),
 		});
+	}
+};
+ChannelStream.prototype.find=function(query,cb){
+	var p=this.port;
+	//メッセージを
+	p.addEventListener("message",listener);
+	//リクエスト送信
+	/*p.postMessage({
+		name:"find",
+		query:query,
+	});*/
+	this.emit("find",query);
+
+	function listener(ev){
+		var d=ev.data;
+		if(d.name==="findresponse"){
+			cb(d.arr);
+			p.removeEventListener("message",listener);
+		}
 	}
 };
 
@@ -595,7 +684,7 @@ ChatClient.prototype={
 		
 		/*document.forms["inout"].addEventListener("submit",this.submit.bind(this),false);
 		document.forms["comment"].addEventListener("submit",this.submit.bind(this),false);*/
-		console.log("init!");
+		//console.log("init!");
 		document.addEventListener("submit",this.submit.bind(this),false);
 		
 		this.log.addEventListener('click',this.click.bind(this),false);
@@ -609,7 +698,7 @@ ChatClient.prototype={
 	//HottoMottoボタン初期化
 	prepareHottoMottoButton:function(){
 		var hottomottob=document.getElementsByClassName("logs")[0].getElementsByClassName("hottomottobutton")[0];
-		hottomottob.addEventListener("click",this.HottoMotto.bind(this),false);
+		hottomottob.addEventListener("click",function(e){this.HottoMotto()}.bind(this),false);
 	},
 	//フォーム準備
 	prepareForm:function(){
@@ -621,7 +710,7 @@ ChatClient.prototype={
 		//通信部分初期化
 	},
 	loginit:function(data){
-		console.log("loginit",data,this.oldest_time);
+		//console.log("loginit",data,this.oldest_time);
 		if(sessionStorage){
 			if(this.socket){
 				sessionStorage.socketid=this.socket.socket.sessionid;
@@ -652,7 +741,7 @@ ChatClient.prototype={
 	},
 	//誰かが来た
 	newuser: function(user){
-		console.log("newuser", user);
+		//console.log("newuser", user);
 		var li=document.createElement("li");
 		var sp=document.createElement("span");
 		sp.textContent=user.name;
@@ -667,7 +756,7 @@ ChatClient.prototype={
 		
 		li.appendChild(sp);
 		this.users.appendChild(li);
-		console.log("newuser out");
+		//console.log("newuser out");
 	},
 	getuserelement: function(id){
 		var ul=this.users.childNodes;
@@ -680,7 +769,7 @@ ChatClient.prototype={
 	},
 	//誰かがお亡くなりに
 	deluser: function(id){
-		console.log("deluser", id);
+		//console.log("deluser", id);
 		var elem=this.getuserelement(id);
 		if(!elem) return;
 		
@@ -691,11 +780,10 @@ ChatClient.prototype={
 			this.setusernumber(-1, 0);
 		}
 		this.users.removeChild(elem);
-		console.log("deluser out");
 	},
 	//最初にユーザリストを得る
 	userinit:function(obj){
-		console.log("userinit", obj);
+		//console.log("userinit", obj);
 		while(this.users.firstChild)this.users.removeChild(this.users.firstChild);//textNode消す
 		
 		obj.users.forEach(this.newuser, this);
@@ -710,7 +798,7 @@ ChatClient.prototype={
 	},
 	//誰かが入退室
 	inout: function(obj){
-		console.log("inout", obj);
+		//console.log("inout", obj);
 		var elem=this.getuserelement(obj.id);
 		if(!elem)return;
 		elem.firstChild.textContent=obj.name;
@@ -721,11 +809,10 @@ ChatClient.prototype={
 			elem.classList.remove("rom");
 			this.setusernumber(1, -1);
 		}
-		console.log("inout out");
 	},
 	//自分が入退室
 	userinfo:function(obj){
-		console.log("userinfo",obj);
+		//console.log("userinfo",obj);
 		this.me={
 			name:obj.name,
 			rom:obj.rom,
@@ -741,11 +828,18 @@ ChatClient.prototype={
 		}
 		if(!obj.refresh)this.inout(obj);
 	},
-	mottoResponse:function(data){
-		data.logs.forEach(function(line){
-			this.log.appendChild(this.line.make(line));
-		},this);
-		if(data.logs.length)this.oldest_time=data.logs.pop().time;
+	HottoMotto:function(until){
+		this.stream.find({
+			"motto":{
+				time:this.oldest_time,
+				until:until || void 0,
+			}
+		},function(logs){
+			logs.forEach(function(line){
+				this.log.appendChild(this.line.make(line));
+			},this);
+			if(logs.length)this.oldest_time=logs.pop().time;
+		}.bind(this));
 	},
 	
 	submit:function(e){
@@ -795,7 +889,11 @@ ChatClient.prototype={
 			document.forms["comment"].elements["response"].value=this.responding_tip.dataset.to;
 			document.forms["comment"].elements["comment"].focus();
 			this.responding_tip.classList.add("checked");
-			console.log(document.forms["comment"]);
+			//console.log(document.forms["comment"]);
+			return;
+		}else if(t.classList.contains("channel")&&t.dataset.channel){
+			//チャンネルだ
+			this.openChannel(t.dataset.channel);
 			return;
 		}
 		var dd=document.evaluate('ancestor-or-self::p',t,null,XPathResult.ANY_UNORDERED_NODE_TYPE,null).singleNodeValue;
@@ -807,7 +905,16 @@ ChatClient.prototype={
 		if(dd.classList.contains("respto") && dd.dataset.open!="open"){
 			//開く
 			this.responding_to=dd;
-			this.socket.emit("idrequest",{"id":dd.dataset.respto});
+			//this.socket.emit("idrequest",{"id":dd.dataset.respto});
+			this.stream.find({"id":dd.dataset.respto},function(arr){
+				var data=arr[0];
+				var line=this.line.make(data);
+				var bq=document.createElement("blockquote");
+				bq.classList.add("resp");
+				bq.appendChild(line);
+
+				dd.parentNode.insertBefore(bq,dd.nextSibling);
+			}.bind(this));
 			dd.dataset.open="open";
 			return;
 		}
@@ -818,17 +925,6 @@ ChatClient.prototype={
 		dd.appendChild(this.responding_tip);
 		this.responding_tip.dataset.to=dd.dataset.id;
 	},
-	idresponse:function(data){
-		if(!this.responding_to || !data)return;
-		var line=this.line.make(data);
-		var bq=document.createElement("blockquote");
-		bq.classList.add("resp");
-		bq.appendChild(line);
-
-		var r=this.responding_to;
-		r.parentNode.insertBefore(bq,r.nextSibling);
-		
-	},
 	disconnect:function(){
 		document.body.classList.add("discon");
 	},
@@ -836,7 +932,7 @@ ChatClient.prototype={
 	openChannel:function(channelname){
 		var win=window.open(location.pathname+"#channel");
 		//まず通信を確立する
-		var wait=300, count=0;
+		var wait=100, count=0;
 		var timerid=null;
 		var t=this;
 		window.addEventListener("message",listener);
@@ -865,7 +961,10 @@ ChatClient.prototype={
 					if(d.name==="ready"){
 						//できた
 						channel.port1.removeEventListener("message",ls);
-						t.stream.addChild(channel.port1);
+						t.stream.addChild({
+							port:channel.port1,
+							channel:channelname
+						});
 						t.initChild(channel.port1,channelname);
 					}
 				});
@@ -894,7 +993,6 @@ ChatClient.prototype={
 				rom:t.me.rom,
 			});
 		});
-
 
 		function send(name,obj){
 			if(Array.isArray(obj)){
@@ -928,8 +1026,6 @@ SocketChat.prototype.cominit=function(){
 	stream.on("log",this.recv.bind(this));
 	stream.on("users",this.userinit.bind(this));
 	stream.on("userinfo",this.userinfo.bind(this));
-	stream.on("mottoResponse",this.mottoResponse.bind(this));
-	stream.on("idresponse",this.idresponse.bind(this));
 	stream.on("disconnect",this.disconnect.bind(this));
 	stream.on("newuser",this.newuser.bind(this));
 	stream.on("deluser",this.deluser.bind(this));
@@ -942,15 +1038,16 @@ SocketChat.prototype.inout_notify=function(name){
 	this.stream.emit("inout",{"name":name});
 };
 SocketChat.prototype.say=function(comment,response,channel){
-	this.stream.emit("say",{"comment":comment,"response":response?response:"","channel":channel?channel:""});
+	this.stream.say(comment,response,channel);
 };
-SocketChat.prototype.HottoMotto=function(e,until){
+/*SocketChat.prototype.HottoMotto=function(e,until){
 	if(until){
 		this.stream.emit("motto",{"time":this.oldest_time,"until":until});
 	}else{
 		this.stream.emit("motto",{"time":this.oldest_time});
 	}
-};
+};*/
+
 
 function APIChat(){
 	ChatClient.apply(this,arguments);
@@ -1338,7 +1435,7 @@ CommandLineChat.prototype.commands=(function(){
 					//ローカルで書いてあるからずらす
 					until+=(new Date).getTimezoneOffset()*60000
 				}
-				process.chat.HottoMotto(null,until);
+				process.chat.HottoMotto(until);
 				process.die();
 				return;
 			}

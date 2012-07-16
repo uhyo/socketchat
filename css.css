@@ -26,6 +26,17 @@ div.logs{
 	color:#cccccc;
 	padding-left:0.8ex;
 }
+#log span.main span.channel{
+	padding-left:1.5ex;
+	color:#0084b4;
+	cursor:pointer;
+}
+#log span.comment span.channel{
+	padding-left:0;
+}
+#log span.main span.channel:hover{
+	text-decoration:underline;
+}
 #log .name{
 	font-weight:bold;
 }
