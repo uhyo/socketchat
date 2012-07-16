@@ -399,6 +399,13 @@ ChatStream.prototype.init=function(chat){
 	this.sessionid = sessionStorage.sessionid || void 0;
 	//子供たち(ports)
 	this.children=[];
+	//終了時に子どもも消す
+	window.addEventListener("unload",function(ev){
+		var c=this.children;
+		for(var i=0,l=c.length;i<l;i++){
+			c[i].window.close();
+		}
+	}.bind(this),false);
 };
 ChatStream.prototype.addChild=function(obj){
 	//こども
@@ -972,7 +979,8 @@ ChatClient.prototype={
 						channel.port1.removeEventListener("message",ls);
 						t.stream.addChild({
 							port:channel.port1,
-							channel:channelname
+							channel:channelname,
+							window:win,
 						});
 						t.initChild(channel.port1,channelname);
 					}
