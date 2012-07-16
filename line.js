@@ -375,6 +375,51 @@ HighChatMaker.prototype.gyozamouse=function(e){
 		img.style.display="";
 	}
 };
+//通信を担当するオブジェクト
+function ChatStream(chat){
+	io.EventEmitter.apply(this);
+	this.chat=chat;	//ChatClientオブジェクト
+	this.sessionid = sessionStorage.sessionid || void 0;
+	this.init();
+}
+ChatStream.prototype=new io.EventEmitter;
+ChatStream.prototype.init=function(){};
+ChatStream.prototype.$emit=io.EventEmitter.prototype.emit;
+ChatStream.prototype.regist=function(){
+	//自分をサーバーに登録する
+};
+ChatStream.prototype.setSessionid=function(id){
+	this.sessionid=sessionStorage.sessionid=id;
+};
+
+function SocketChatStream(){
+	ChatStream.apply(this,arguments);
+}
+SocketChatStream.prototype=new ChatStream;
+SocketChatStream.prototype.init=function(){
+	var socket;
+	var t=this;
+	socket=this.socket = io.connect(settings.SOCKET_HOST_NAME||(location.protocol+"//"+location.host));
+	socket.on("connect",function(){
+		t.setSessionid(socket.socket.sessionid);
+	});
+	
+	//$emitを乗っ取る
+	socket._old_$emit=socket.$emit;
+	socket.$emit=function(){
+		t.$emit.apply(t,arguments);
+		socket._old_$emit.apply(socket,arguments);
+	};
+};
+SocketChatStream.prototype.emit=function(){
+	//ソケットへ
+	this.socket.emit.apply(this.socket,arguments);
+	this.$emit.apply(this,arguments);
+};
+SocketChatStream.prototype.regist=function(){
+	this.socket.emit("regist",{"mode":"client","lastid":this.sessionid});
+};
+
 
 
 function ChatClient(log,info,infobar){
@@ -674,34 +719,35 @@ function SocketChat(){
 }
 SocketChat.prototype=new ChatClient;
 SocketChat.prototype.cominit=function(){
-	var socket;
-	socket=this.socket = io.connect(settings.SOCKET_HOST_NAME||location.origin);
+	var stream;
+	//socket=this.socket = io.connect(settings.SOCKET_HOST_NAME||location.origin);
+	this.stream=stream=new SocketChatStream();
 	
-	socket.on("init",this.loginit.bind(this));
-	socket.on("log",this.recv.bind(this));
-	socket.on("users",this.userinit.bind(this));
-	socket.on("userinfo",this.userinfo.bind(this));
-	socket.on("mottoResponse",this.mottoResponse.bind(this));
-	socket.on("idresponse",this.idresponse.bind(this));
-	socket.on("disconnect",this.disconnect.bind(this));
-	socket.on("newuser",this.newuser.bind(this));
-	socket.on("deluser",this.deluser.bind(this));
-	socket.on("inout",this.inout.bind(this));
+	stream.on("init",this.loginit.bind(this));
+	stream.on("log",this.recv.bind(this));
+	stream.on("users",this.userinit.bind(this));
+	stream.on("userinfo",this.userinfo.bind(this));
+	stream.on("mottoResponse",this.mottoResponse.bind(this));
+	stream.on("idresponse",this.idresponse.bind(this));
+	stream.on("disconnect",this.disconnect.bind(this));
+	stream.on("newuser",this.newuser.bind(this));
+	stream.on("deluser",this.deluser.bind(this));
+	stream.on("inout",this.inout.bind(this));
 
-	socket.emit("regist",{"mode":"client","lastid":sessionStorage.socketid});
+	stream.regist();
 	
 };
 SocketChat.prototype.inout_notify=function(name){
-	this.socket.emit("inout",{"name":name});
+	this.stream.emit("inout",{"name":name});
 };
 SocketChat.prototype.say=function(comment,response,channel){
-	this.socket.emit("say",{"comment":comment,"response":response?response:"","channel":channel?channel:""});
+	this.stream.emit("say",{"comment":comment,"response":response?response:"","channel":channel?channel:""});
 };
 SocketChat.prototype.HottoMotto=function(e,until){
 	if(until){
-		this.socket.emit("motto",{"time":this.oldest_time,"until":until});
+		this.stream.emit("motto",{"time":this.oldest_time,"until":until});
 	}else{
-		this.socket.emit("motto",{"time":this.oldest_time});
+		this.stream.emit("motto",{"time":this.oldest_time});
 	}
 };
 
