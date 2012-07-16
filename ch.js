@@ -322,7 +322,6 @@ User.prototype.find=function(query,callback){
 		var m=query.motto;
 		q.time={$lt:new Date(m.time)};
 		if(m.until){
-			console.log("untilmotto!",m.until);
 			q.time.$gte=new Date(m.until);
 			//最大までにしてあげる
 			if(!query.number)number=settings.CHAT_MOTTO_MAX_LOG;
@@ -511,7 +510,6 @@ function addSocketUser(socket,lastid){
 	user=users.filter(function(x){return x.socket && x.socket.id==lastid && x.timerid})[0];
 	if(user && !user.rom){
 		//音もなく復帰
-		console.log(user.timerid);
 		clearTimeout(user.timerid);
 		user.timerid=null;
 		user.socket=socket;

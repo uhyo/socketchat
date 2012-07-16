@@ -396,9 +396,16 @@ function ChatStream(){
 ChatStream.prototype=new io.EventEmitter;
 ChatStream.prototype.init=function(chat){
 	this.chat=chat;	//ChatClientオブジェクト
-	this.sessionid = sessionStorage.sessionid || void 0;
+	this.lastid = this.sessionid = sessionStorage.sessionid || void 0;
 	//子供たち(ports)
 	this.children=[];
+	//終了時に子どもも消す
+	window.addEventListener("unload",function(ev){
+		var c=this.children;
+		for(var i=0,l=c.length;i<l;i++){
+			c[i].window.close();
+		}
+	}.bind(this),false);
 };
 ChatStream.prototype.addChild=function(obj){
 	//こども
@@ -524,7 +531,7 @@ SocketChatStream.prototype.emit=function(){
 	this.$emit.apply(this,arguments);
 };
 SocketChatStream.prototype.regist=function(){
-	this.socket.emit("regist",{"mode":"client","lastid":this.sessionid});
+	this.socket.emit("regist",{"mode":"client","lastid":this.lastid});
 };
 SocketChatStream.prototype.find=function(query,cb){
 	this.emit("find",query,function(arr){
@@ -720,13 +727,6 @@ ChatClient.prototype={
 	},
 	loginit:function(data){
 		//console.log("loginit",data,this.oldest_time);
-		if(sessionStorage){
-			if(this.socket){
-				sessionStorage.socketid=this.socket.socket.sessionid;
-			}else{
-				sessionStorage.sessionid=this.sessionId;
-			}
-		}
 		data.logs.reverse().forEach(function(line){
 			this.write(line);
 		},this);
@@ -972,7 +972,8 @@ ChatClient.prototype={
 						channel.port1.removeEventListener("message",ls);
 						t.stream.addChild({
 							port:channel.port1,
-							channel:channelname
+							channel:channelname,
+							window:win,
 						});
 						t.initChild(channel.port1,channelname);
 					}
@@ -1589,7 +1590,19 @@ CommandLineChat.prototype.commands=(function(){
 		}
 	};
 	obj.go=function(process){
-		process.chat.newwin(process.arg);
+		var dest=process.arg;
+		if(dest==="wiki"){
+			//wikiへ飛ぶ
+			dest="http://shogiwiki.81.la/shogiwiki/";
+		}else{
+			var result=dest.match(/^#(\S+)$/);
+			if(result){
+				process.chat.openChannel(result[1]);
+				process.die();
+				return;
+			}
+		}
+		process.chat.newwin(dest);
 		process.die();
 	};
 	obj.disip=function(process){
@@ -1617,6 +1630,7 @@ CommandLineChat.prototype.commands=(function(){
 		//返信を行う
 		
 		var index=0,maxlen=10;
+		var choosing=true;
 		
 		process.newContext();
 
@@ -1636,6 +1650,7 @@ CommandLineChat.prototype.commands=(function(){
 				return false;
 			}else if(e.keyCode==13){
 				//Enter
+				if(!choosing)return false;
 				var lc=process.chat.log.childNodes;
 				var c=lc[index];
 				if(!c){
@@ -1650,6 +1665,7 @@ CommandLineChat.prototype.commands=(function(){
 					}
 					end();
 				});
+				choosing=false;
 				return true;	//input側で新たなkeyを設定するから（暫定処置）
 			}
 			return true;
