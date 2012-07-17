@@ -1,5 +1,6 @@
 body{
 	font-family: Helvetica, HiraKakuProN-W3, sans-serif;
+	-webkit-text-size-adjust : none;
 }
 body.discon{
 	background-color:#f4f4f4;

@@ -1,6 +1,5 @@
 body{
 	font-family:'Arial','MS Sans Serif', sans-serif;
-	-webkit-text-size-adjust : none;
 }
 body.discon{
 	background-color:#f4f4f4;
