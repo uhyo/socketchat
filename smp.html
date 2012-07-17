@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>socket chat</title>
+    <link href="/smp.css" rel="stylesheet">
+    <script src="/settings.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/line.js"></script>
+
+    <script>
+chat=new SocketChat("log","info","infobar");
+window.addEventListener('load',function(){
+	chat.init();
+},false);
+
+function hideAddrBar(){
+	setTimeout('scrollTo(0,1)',100);
+}
+
+function config(){
+	var v_false = document.getElementById("main"); 
+	v_false.style.display = 'none';
+	var v_true = document.getElementById("infobar"); 
+	v_true.style.display = 'block';
+}
+function userlist(){
+	var v_false = document.getElementById("main"); 
+	v_false.style.display = 'none';
+	var v_true = document.getElementById("info"); 
+	v_true.style.display = 'block';
+}
+function back(){
+	var v_false = document.getElementById("info"); 
+	v_false.style.display = 'none';
+	var v_false = document.getElementById("infobar"); 
+	v_false.style.display = 'none';
+	var v_true = document.getElementById("main"); 
+	v_true.style.display = 'block';
+}
+    </script>
+  </head>
+  <body onload="hideAddrBar();" onOrientationChange="hideAddrBar();">
+  <div id="main">
+	  <div class="forms">
+	    <button onclick="config();">設定</button><button onclick="userlist();">入室者</button>
+	    <form name="inout">
+	      <p><input name="uname" size="20" maxlength="25" required type="text" style="width:40%"><input type="submit" value="入室"></p>
+	    </form>
+	    <form name="comment">
+	      <p><input name="comment" size="70" autocomplete="off" required type="text"><input type="submit" value="発言"></p>
+	      <input type="hidden" name="response" value="">
+	    </form>
+	  </div>
+	  <div class="logs">
+	    <div id="log">
+	    </div>
+	    <p><button class="hottomottobutton">HottoMotto</button></p>
+	  </div>
+  </div>
+  <div id="info">
+  	<p><button onclick="back();">戻る</button></p>
+    <span class="usernumber"></span>
+    <ul class="users">
+    </ul>
+  </div>
+  <div id="infobar">
+  	<button onclick="back();">戻る</button>
+  </div>
+  <p style="font-size:xx-small"><a href="https://github.com/uhyo/socketchat" target="_blank">github</a></p>
+  </body>
+</html>

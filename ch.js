@@ -44,10 +44,10 @@ var app = require('express').createServer();
 app.get(/^\/(index\.html)?$/, function(req, res){
 	res.sendfile(__dirname + '/index.html');
 });
-app.get(/^\/(log|list|apiclient|com)$/, function(req, res){
+app.get(/^\/(log|list|apiclient|com|smp)$/, function(req, res){
 	res.sendfile(__dirname + "/"+req.params[0]+'.html');
 });
-app.get(/^\/((?:line|storagefs)\.js|css\.css|sound\.(mp3|wav|ogg))$/, function(req, res){
+app.get(/^\/((?:line|storagefs)\.js|css\.css|sound\.(mp3|wav|ogg)|smp\.css)$/, function(req, res){
 	res.sendfile(__dirname + "/"+req.params[0]);
 });
 

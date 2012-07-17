@@ -1,6 +1,5 @@
 body{
-	font-family:'Arial','MS Sans Serif', sans-serif;
-	-webkit-text-size-adjust : none;
+	font-family: Helvetica, HiraKakuProN-W3, sans-serif;
 }
 body.discon{
 	background-color:#f4f4f4;
@@ -17,7 +16,11 @@ div.logs{
 	margin:0;
 }
 #log p{
-	margin:0;
+	height: 43px;
+	border-bottom: solid 1px #D9D9D9;
+	font-family: HiraKakuProN-W6;
+	line-height: 19px;
+	overflow: hidden;
 }
 #log .name.syslog{
 	color:#0000ff !important;
@@ -26,6 +29,7 @@ div.logs{
 	font-size:smaller;
 	color:#cccccc;
 	padding-left:0.8ex;
+	display: block;
 }
 #log span.main span.channel{
 	padding-left:1.5ex;
@@ -56,13 +60,6 @@ div.logs{
 	margin:0 0 0 3em;
 }
 
-div#info{
-	position:fixed;
-	right:10px;
-	bottom:0px;
-	opacity:0.45;
-	text-align:right;
-}
 ul.users{
 	margin:0;
 }
@@ -85,10 +82,13 @@ span.code{
 }
 
 div.forms form{
-	display:inline-block;
+	display:block;
 }
 div.forms p{
 	margin:0;
+}
+div.forms p input[type=text]{
+	width:60%;
 }
 #log img{
 	vertical-align:middle;
@@ -105,40 +105,21 @@ div.forms p{
 li.rom{
 	display: none;
 }
-/* コンソール風 */
-#console{
-	font-family:monospace;
-	background-color:rgba(48,48,48,0.7);
-	color:#ffffff;
-	height:30em;
-	width:100%;
-	position:fixed;
-	left:0;
-	bottom:-30em;
-	padding:0 2em;
-	overflow-y:scroll;
-	
-	-webkit-transition:bottom 0.3s ease;
-	-moz-transition:bottom 0.3s ease;
-	-o-transition:bottom 0.3s ease;
-	transition:bottom 0.3s ease;
+div#infobar{
+	display: none;
 }
-pre.consoleoutput{
-	margin:0;
-	padding:0;
+div#info{
+	display: none;
 }
-#console.open{
-	bottom:0;
+.gyozainfo{
+	width: 100%;
+	height: 43px;
+	border-bottom: solid 1px #D9D9D9;
+	font-family: HiraKakuProN-W6;
+	line-height: 19px;
+	overflow: hidden;
+	background-color: white;
 }
-#console p{
-	margin:0;
-	white-space:pre;
-}
-#console input{
-	width:90%;
-	border:none;
-	outline:none;
-	color:#ffffff;
-	background-color:transparent;
-	font-family:monospace;
+input[type=range]{
+	width: 100%;
 }
