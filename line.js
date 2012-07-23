@@ -22,14 +22,18 @@ if (!Function.prototype.bind) {
 
 }
 
+//ログオブジェクトからログのHTML要素を生成するオブジェクト
+//parentはChatClientオブジェクト
 function LineMaker(parent){
 	this.parent=parent;
 }
 LineMaker.prototype={
+	//ログオブジェクトを渡されると1行(p要素)を返すメソッド
 	make:function(obj){
 		var df=document.createElement("p");
 		var color=this.getColor(obj.ip);
-		var dt=el("bdi",obj.name);
+		//名前部分の生成
+		var dt=el("bdi",obj.name);	//bdi要素を使うと名前に右から左の文字を使われても表示が崩れない
 		if(obj.syslog)dt.classList.add("syslog");
 		dt.classList.add("name");
 		df.style.color=color;
@@ -37,12 +41,14 @@ LineMaker.prototype={
 		df.appendChild(dt);
 		var dd=el("span","");
 		dd.classList.add("main");
+		//comsp: コメント部分のspan
 		var comsp=el("span");
 		comsp.classList.add("comment");
 		comsp.appendChild(commentHTMLify(obj.comment));
 		dd.appendChild(comsp);
 		//チャンネル
 		if(obj.channel){
+			//ログのチャンネル名と、本文中のハッシュタグがかぶる場合は本文を優先
 			if(obj.comment.indexOf("#"+obj.channel)===-1){
 				var chnsp=el("span");
 				chnsp.classList.add("channel");
@@ -51,10 +57,12 @@ LineMaker.prototype={
 				dd.appendChild(chnsp);
 			}
 		}
+		//時間、IPアドレスなど
 		var infsp=el("span");
 		infsp.classList.add("info");
 		var date=new Date(obj.time);
 		var dat=date.getFullYear()+"-"+zero2(date.getMonth()+1)+"-"+zero2(date.getDate()), tim=zero2(date.getHours())+":"+zero2(date.getMinutes())+":"+zero2(date.getSeconds());
+		//時間はtime要素
 		var time=el("time");
 		var datelement=el("span",dat+" "), timelement=el("span",tim);
 		datelement.classList.add("date");
@@ -63,15 +71,18 @@ LineMaker.prototype={
 		time.appendChild(timelement);
 		time.appendChild(document.createTextNode("; "));
 		//time.datetime=dat+"T"+tim+"+09:00";
-		time.dateTime=date.toISOString();
+		//time.dateTime=date.toISOString();	//datetime属性は廃止された
 		
+		//コメントの_idを保存（返信など用）
 		df.dataset.id=obj._id;
 		if(obj.response){
+			//そのコメントが返信の場合はdatasetに追加、クラス追加
 			df.dataset.respto=obj.response;
 			df.classList.add("respto");
 		}
 		dt.title=dat+" "+tim+", "+obj.ip;
 	
+		//IPaddressのspan要素
 		var ipelement = el("span",obj.ip+"; ");
 		ipelement.classList.add("ip");
 		infsp.appendChild(time);
@@ -81,23 +92,30 @@ LineMaker.prototype={
 		df.appendChild(dd);
 		return df;
 
+		//要素名と中身のテキストを指定すると生成する関数el
 		function el(name,text){
 			var ret=document.createElement(name);
-			if(typeof text!="undefined") ret.textContent=text;
+			if(typeof text!=="undefined") ret.textContent=text;
 			return ret;
 		}
 		function zero2(str){
+			//2桁に0埋めする
 			return ("00"+str).slice(-2);
 		}
+		//obj.commentをHTML化する
 		function commentHTMLify(comment){
-			if(typeof comment=="object"){
-				if(comment instanceof Array){
+			if(typeof comment==="object"){
+				if(Array.isArray(comment)){
+					//配列の場合はそれぞれを再帰的に処理して連結
 					var df=document.createDocumentFragment();
 					comment.forEach(function(x){
 						df.appendChild(commentHTMLify(x));
 					});
 					return df;
 				}else{
+					//オブジェクトの場合HTML要素を生成
+					//name:要素名 attributes: key-valueのオブジェクト style: key-valueのCSSスタイル
+					//childの中身を再帰的に処理して子にする
 					var elm=document.createElement(comment.name);
 					for(var i in comment.attributes){
 						elm.setAttribute(i,comment.attributes[i]);
@@ -109,10 +127,12 @@ LineMaker.prototype={
 					return elm;
 				}
 			}else{
+				//テキストならテキストノードを生成
 				return document.createTextNode(comment);
 			}
 		}
 	},
+	//IPアドレスから色を生成
 	getColor:function(ip){
 		var arr=ip.split(/\./);
 		return "rgb("+Math.floor(parseInt(arr[0])*0.75)+", "+
@@ -122,12 +142,14 @@ LineMaker.prototype={
 }
 
 
+//LineMakerを継承。HTML化されたコメントをさらに加工
 function HighChatMaker(parent,infobar){
 	this.parent=parent;
 	this.gyoza1_on=null;	//mouseoverがonになっているか
 	this.gyozas=["餃子無展開","餃子オンマウス","餃子常時"];
-	this.infobar=infobar;
+	this.infobar=infobar;	//餃子ボタンなどを置く場所
 	if(!infobar){
+		//infobarがない場合のエラー防止（見えないdiv）
 		this.infobar=document.createElement("div");
 	}
 	this.init();
@@ -140,6 +162,7 @@ HighChatMaker.prototype.init=function(){
 	//infobar
 	//while(this.infobar.firstChild)this.infobar.removeChild(this.infobar.firstChild);
 	
+	//餃子ボタン
 	this.gyozab=document.createElement("button");
 	this.gyozab.textContent=this.gyozas[this.gyoza];
 	this.gyozab.classList.add("gyozainfo");
@@ -147,9 +170,10 @@ HighChatMaker.prototype.init=function(){
 	this.gyozab.addEventListener("click",this.gyozabutton.bind(this),false);
 	this.infobar.appendChild(this.gyozab);
 	
-	//audio
+	//audio音量調整
 	var audioc=this.audioc=document.createElement("input");
 	audioc.type="range",audioc.min=0,audioc.max=100,audioc.step=10;
+	//localStorageから音量設定読み出し。未設定の場合50を設定
 	audioc.value = (localStorage.soc_highchat_audiovolume!=undefined ? localStorage.soc_highchat_audiovolume : (localStorage.soc_highchat_audiovolume=50));
 	if(this.parent && this.parent.audio)this.parent.audio.volume=audioc.value/100;
 	audioc.addEventListener("change",function(e){
@@ -196,22 +220,29 @@ HighChatMaker.gyazoSetting = [
 	}
 ];
 HighChatMaker.prototype.make=function(obj){
+	//LineMakerにHTML要素を生成してもらう
 	var df=LineMaker.prototype.make.apply(this,arguments);
 	var parse=_parse.bind(this);
 	var allowed_tag=["s","small","code"];
 	
 	//var dd=df.childNodes.item(1);
+	//コメント部分をパース
 	var dd=df.querySelector("span.comment");
 	parse(dd);
+	//余計なテキストノードなどを除去
+	df.normalize();
 	return df;
 	
 	function _parse(node){
+		//Text#splitText: テキストノードを先頭からn文字のところで2つに分ける。返り値はあとのノード
+		//DocumentFragment: 複数の並列のノードをまとめる親。appendChildしたときは兄弟のみが追加される
 		if(node.nodeType==Node.TEXT_NODE){
 			//テキストノード
 			if(!node.parentNode)return;
 			var result=document.createDocumentFragment();
+			//全て処理し終えるまで続ける。先頭から順番に処理
 			while(node.nodeValue){
-				//開始タグ
+				//先頭が開始タグ
 				var res=node.nodeValue.match(/^\[(\w+?)\]/);
 				if(res){
 					if(allowed_tag.indexOf(res[1])<0){
@@ -219,14 +250,20 @@ HighChatMaker.prototype.make=function(obj){
 						node=node.splitText(res[0].length);
 						continue;
 					}
+					//タグが適用される部分をspanで囲む
 					var span=document.createElement("span");
+					//タグ名はクラスにする
 					span.classList.add(res[1]);
+					//タグより後ろを一旦全てspan要素の中に突っ込む
 					span.textContent=node.nodeValue.slice(res[0].length);
 					if(!span.textContent){
+						//空だったのでキャンセル。spanは破棄してただのテキスト扱い
 						node=node.splitText(res[0].length);
 						continue;
 					}
+					//処理対象のノード（後ろ全て含む）をspan（後ろ全てコピーされた）に置き換え
 					node.parentNode.replaceChild(span,node);
+					//これからはspanの中のテキストノードを処理していく
 					node=span.firstChild;
 					continue;
 				}
@@ -240,18 +277,20 @@ HighChatMaker.prototype.make=function(obj){
 					}
 					//閉じるべきタグを探す
 					var p=node;
-					while(p=p.parentNode){
+					while(p=p.parentNode){	//nodeはテキストノードなのでnodeの親からスタート
 						if(p.classList && p.classList.contains(res[1])){
+							//問題のタグである
 							break;
 						}
 					}
+					//タグを閉じる
 					if(p){
-						//タグを閉じる
+						//終了タグを取り除いて、nodeの中には終了タグより右側が残る
 						node.nodeValue=node.nodeValue.slice(res[0].length);
-						//うしろにひとまるGOGOとかがあると挟まってしまうので修正
-						//p.parentNode.appendChild(node);
+						//nodeをタグの外へ移動（pの後ろへ）
 						p.parentNode.insertBefore(node,p.nextSibling);
 					}else{
+						//そのタグは無かった。ただのテキストとして処理
 						node=node.splitText(res[0].length);
 						continue;
 					}
@@ -261,6 +300,7 @@ HighChatMaker.prototype.make=function(obj){
 				res=node.nodeValue.match(/^https?:\/\/\S+/);
 				if(res){
 					var matched=false;
+					//URLがgyazo系かどうか調べる
 					for(var i=0, l=HighChatMaker.gyazoSetting.length; i<l; i++){
 						var settingObj = HighChatMaker.gyazoSetting[i];
 						var res2=res[0].match(new RegExp("^"+settingObj.url.image.replace(".", "\\.")+"([0-9a-f]{32})(?:\\.png)?"));
@@ -274,13 +314,16 @@ HighChatMaker.prototype.make=function(obj){
 						if(settingObj.thumb && this.gyoza==2){
 							//餃子常時展開
 							(function(a){
+								//クロージャによりa要素への参照を保存（複数Gyazoがあった場合for文の中でaが書き換わってしまうため）
 								var img=document.createElement("img");
 								img.classList.add("thumbnail");
-								img.hidden=true;
+								img.hidden=true;	//読み込み終わるまで表示しない
 								a.appendChild(img);
+								//読み込み中の文字列
 								var temp_node=document.createTextNode(settingObj.text.opening);
 								a.appendChild(temp_node);
 								img.addEventListener('load',function(e){
+									//文字列を消して画像を表示
 									a.removeChild(temp_node);
 									img.hidden=false;
 								},false);
@@ -291,16 +334,18 @@ HighChatMaker.prototype.make=function(obj){
 							a.textContent=settingObj.text.normal;
 						}
 						node=node.splitText(res2[0].length);
+						//node.previousSiblingは、 splitTextで切断されたurl部分のテキストノード
 						node.parentNode.replaceChild(a,node.previousSibling);
 						matched=true;
 						break;
 					}
 					if(matched) continue;
-						
+					//通常のリンクだった
 					var a=document.createElement("a");
 					a.href=res[0];
 					a.target="_blank";
 					try{
+						//%xxなどを普通の文字列に変換する。不正な%があると困るのでtryで囲む
 						a.textContent=decodeURIComponent(res[0]);
 					}catch(e){
 						a.textContent=res[0];
@@ -313,29 +358,33 @@ HighChatMaker.prototype.make=function(obj){
 				res=node.nodeValue.match(/^(\s*)#(\S+)/);
 				if(res){
 					if(res[1]){
+						//前の空白はいらないのでそのまま流す
 						node=node.splitText(res[1].length);
 					}
+					//チャネルのスタイルを変える
 					var span=document.createElement("span");
 					span.classList.add("channel");
 					span.dataset.channel=res[2];
 					span.textContent="#"+res[2];
+					//チャネル部分を分離（スペースは既に分離したのでその分だけ文字数を減らしてカウント）
 					node=node.splitText(res[0].length-res[1].length);
 					node.parentNode.replaceChild(span,node.previousSibling);
 					continue;
 				}
-				//その他
+				//その他 上記のマークアップを発見するまではただの文字列なので普通にテキストノードを生成
 				res=node.nodeValue.match(/^(.+?)(?=\[\/?\w+?\]|https?:\/\/|\s+#\S+)/)
 				if(res){
 					node=node.splitText(res[0].length);
 					continue;
 				}
+				//もう最後まで何もない。nodeは空のテキストノードになる
 				node=node.splitText(node.nodeValue.length);
 //				throw new Error("parse failed");
-				
-				
 			}
 		}else if(node.childNodes){
+			//elementノードの場合 子のテキストを再帰的処理
 			var nodes=[];
+			//途中でchildNodesが変化するので、処理対象のノードをリストアップ
 			for(var i=0,l=node.childNodes.length;i<l;i++){
 				nodes.push(node.childNodes[i]);
 			}
@@ -346,10 +395,14 @@ HighChatMaker.prototype.make=function(obj){
 		}
 	}
 };
+//餃子ボタンにより餃子モードが変更されたりした処理
 HighChatMaker.prototype.setGyoza=function(gyoza){
+	//localStorageに保存
 	this.gyoza=localStorage.soc_highchat_gyoza=gyoza%this.gyozas.length;
+	//餃子ボタンを変更
 	this.gyozab.textContent=this.gyozas[this.gyoza];
 
+	//イベントをセット/除去
 	if(this.gyoza==1 && !this.gyoza1_on){
 		this.gyoza1_on=this.gyozamouse.bind(this);
 		document.addEventListener("mouseover",this.gyoza1_on,false);
@@ -361,11 +414,15 @@ HighChatMaker.prototype.setGyoza=function(gyoza){
 HighChatMaker.prototype.gyozabutton=function(e){
 	this.setGyoza(this.gyoza+1);
 };
+//餃子の上に乗った（餃子オンマウス時）
 HighChatMaker.prototype.gyozamouse=function(e){
 	var t=e.target;
 	if(t.classList.contains("gyoza")){
+		//既に展開処理を行っている場合はとばす
 		if(t.dataset.gyazoloaded) return;
 		t.dataset.gyazoloaded=true;
+
+		//どの餃子が調べる
 		for(var i=0, l=HighChatMaker.gyazoSetting.length; i<l; i++){
 			var settingObj = HighChatMaker.gyazoSetting[i];
 			if(!settingObj.thumb) continue;
@@ -375,9 +432,11 @@ HighChatMaker.prototype.gyozamouse=function(e){
 				img.src=settingObj.url.thumb+result[1]+".png";
 				img.alt=settingObj.url.image+result[1]+".png";
 			
+				//非表示のimg要素を生成してloadを待つ
 				img.addEventListener("load",ev,false);
-				img.style.display="none";
-				t.textContent=settingObj.text.opening;
+				//img.style.display="none";
+				img.hidden=true;
+				t.textContent=settingObj.text.opening;	//テキストはオープン状態に変更
 				t.appendChild(img);
 				return;
 			}
@@ -385,19 +444,22 @@ HighChatMaker.prototype.gyozamouse=function(e){
 	}
 	
 	function ev(e){
+		//ロード完了したらオープン中のテキストは除去
 		t.removeChild(t.firstChild);
-		img.style.display="";
+		img.hidden=false;
 	}
 };
 //通信を担当するオブジェクト
 function ChatStream(){
+	//EventEmitter（onでlistener登録、emitでイベント発火）
 	io.EventEmitter.apply(this);
 }
 ChatStream.prototype=new io.EventEmitter;
 ChatStream.prototype.init=function(chat){
 	this.chat=chat;	//ChatClientオブジェクト
+	//ページを更新したときなどの復帰用にsessionid
 	this.lastid = this.sessionid = sessionStorage.sessionid || void 0;
-	//子供たち(ports)
+	//子供たち(ports) port:MessagePort, channel: (チャンネル名), window:Window
 	this.children=[];
 	//終了時に子どもも消す
 	window.addEventListener("unload",function(ev){
@@ -408,18 +470,21 @@ ChatStream.prototype.init=function(chat){
 	}.bind(this),false);
 };
 ChatStream.prototype.addChild=function(obj){
-	//こども
+	//こどもを追加する。メッセージを受けたらこどもにも送る
 	this.children.push(obj);
 	//メッセージを受け取る
 	var t=this;
 	var port=obj.port, channel=obj.channel;
+	//messageイベントで受け取れる
 	port.addEventListener("message",message);
 
 	function message(ev){
 		var d=ev.data;
+		//メッセージd: {name:(イベント名), args:パラメータ配列}
 		if(d.name==="unload"){
-			//閉じられた
+			//こどもが閉じられた(emitしない内部メッセージ)
 			port.close();
+			//子どもの登録を末梢
 			t.children.splice(t.children.indexOf(obj),1);
 			return;
 		}
@@ -427,14 +492,17 @@ ChatStream.prototype.addChild=function(obj){
 		var obj1=d.args[0];
 		//フィルターをかける
 		if(d.name==="say"){
-			//発言
-			obj1.channel=channel;//チャンネルを与える
+			//こどもから来た発言
+			if(!obj1.channel){
+				obj1.channel=channel;//チャンネルを与える
+			}
 		}else if(d.name==="find"){
-			//サブウィンドウのほうへ流す
+			//サブウィンドウのほうへ流す（関数は送れない）
 			//d.args[1]:func
 			//motto時はチャンネル限定してあげる
 			if(obj1.motto)obj1.channel=channel;
 			t.find(obj1,function(arr){
+				//結果を送ってあげる
 				port.postMessage({
 					name:"findresponse",
 					arr:arr,
@@ -442,21 +510,22 @@ ChatStream.prototype.addChild=function(obj){
 			});
 			return;
 		}
-		//そしてそのまま流す
+		//そしてそのまま流す（自分が発行したイベントと区別しない）
 		t.emit.apply(t,[d.name].concat(d.args));
 	}
 };
 ChatStream.prototype.$emit=function(name,obj1){
-	//本体
+	//emitするときに内部的に呼ばれる
 	var em=io.EventEmitter.prototype.emit;
+	//本来のemitのはたらき
 	em.apply(this,arguments);
-	//子供たちにも送ってあげる
+	//子供たちにもイベントを送ってあげる
 	var c=this.children;
 	for(var i=0,l=c.length;i<l;i++){
 		//フィルタリングする
 		if(name==="log"){
 			if(obj1.channel!==c[i].channel){
-				//合わない
+				//子どものチャンネルのログのみ送る
 				continue;
 			}
 		}else if(name==="find"){
@@ -480,11 +549,20 @@ ChatStream.prototype.setSessionid=function(id){
 ChatStream.prototype.say=function(comment,response,channel){
 	//コメントからハッシュタグを探す
 	if(!channel){
-		var result=comment.match(/(?:^|\s+)#(\S+)/);
+		var result=comment.match(/(?:^|\s+)#(\S+)\s*$/);
 		if(result){
+			//ハッシュタグが文末にあるときはコメントに含めない
 			channel=result[1];
+			comment=comment.slice(0,comment.length-result[0].length);	//後ろを削る
+		}else{
+			//普通にチャンネルを割り当てる
+			result=comment.match(/(?:^|\s+)#(\S+)/);
+			if(result){
+				channel=result[1];
+			}
 		}
 	}
+	//sayイベントを発行
 	this.emit("say",{"comment":comment,"response":response?response:"","channel":channel?channel:""});
 };
 //発言をサーバーに問い合わせる
@@ -495,7 +573,7 @@ ChatStream.prototype.find=function(query,cb){
 		cb(arr);
 	});
 };
-//ユーザーをサーバーに問い合わせる*/
+//ユーザーをサーバーに問い合わせる
 ChatStream.prototype.users=function(cb){
 	cb({
 		"users":[],
@@ -504,6 +582,7 @@ ChatStream.prototype.users=function(cb){
 	});
 };
 
+//サーバーとソケットで通信するストリーム
 function SocketChatStream(){
 	ChatStream.apply(this,arguments);
 }
@@ -511,22 +590,26 @@ SocketChatStream.prototype=new ChatStream;
 SocketChatStream.prototype.init=function(chat){
 	ChatStream.prototype.init.apply(this,arguments);
 
+	//ソケットを準備
 	var socket;
 	var t=this;
 	socket=this.socket = io.connect(settings.SOCKET_HOST_NAME||(location.protocol+"//"+location.host));
 	socket.on("connect",function(){
+		//ソケットidがセッションid
 		t.setSessionid(socket.socket.sessionid);
 	});
 	
 	//$emitを乗っ取る
 	socket._old_$emit=socket.$emit;
 	socket.$emit=function(){
+		//ソケットで発生したイベントはSocketChatStreamでも発生する
 		t.$emit.apply(t,arguments);
+		//本来の働きをさせる
 		socket._old_$emit.apply(socket,arguments);
 	};
 };
 SocketChatStream.prototype.emit=function(){
-	//ソケットへ
+	//ソケットへも送る
 	this.socket.emit.apply(this.socket,arguments);
 	this.$emit.apply(this,arguments);
 };
@@ -534,17 +617,19 @@ SocketChatStream.prototype.regist=function(){
 	this.socket.emit("regist",{"mode":"client","lastid":this.lastid});
 };
 SocketChatStream.prototype.find=function(query,cb){
+	//サーバーへクエリを送る
 	this.emit("find",query,function(arr){
 		if(!Array.isArray(arr))cb([]);
 		cb(arr);
 	});
 };
 SocketChatStream.prototype.users=function(cb){
+	//ユーザー一覧をサーバーへ請求する
 	this.socket.emit("users",function(obj){
 		cb(obj);
 	});
 };
-//メインストリームからもらってくる
+//メインストリームからもらってくる（チャネルウィンドウ）
 function ChannelStream(){
 	ChatStream.apply(this,arguments);
 }
@@ -553,11 +638,13 @@ ChannelStream.prototype.init=function(){
 	ChatStream.prototype.init.apply(this,arguments);
 	var t=this;
 	this.port=null;
+	//親ウィンドウから連絡がくるのを待つ
 	window.addEventListener("message",function(ev){
 		//メッセージ
 		var d=ev.data;
 		//通信を確立したい
 		if(d.name==="init"){
+			//portsにMessagePortが送られてくるのでこれで通信する
 			t.port=ev.ports[0];
 			if(!t.port){
 				throw new Error("no port");
@@ -574,13 +661,14 @@ ChannelStream.prototype.init=function(){
 			ev.source.postMessage(d,ev.origin);
 		}
 	},false);
-	//クローズを検知
+	//クローズを検知して親に伝える
 	window.addEventListener("unload",function(ev){
 		t.port.postMessage({
 			name:"unload",
 		});
 	},false);
 };
+//ポート初期化
 ChannelStream.prototype.initPort=function(port){
 	//ポートが届いた
 	var t=this;
@@ -588,9 +676,11 @@ ChannelStream.prototype.initPort=function(port){
 	port.addEventListener("message",function(ev){
 		var d=ev.data;
 		//d.name: event name; d.args: event args;
+		//サーバーから届いたメッセージ同様自らにイベントを発生させる）
 		t.$emit.apply(t,[d.name].concat(d.args));
 	},false);
 };
+//ストリームへイベント発生要求があった場合
 ChannelStream.prototype.emit=function(name){
 	this.$emit.apply(this,arguments);
 	if(this.port){
@@ -601,6 +691,7 @@ ChannelStream.prototype.emit=function(name){
 		});
 	}
 };
+//親へログ検索要求
 ChannelStream.prototype.find=function(query,cb){
 	var p=this.port;
 	//メッセージを
@@ -612,6 +703,7 @@ ChannelStream.prototype.find=function(query,cb){
 	});*/
 	this.emit("find",query);
 
+	//コールバック関数を送れないので帰りもメッセージで
 	function listener(ev){
 		var d=ev.data;
 		if(d.name==="findresponse"){
@@ -623,10 +715,12 @@ ChannelStream.prototype.find=function(query,cb){
 
 
 
+//チャットクライアント
 function ChatClient(log,info,infobar){
+	//logid, infoid, infobarid : それぞれのid
 	this.logid=log,this.infoid=info,this.infobarid=infobar;
 	
-	this.oldest_time=null;
+	this.oldest_time=null;	//持っているもっとも古いログ
 	this.flags={"sound":true};
 }
 ChatClient.prototype={
@@ -679,32 +773,37 @@ ChatClient.prototype={
 				audio=new Audio();
 				audio.removeAttribute("src");
 				soundSource.forEach(function(arr){
+					//source要素：複数候補を指定できる（再生できるものを再生）
 					var source=document.createElement("source");
 					source.src=arr[0];
 					source.type=arr[1];
 					audio.appendChild(source);
 				});
 			}catch(e){
+				//オーディオなんてなかった　ダミーを用意
 				audio={play:function(){}};
 			}
 			this.audio=audio;
 		}
 		
-		//Responding tip
+		//Responding tip(クリックすると右側に出るやつ）
 		this.responding_tip=document.createElement("span");
 		this.responding_tip.textContent="⇒";
 		this.responding_tip.classList.add("responding_tip");
 		
+		//通信部分初期化
 		this.cominit();
 		
 		
 		/*document.forms["inout"].addEventListener("submit",this.submit.bind(this),false);
 		document.forms["comment"].addEventListener("submit",this.submit.bind(this),false);*/
 		//console.log("init!");
+		//フォーム送信
 		document.addEventListener("submit",this.submit.bind(this),false);
 		
 		this.log.addEventListener('click',this.click.bind(this),false);
 		
+		//フォームを用意
 		this.prepareForm();
 		this.prepareHottoMottoButton();
 		this.line=new HighChatMaker(this,document.getElementById(this.infobarid));
@@ -725,6 +824,7 @@ ChatClient.prototype={
 	cominit:function(){	
 		//通信部分初期化
 	},
+	//初期化情報が届いた logs:現在のログ
 	loginit:function(data){
 		//console.log("loginit",data,this.oldest_time);
 		data.logs.reverse().forEach(function(line){
@@ -734,6 +834,7 @@ ChatClient.prototype={
 			this.oldest_time=data.logs.shift().time;
 		}
 	},
+	//ログを受信した
 	recv:function(obj){
 		if(this.disip.indexOf(obj.ip)>=0){
 			// disip
@@ -745,6 +846,7 @@ ChatClient.prototype={
 		}
 		this.write(obj);
 	},
+	//ログを追加
 	write:function(obj){
 		this.log.insertBefore(this.line.make(obj),this.log.firstChild);
 	},
@@ -758,8 +860,10 @@ ChatClient.prototype={
 		li.dataset.id=user.id;
 		if(user.rom){
 			li.classList.add("rom");
+			//rom+1
 			this.setusernumber(0, 1);
 		}else{
+			//active+1
 			this.setusernumber(1, 0);
 		}
 		
@@ -767,6 +871,7 @@ ChatClient.prototype={
 		this.users.appendChild(li);
 		//console.log("newuser out");
 	},
+	//そのユーザーidを表すエレメントをusersから探す
 	getuserelement: function(id){
 		var ul=this.users.childNodes;
 		for(var i=0, l=ul.length; i<l; i++){
@@ -782,15 +887,18 @@ ChatClient.prototype={
 		var elem=this.getuserelement(id);
 		if(!elem) return;
 		
+		//そのユーザーの要素を削除
 		var actives=this.usernumber.dataset.actives, roms=this.usernumber.dataset.roms;
 		if(elem.classList.contains("rom")){
+			//rom-1
 			this.setusernumber(0, -1);
 		}else{
+			//active-1
 			this.setusernumber(-1, 0);
 		}
 		this.users.removeChild(elem);
 	},
-	//最初にユーザリストを得る
+	//最初にユーザリストが送られてきた
 	userinit:function(obj){
 		//console.log("userinit", obj);
 		while(this.users.firstChild)this.users.removeChild(this.users.firstChild);//textNode消す
@@ -800,6 +908,7 @@ ChatClient.prototype={
 	},
 	//人数をセットして反映
 	setusernumber: function(actives, roms){
+		//actives, roms: それぞれの増減
 		var dataset=this.usernumber.dataset;
 		dataset.actives=parseInt(dataset.actives)+actives;
 		dataset.roms=parseInt(dataset.roms)+roms;
@@ -808,35 +917,42 @@ ChatClient.prototype={
 	//誰かが入退室
 	inout: function(obj){
 		//console.log("inout", obj);
+		//obj.id, obj.name, obj.rom
 		var elem=this.getuserelement(obj.id);
 		if(!elem)return;
 		elem.firstChild.textContent=obj.name;
 		if(obj.rom){
 			elem.classList.add("rom");
+			//active-1, rom+1
 			this.setusernumber(-1, 1);
 		}else{
 			elem.classList.remove("rom");
+			//active+1,rom-1
 			this.setusernumber(1, -1);
 		}
 	},
-	//自分が入退室
+	//自分が入退室したときにサーバー側から情報がくる
 	userinfo:function(obj){
 		//console.log("userinfo",obj);
+		//自分の名前とrom状態
 		this.me={
 			name:obj.name,
 			rom:obj.rom,
 		};
 		var f=document.forms["inout"];
 		if(f){
+			//入室フォームがある場合はそこを変える
 			f.elements["uname"].disabled=!obj.rom;
 			if(!obj.rom)f.elements["uname"].value=obj.name;
 		
+			//入室ボタンの文字を変える
 			var result=document.evaluate('descendant::input[@type="submit"]',f,null,XPathResult.ANY_UNORDERED_NODE_TYPE,null);
 			var bt=result.singleNodeValue;
 			bt.value=obj.rom?"入室":"退室";
 		}
 		if(!obj.refresh)this.inout(obj);
 	},
+	//mottoボタンを押したとき until:時間指定
 	HottoMotto:function(until){
 		this.stream.find({
 			"motto":{
@@ -851,6 +967,7 @@ ChatClient.prototype={
 		}.bind(this));
 	},
 	
+	//フォームが送信されたとき
 	submit:function(e){
 		var f=e.target;
 		if(f.name=="inout"){
@@ -869,12 +986,15 @@ ChatClient.prototype={
 		}
 		e.preventDefault();
 	},
+	//入退室をサーバーに伝える
 	inout_notify:function(name){},
 	
+	//フォームをもとに発言
 	sayform:function(f){
 		this.say(f.elements["comment"].value,f.elements["response"].value);
 	},
-	say:function(comment,response){
+	//発言をサーバーに伝える
+	say:function(comment,response,channel){
 	},
 	
 	bot:function(func){
@@ -890,9 +1010,12 @@ ChatClient.prototype={
 			this.bots=eval(localStorage.socketchat_bot)||[];
 		}catch(e){}
 	},
+	//クリック
 	click:function(e){
 		var t=e.target;
 		if(t===this.responding_tip){
+			//返信チップ
+			//イベント伝播ストップ（何で必要なんだろう）
 			e.stopPropagation();
 			
 			document.forms["comment"].elements["response"].value=this.responding_tip.dataset.to;
@@ -905,16 +1028,19 @@ ChatClient.prototype={
 			this.openChannel(t.dataset.channel);
 			return;
 		}
+		//ログをクリックしたとき
 		var dd=document.evaluate('ancestor-or-self::p',t,null,XPathResult.ANY_UNORDERED_NODE_TYPE,null).singleNodeValue;
 		if(!dd){
 
+			//返信チップ消す
 			this.responding_tip.parentNode && this.responding_tip.parentNode.removeChild(this.responding_tip);
 			return;
 		}
+		//返信先を開く
 		if(dd.classList.contains("respto") && dd.dataset.open!="open"){
-			//開く
 			this.responding_to=dd;
 			//this.socket.emit("idrequest",{"id":dd.dataset.respto});
+			//サーバーへ返信先のログを要求
 			this.stream.find({"id":dd.dataset.respto},function(arr){
 				var data=arr[0];
 				var line=this.line.make(data);
@@ -922,6 +1048,7 @@ ChatClient.prototype={
 				bq.classList.add("resp");
 				bq.appendChild(line);
 
+				//もとのログの直後に追加
 				dd.parentNode.insertBefore(bq,dd.nextSibling);
 			}.bind(this));
 			dd.dataset.open="open";
@@ -934,6 +1061,7 @@ ChatClient.prototype={
 		dd.appendChild(this.responding_tip);
 		this.responding_tip.dataset.to=dd.dataset.id;
 	},
+	//サーバーから切断されたとき
 	disconnect:function(){
 		document.body.classList.add("discon");
 	},
@@ -947,11 +1075,12 @@ ChatClient.prototype={
 		window.addEventListener("message",listener);
 		ping();
 		function ping(){
-			//送る
+			//送る（帰ってきたら向こうが受付開始したとみなせる）
 			win.postMessage({
 				name:"ping",
 			},"*");
 			//console.log(++count);
+			//次のpingを用意
 			timerid=setTimeout(ping,wait);
 		}
 		//pongリスナ
@@ -962,14 +1091,15 @@ ChatClient.prototype={
 				//データが帰ってきた
 				clearTimeout(timerid);
 				window.removeEventListener("message",listener);
-				//情報を送る
+				//情報を送る(MessageChannel: port1とport2がつながっている）
 				var channel=new MessageChannel();
 				channel.port1.start();
 				channel.port1.addEventListener("message",function ls(ev){
 					var d=ev.data;
 					if(d.name==="ready"){
-						//できた
+						//通信準備ができた
 						channel.port1.removeEventListener("message",ls);
+						//ストリームに子として登録
 						t.stream.addChild({
 							port:channel.port1,
 							channel:channelname,
@@ -988,14 +1118,16 @@ ChatClient.prototype={
 		}
 	},
 	initChild:function(port,channelname){
-		//子供に最初のメッセージを送る
+		//子供に最初のメッセージを送る（サーバーを模倣した感じ）
 		//initメッセージ
 		var t=this;
+		//ログを持ってくる
 		this.stream.find({
 			channel:channelname,
 		},function(arr){
 			send("init",{logs:arr});
 		});
+		//ユーザー情報
 		this.stream.users(function(obj){
 			send("users",obj);
 			send("userinfo",{
