@@ -1164,6 +1164,7 @@ SocketChat.prototype.cominit=function(){
 	//socket=this.socket = io.connect(settings.SOCKET_HOST_NAME||location.origin);
 	this.stream=stream=this.getStream();
 	
+	//ストリームに対しイベントを登録
 	stream.on("init",this.loginit.bind(this));
 	stream.on("log",this.recv.bind(this));
 	stream.on("users",this.userinit.bind(this));
@@ -1173,13 +1174,16 @@ SocketChat.prototype.cominit=function(){
 	stream.on("deluser",this.deluser.bind(this));
 	stream.on("inout",this.inout.bind(this));
 
+	//サーバーへ登録
 	stream.regist();
 	
 };
 SocketChat.prototype.inout_notify=function(name){
+	//サーバーに入室を伝える
 	this.stream.emit("inout",{"name":name});
 };
 SocketChat.prototype.say=function(comment,response,channel){
+	//サーバーに発言を伝える
 	this.stream.say(comment,response,channel);
 };
 /*SocketChat.prototype.HottoMotto=function(e,until){
@@ -1280,7 +1284,7 @@ APIChat.prototype.HottoMotto=function(){
 //コマンドライン風
 function CommandLineChat(log,info,con,fnd){
 	var infobar=document.createElement("div");
-	infobar.id="aaaaaaaaa____aa_a_a_a_a_a_a_a___aa_a";
+	infobar.id="aaaaaaaaa____aa_a_a_a_a_a_a_a___aa_a";	//?????
 	SocketChat.call(this,log,info,infobar.id);
 	
 	this.consoleid=con;
@@ -1296,6 +1300,7 @@ function CommandLineChat(log,info,con,fnd){
 	this.autoin_flg=false;	//autoin処理が行われたかどうか
 }
 CommandLineChat.prototype=new SocketChat;
+//HottoMottoボタンやフォームは表示しない
 CommandLineChat.prototype.prepareHottoMottoButton=function(){};
 CommandLineChat.prototype.prepareForm=function(){};
 CommandLineChat.prototype.init=function(){
@@ -1303,7 +1308,7 @@ CommandLineChat.prototype.init=function(){
 	
 	this.findlog=document.getElementById(this.findlogid);
 	
-	
+	//コンソールを準備
 	this.console=document.getElementById(this.consoleid);
 	this.consoleo=this.console.getElementsByClassName("consoleoutput")[0];
 	this.command=document.createElement("input");
@@ -1336,6 +1341,7 @@ CommandLineChat.prototype.init=function(){
 	this.form.target="_blank";
 	
 	function keydown(e){
+		//起動中のプロセスがあればプロセスに送る
 		if(this.process && this.process.key){
 			if(!this.process.key(e))return;
 		}
@@ -1360,6 +1366,7 @@ CommandLineChat.prototype.init=function(){
 			e.preventDefault();
 			return;
 		}*/
+		//コマンド履歴
 		if(focus && (e.keyCode==38 || e.keyCode==40)){
 			//上下
 			if(this.commandlogindex==null){
@@ -1385,6 +1392,7 @@ CommandLineChat.prototype.closeConsole=function(){
 	this.console.classList.remove("open");
 	this.command.blur();
 };
+//コマンドを解析する
 CommandLineChat.prototype.doCommand=function(str){
 	var result;
 	var syschar=localStorage.syschar || "\\";
@@ -1399,14 +1407,14 @@ CommandLineChat.prototype.doCommand=function(str){
 	this.commandlogindex=null;
 	
 	this.cprint("> "+str);
+	//コマンド文字列から命令及びスペースを除去
 	str=str.slice(result[0].length);
 	if(!this.commands[result[1]]){
 		this.cprint(result[1]+": No such command");
 		return;
 	}
+	//result[1]がコマンド名
 	this.commands[result[1]](new CommandLineChat.Process(this,str));
-	
-	
 };
 CommandLineChat.prototype.chideinput=function(){
 	this.command.disabled=true;
@@ -1420,9 +1428,10 @@ CommandLineChat.prototype.copeninput=function(topstr){
 	this.command.parentNode.hidden=false;
 
 };
+//コマンドのプロセスを管理するオブジェクト
 CommandLineChat.Process=function(chat,arg){
 	this.chat=chat;
-	this.arg=arg;
+	this.arg=arg;	//arg: コマンドに渡された引数
 	
 	this.chat.chideinput();
 	
@@ -1430,7 +1439,7 @@ CommandLineChat.Process=function(chat,arg){
 	this.saves=[];
 }
 CommandLineChat.Process.prototype={
-	//スペース区切り
+	//このプロセスに渡された引数を配列に分けて返す
 	parse:function(str,maxlen){
 		var ret=[],opt=[],result;
 		if(!maxlen)maxlen=1/0;
@@ -1461,20 +1470,20 @@ CommandLineChat.Process.prototype={
 			opt:opt,
 		};
 	},
-	//出力
+	//プロセスからコンソールへ出力
 	put:function(str){
 		this.chat.cprint(str);
 	},
 	print:function(str){
 		this.chat.cprint(str);
 	},
-	//行削除
+	//行削除(num:後ろから何行消すか)
 	deletelines:function(num){
 		for(var i=0;i<num;i++){
 			this.chat.consoleo.textContent=this.chat.consoleo.textContent.replace(/.*\n?$/,"");
 		}
 	},
-	//新しいコンテキスト
+	//新しいコンテキスト（出力フィールドを空にする）
 	newContext:function(){
 		this.saves.push(this.chat.consoleo.textContent);
 		this.chat.consoleo.textContent="";
@@ -1483,29 +1492,31 @@ CommandLineChat.Process.prototype={
 	restoreContext:function(){
 		this.chat.consoleo.textContent=this.saves.pop();
 	},
-	//入力
+	//行単位で入力 結果はコールバック
 	input:function(cb){
 		//複数行対応
-		this.chat.copeninput("");
+		this.chat.copeninput("");	//入力できる状態にする
 		var result=""
-		//入力
+		//入力を受け付けるリスナ
 		this.key=function(e){
 			if(e.keyCode==13){
 				//Shift+Enter
 				this.print(this.chat.command.value);
 				result+=this.chat.command.value+"\n";
+				//入力を上に表示して次の行に移る
 				this.chat.command.value="";
 				this.chat.cfocus();
 				if(!e.shiftKey){
 					//終了
+					//（最後に改行を含む系）
 					this.chat.chideinput();
-					this.key=null;
+					this.key=null;	//入力受付解除
 					cb(result);
 				}
 			}
 		}.bind(this);
 	},
-	//キーひとつ trueを返すと続行
+	//キーひとつを受け付ける入力 trueを返すと続行
 	getkey:function(cb){
 		this.chat.copeninput("");
 		this.key=function(e){
@@ -1517,7 +1528,7 @@ CommandLineChat.Process.prototype={
 			return false;
 		}.bind(this);
 	},
-	//終了
+	//プロセス終了 通常モードに戻す
 	die:function(chat){
 		this.chat.process=null;
 		this.chat.copeninput(">");
@@ -1528,9 +1539,11 @@ CommandLineChat.Process.prototype={
 	},
 };
 
+//実効できるコマンド
 CommandLineChat.prototype.commands=(function(){
 	var obj={};
 	obj["in"]=function(process){
+		//入室
 		var pr=process.parse(process.arg);
 		var str=pr.arg[0];	//名前
 		var oauto=pr.opt.indexOf("--auto")>=0;	// autoオプション
@@ -1540,6 +1553,7 @@ CommandLineChat.prototype.commands=(function(){
 			process.die();
 			return;
 		}
+		//既に入室している
 		if(process.chat.me.rom===false){
 			process.print("You are already in the room.");
 			process.die();
@@ -1552,10 +1566,12 @@ CommandLineChat.prototype.commands=(function(){
 				localStorage.socketchat_autoin=str;
 			}
 		}
+		//入室する
 		process.chat.inout_notify(str ? str : localStorage.socketchat_name);
 		process.die();
 	};
 	obj.out=function(process){
+		//退室
 		if(process.chat.me.rom===true){
 			process.print("You are not in the room.");
 			process.die();
@@ -1563,13 +1579,16 @@ CommandLineChat.prototype.commands=(function(){
 		}
 		var str;
 		if(str=process.arg){
+			//次回の名前を設定できる（いるのだろうか）
 			localStorage.socketchat_name=str;
 		}
 		process.chat.inout_notify(str ? str : localStorage.socketchat_name);
 		process.die();
 	};
 	obj.motto=function(process){
+		//HottoMotto要求
 		if(process.arg){
+			//日時指定（この日時まで読み込む）
 			var pr=process.parse(process.arg);
 			var until=new Date(pr.arg[0]).getTime();
 			if(!isNaN(until)){
@@ -1582,10 +1601,12 @@ CommandLineChat.prototype.commands=(function(){
 				return;
 			}
 		}
+		//通常のmotto（一定数読み込み）
 		process.chat.HottoMotto();
 		process.die();
 	};
 	obj.volume=function(process){
+		//ボリューム変更
 		if(process.arg){
 			var vo=parseInt(process.arg);
 			if(isNaN(vo) || vo<0 || 100<vo){
@@ -1595,12 +1616,14 @@ CommandLineChat.prototype.commands=(function(){
 				process.chat.audio.volume=vo/100;
 			}
 		}else{
+			//現在のボリュームを表示
 			process.print(localStorage.soc_highchat_audiovolume);
 		}
 		process.die();
 		
 	};
 	obj.set=function(process){
+		//設定
 		var args=process.parse(process.arg,2).arg;
 		switch(args[0]){
 		case "syschar":case "systemchar":	//命令文字
@@ -1625,6 +1648,7 @@ CommandLineChat.prototype.commands=(function(){
 		process.die();
 	};
 	obj.gyazo=obj.gyoza=function(process){
+		//餃子設定
 		if(process.arg){
 			vo=parseInt(process.arg);
 			if(isNaN(vo) || vo<0 || 2<vo){
@@ -1640,6 +1664,7 @@ CommandLineChat.prototype.commands=(function(){
 		process.die();
 	};
 	obj.clean=obj.clear=function(process){
+		//コンソール掃除
 		var spc=process.chat.command.parentNode;
 		process.chat.consoleo.textContent="";
 		process.chat.console.appendChild(spc);
@@ -1675,20 +1700,25 @@ CommandLineChat.prototype.commands=(function(){
 "    set/remove ip into/from disip list",
 "resp",
 "    response to a comment",
+"go [URL|alias|#channelname]".
+"    alias: 'wiki'",
 		].join("\n"));
 		process.die();
 	};
 	obj.js=function(process){
+		//JSコンソール
 		process.print("Type '//bye' to finish the console.");
 		
 		waitforline();
 		
 		function waitforline(){
+			//1行読んでevalに投げる
 			process.input(function(line){
 				if(line=="//bye" || line=="//bye\n"){
 					process.die();
 					return;
 				}
+				//consoleを書き換える
 				var console={log:function(){
 					Array.prototype.forEach.call(arguments,function(x){
 						process.put(x.toString()+" ");
@@ -1704,6 +1734,7 @@ CommandLineChat.prototype.commands=(function(){
 		}
 	};
 	obj.sc=obj.scroll=function(process){
+		//上下キーでスクロールするコマンド
 		waitforkey();
 		function waitforkey(){
 			process.getkey(function(e){
@@ -1722,6 +1753,7 @@ CommandLineChat.prototype.commands=(function(){
 		}
 	};
 	obj.go=function(process){
+		//新しいウィンドウで移動
 		var dest=process.arg;
 		if(dest==="wiki"){
 			//wikiへ飛ぶ
@@ -1738,6 +1770,7 @@ CommandLineChat.prototype.commands=(function(){
 		process.die();
 	};
 	obj.disip=function(process){
+		//disip設定
 		var pr=process.parse(process.arg);
 		var ip=pr.arg[0];
 		if(ip){
@@ -1753,8 +1786,10 @@ CommandLineChat.prototype.commands=(function(){
 					process.chat.disip.push(ip);
 				}
 			}
+			//localStorageに保存
 			localStorage.socketchat_disip=JSON.stringify(process.chat.disip);
 		}
+		//現在のdisipを表示して終了
 		process.chat.disip.forEach(process.print,process);
 		process.die();
 	};
@@ -1764,12 +1799,15 @@ CommandLineChat.prototype.commands=(function(){
 		var index=0,maxlen=10;
 		var choosing=true;
 		
+		//返信先表示画面
 		process.newContext();
 
 		process.getkey(function(e){
+			//上下：返信先選択
 			if(e.keyCode==38){
 				index--;
 				if(index<0)index=0;
+				//書き換え
 				process.deletelines(maxlen);
 				view();
 			}else if(e.keyCode==40){
@@ -1790,6 +1828,7 @@ CommandLineChat.prototype.commands=(function(){
 					return false;
 				}
 				respto=c.dataset.id;
+				//返信内容入力
 				process.input(function(inp){
 					inp=process.chomp(inp);
 					if(inp){
@@ -1805,6 +1844,7 @@ CommandLineChat.prototype.commands=(function(){
 		view();
 		
 		function view(){
+			//返信先表示
 			var lc=process.chat.log.childNodes;
 			var st=Math.max(0,Math.floor(index-maxlen/2));
 			for(var i=0;i<maxlen;i++){
@@ -1922,6 +1962,7 @@ CommandLineChat.prototype.cput=function(str){
 	this.cscrollDown();
 };
 CommandLineChat.prototype.cfocus=function(){
+	//コマンドにフォーカスするとスクロールしてしまうので一時的にスクロール位置保存
 	var sc=document.documentElement.scrollTop || document.body.scrollTop;
 	this.command.focus();
 	document.documentElement.scrollTop && (document.documentElement.scrollTop=sc);
@@ -1931,6 +1972,7 @@ CommandLineChat.prototype.cscrollDown=function(){
 	this.console.scrollTop= this.console.scrollHeight - this.console.clientHeight;
 	
 };
+//サーバーからユーザー情報が送られてきたらコンソールに表示
 CommandLineChat.prototype.userinfo=function(obj){
 	SocketChat.prototype.userinfo.apply(this,arguments);
 	if(!obj.rom)this.cprint("Hello, "+obj.name);
