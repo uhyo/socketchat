@@ -259,7 +259,19 @@ User.prototype.says=function(data){
 		    "ip":this.ip,
 		    "time":new Date()
 		    };
-	if(data.channel) logobj.channel = data.channel;
+	if(data.channel){
+		//チャンネル
+		var c=data.channel;
+		if(Array.isArray(c)){
+			//配列だった
+			if(c.length===0 || c.some(function(x){return !x})){
+				c=null;
+			}else if(c.length===1){
+				c=c[0];	//文字列化
+			}
+		}
+		if(c)logobj.channel=c;
+	}
 	var say=makelog.bind(null,this,logobj);
 	if(data.response){
 		try{

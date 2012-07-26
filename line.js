@@ -48,13 +48,16 @@ LineMaker.prototype={
 		dd.appendChild(comsp);
 		//チャンネル
 		if(obj.channel){
-			//ログのチャンネル名と、本文中のハッシュタグがかぶる場合は本文を優先
-			if(obj.comment.indexOf("#"+obj.channel)===-1){
-				var chnsp=el("span");
-				chnsp.classList.add("channel");
-				chnsp.textContent="#"+obj.channel;
-				chnsp.dataset.channel=obj.channel;
-				dd.appendChild(chnsp);
+			var c= Array.isArray(obj.channel) ? obj.channel : [obj.channel];
+			for(var i=0,l=c.length;i<l;i++){
+				//ログのチャンネル名と、本文中のハッシュタグがかぶる場合は本文を優先
+				if(obj.comment.indexOf("#"+c[i])===-1){
+					var chnsp=el("span");
+					chnsp.classList.add("channel");
+					chnsp.textContent="#"+c[i];
+					chnsp.dataset.channel=c[i];
+					dd.appendChild(chnsp);
+				}
 			}
 		}
 		//時間、IPアドレスなど
@@ -493,8 +496,10 @@ ChatStream.prototype.addChild=function(obj){
 		//フィルターをかける
 		if(d.name==="say"){
 			//こどもから来た発言
-			if(!obj1.channel){
-				obj1.channel=channel;//チャンネルを与える
+			var ch= !obj1.channel? [] : (Array.isArray(obj1.channel) ? obj1.channel : [obj1.channel]);
+			if(ch.indexOf(channel)<0){
+				ch.push(channel);//チャンネルに加える
+				obj1.channel=ch;
 			}
 		}else if(d.name==="find"){
 			//サブウィンドウのほうへ流す（関数は送れない）
@@ -524,7 +529,13 @@ ChatStream.prototype.$emit=function(name,obj1){
 	for(var i=0,l=c.length;i<l;i++){
 		//フィルタリングする
 		if(name==="log"){
-			if(obj1.channel!==c[i].channel){
+			var ch=obj1.channel;
+			if(Array.isArray(ch)){
+				if(ch.indexOf(c[i].channel)===-1){
+					//チャンネルではないログは送らない
+					continue;
+				}
+			}else if(ch!==c[i].channel){
 				//子どものチャンネルのログのみ送る
 				continue;
 			}
@@ -548,17 +559,35 @@ ChatStream.prototype.setSessionid=function(id){
 //発言する
 ChatStream.prototype.say=function(comment,response,channel){
 	//コメントからハッシュタグを探す
-	if(!channel){
-		var result=comment.match(/(?:^|\s+)#(\S+)\s*$/);
-		if(result){
-			//ハッシュタグが文末にあるときはコメントに含めない
-			channel=result[1];
-			comment=comment.slice(0,comment.length-result[0].length);	//後ろを削る
-		}else{
-			//普通にチャンネルを割り当てる
-			result=comment.match(/(?:^|\s+)#(\S+)/);
-			if(result){
-				channel=result[1];
+	if(!channel)channel=[];
+	else if(!Array.isArray(channel)){
+		channel=[channel];
+	}
+	var result;
+	var save_str=comment;	//とっておく
+	//コメントからチャネルを探す
+	var flag=false;
+	while(result=comment.match(/(?:^|\s+)#(\S+)\s*$/)){
+		//文末のハッシュタグはチャネルに組み入れる
+		if(channel.indexOf(result[1])<0){
+			channel.unshift(result[1]);
+		}
+		comment=comment.slice(0,comment.length-result[0].length);	//その部分をカット
+		flag=true;
+	}
+	if(flag && /^\s*$/.test(comment)){
+		//空っぽになってしまった場合は戻す
+		comment=save_str;
+	}
+
+	//普通にチャンネルを割り当てる
+	result=comment.match(/(?:^|\s+)#\S+/g);
+	if(result){
+		for(var i=0,l=result.length;i<l;i++){
+			var r=result[i].match(/#(\S+)$/);
+			var hash=r[1];	//チャンネル名
+			if(hash && channel.indexOf(hash)<0){
+				channel.push(hash);
 			}
 		}
 	}
