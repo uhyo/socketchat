@@ -76,6 +76,9 @@ ChalogViewer.prototype={
 		if(this.form.elements["use_comment"].checked){
 			query.comment=this.form.elements["comment_value"].value;
 		}
+		if(this.form.elements["use_channel"].checked){
+			query.channel=this.form.elements["channel_value"].value;
+		}
 		this.query=query;
 		
 		this.sendQuery();
@@ -174,7 +177,10 @@ window.addEventListener("load",function(e){
       <p><label><input type="checkbox" name="use_comment">コメントで検索</label>:
         <input type="text" name="comment_value" size="60">
       </p>
-    </firldset>
+      <p><label><input type="checkbox" name="use_channel">ハッシュタグで検索</label>:
+        #<input type="text" name="channel_value" size="25">
+      </p>
+    </fieldset>
     <p><input type="submit" value="検索"> : 1ページに<input type="number" step="100" min="100" value="100" name="page_number">発言表示</p>
     
   </form>
