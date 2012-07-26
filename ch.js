@@ -657,7 +657,7 @@ function chalog(query,callback){
 	}
 	if(query.name){
 		//一致
-		queryobj.name=query.name;
+		queryobj.name=new RegExp(query.name.replace(/(\W)/g,"\\$1")+"(@.*)?$");
 	}
 	if(query.ip){
 		//一致
@@ -668,7 +668,7 @@ function chalog(query,callback){
 		queryobj.comment=new RegExp(query.comment.replace(/(\W)/g,"\\$1"));
 	}
 	if(query.channel){
-		queryobj.channel = query.channel;
+		queryobj.channel = new RegExp(query.channel.replace(/(\W)/g,"\\$1")+"(/.*)?$");
 	}
 	
 	var result=log.find(queryobj,optobj).toArray(function(err,docs){
