@@ -46,6 +46,19 @@ ChalogViewer.prototype={
 		socket.on("idresponse",this.idresponse.bind(this));
 		
 		this.log.addEventListener('click',this.click.bind(this),false);
+		this.form.addEventListener('change', function(e){
+			var t = e.target;
+			if(t.tagName=="INPUT" && t.type=="text"){
+				var elem = this.form.elements["use_"+t.name.slice(0,-6)];
+				if(elem){
+					if(t.value==""){
+						elem.checked=false;
+					}else{
+						elem.checked=true;
+					}
+				}
+			}
+		}.bind(this));
 		socket.emit("regist",{"mode":"chalog"});
 	},
 	write:function(obj){
