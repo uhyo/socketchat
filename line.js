@@ -1271,7 +1271,7 @@ APIChat.prototype.inout_notify=function(name){
 	this.send("/api/inout",{"name":name},this.response.bind(this));
 };
 APIChat.prototype.say=function(comment,response,channel){
-	this.send("/api/say",{"comment":comment,"response":response,"channel":channel},this.response.bind(this));
+	this.send("/api/say",{"comment":comment,"response":response,"channel":channel?channel:""},this.response.bind(this));
 };
 APIChat.prototype.HottoMotto=function(){
 	this.send("/api/motto",{"time":this.oldest_time},function(data){
