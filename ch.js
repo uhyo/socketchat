@@ -264,11 +264,14 @@ User.prototype.says=function(data){
 		var c=data.channel;
 		if(Array.isArray(c)){
 			//配列だった
-			if(c.length===0 || c.some(function(x){return !x})){
+			if(c.length===0 || c.some(function(x){return !x || 'string'!==typeof x})){
 				c=null;
 			}else if(c.length===1){
 				c=c[0];	//文字列化
+				if(!c || 'string'!==typeof c)c=null;	//無効
 			}
+		}else if('string' !== typeof c){
+			c=null;
 		}
 		if(c)logobj.channel=c;
 	}
