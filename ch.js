@@ -310,7 +310,7 @@ User.prototype.inoutSplash=function(){
 	}.bind(this));*/
 };
 //何か探してあげる
-User.prototype.find=function(query,callback){
+function findlog(query,callback){
 	var q={};
 	var one_flag=false;
 	var number=parseInt(query.number) || settings.CHAT_MOTTO_LOG;
@@ -443,10 +443,6 @@ io.sockets.on('connection',function(socket){
 				user.inout(data);
 			});
 	
-			//ログ検索
-			socket.on("find",function(query,func){
-				user.find(query,func);
-			});
 			//ユーザー情報
 			socket.on("users",function(func){
 				//即返す
@@ -471,6 +467,10 @@ io.sockets.on('connection',function(socket){
 				chalog(data,function(resobj){
 					socket.emit("result",resobj);
 				});
+			});
+			//ログ検索
+			socket.on("find",function(query,func){
+				findlog(query,func);
 			});
 		}
 	});
