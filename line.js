@@ -1700,7 +1700,7 @@ CommandLineChat.prototype.commands=(function(){
 "    set/remove ip into/from disip list",
 "resp",
 "    response to a comment",
-"go [URL|alias|#channelname]".
+"go [URL|alias|#channelname]",
 "    alias: 'wiki'",
 		].join("\n"));
 		process.die();
