@@ -972,6 +972,7 @@ ChatClient.prototype={
 		stream.on("newuser",this.newuser.bind(this));
 		stream.on("deluser",this.deluser.bind(this));
 		stream.on("inout",this.inout.bind(this));
+		stream.on("reconnect",this.reconnect.bind(this));
 
 		//サーバーへ登録
 		stream.regist();
@@ -1221,6 +1222,12 @@ ChatClient.prototype={
 	disconnect:function(){
 		document.body.classList.add("discon");
 	},
+	//復帰した時
+	reconnect: function(){
+		document.body.classList.remove("discon");
+		this.clearLog();
+		this.stream.regist();
+	},
 	//サブチャンネルをオープンする
 	openChannel:function(channelname){
 		var win=window.open(location.pathname+"#channel");
@@ -1305,6 +1312,9 @@ ChatClient.prototype={
 				});
 			}
 		}
+	},
+	clearLog: function(){
+		while(this.log.firstChild)this.log.removeChild(this.log.firstChild);
 	},
 };
 
