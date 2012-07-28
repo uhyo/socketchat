@@ -606,16 +606,16 @@ function api(mode,req,res){
 		try{
 			q=JSON.parse(req.query.query);
 		}catch(e){
-			res.json({error:true},{"Content-Type":"application/json"},400);
+			reply({error:true},400);
 			return;
 		}
 		findlog(q,function(logs){
-			res.send(logs,{"Content-Type":"application/json; charset=UTF-8"});
+			reply(logs);
 		});
 		return;
 	}else if(mode==="users"){
 		//ユーザー一覧の請求
-		res.send(getUsersData(),{"Content-Type":"application/json; charset=UTF-8"});
+		reply(getUsersData());
 		return;
 	}
 	//sessionidを作る
@@ -664,10 +664,19 @@ function api(mode,req,res){
 		"sessionid":user.sessionId
 	};
 	if(inoutobj)put.inout=inoutobj;
-	res.send(put,{"Content-Type":"application/json; charset=UTF-8"});
+	reply(put);
 	
 	user.logs.length=0,user.userinfos.length=0;
 	user.oxygen();
+
+	//返答する
+	function reply(resp,status){
+		if("object"===typeof resp){
+			res.json(resp,{"Content-Type":"application/json; charset=UTF-8","Access-Control-Allow-Origin":"*"},status);
+		}else{
+			res.send(resp,{"Content-Type":"text/plain; charset=UTF-8","Access-Control-Allow-Origin":"*"},status);
+		}
+	}
 }
 
 

@@ -656,6 +656,8 @@ APIStream.prototype.init=function(){
 	this.timerid=setInterval(this.check.bind(this),10000);
 	//フラグ 既に最初のログを受信したか
 	this.init_flg=false;
+	//リクエスト先
+	this.requestto= settings.SOCKET_HOST_NAME || "";
 };
 //sessionStorageに入れなくてもいいと思う
 ChatStream.prototype.setSessionid=function(id){
@@ -681,7 +683,7 @@ APIStream.prototype.send=function(path,query,callback){
 		res.push("sessionId="+this.sessionid);
 	}
 	console.log(path+(res.length? "?"+res.join("&"):""));
-	http.open("get",path+(res.length? "?"+res.join("&"):""));
+	http.open("get",this.requestto+path+(res.length? "?"+res.join("&"):""));
 	http.send();
 };
 //サーバーからの応答
