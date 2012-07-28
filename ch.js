@@ -334,7 +334,7 @@ function findlog(query,callback){
 	var one_flag=false;
 	var number=parseInt(query.number) || settings.CHAT_MOTTO_LOG;
 	if(query.channel){
-		q.channel=new RegExp(query.channel.replace(/(\W)/g,"\\$1")+"(/.*)?$");
+		q.channel=new RegExp("^"+query.channel.replace(/(\W)/g,"\\$1")+"(/.*)?$");
 	}
 	if(query.motto){
 		//time:この時間より前 until:この時間まで
@@ -714,7 +714,7 @@ function chalog(query,callback){
 		queryobj.comment=new RegExp(query.comment.replace(/(\W)/g,"\\$1"));
 	}
 	if(query.channel){
-		queryobj.channel = new RegExp(query.channel.replace(/(\W)/g,"\\$1")+"(/.*)?$");
+		queryobj.channel = new RegExp("^"+query.channel.replace(/(\W)/g,"\\$1")+"(/.*)?$");
 	}
 	
 	var result=log.find(queryobj,optobj).toArray(function(err,docs){
