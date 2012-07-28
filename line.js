@@ -604,10 +604,9 @@ ChatStream.prototype.find=function(query,cb){
 };
 //ユーザーをサーバーに問い合わせる
 ChatStream.prototype.users=function(cb){
-	cb({
-		"users":[],
-		"roms":0,
-		"actives":0,
+	//ユーザー一覧をサーバーへ請求する
+	this.emit("users",function(obj){
+		cb(obj);
 	});
 };
 
@@ -638,26 +637,132 @@ SocketChatStream.prototype.init=function(chat){
 	};
 };
 SocketChatStream.prototype.emit=function(){
-	//ソケットへも送る
+	//ソケットへ送る
 	this.socket.emit.apply(this.socket,arguments);
-	this.$emit.apply(this,arguments);
+	//this.$emit.apply(this,arguments);
 };
 SocketChatStream.prototype.regist=function(){
 	this.socket.emit("regist",{"mode":"client","lastid":this.lastid});
 };
-SocketChatStream.prototype.find=function(query,cb){
-	//サーバーへクエリを送る
-	this.emit("find",query,function(arr){
-		if(!Array.isArray(arr))cb([]);
-		cb(arr);
-	});
+
+//APIを利用したストリーム
+function APIStream(){
+	ChatStream.apply(this,arguments);
+}
+APIStream.prototype=new ChatStream;
+APIStream.prototype.init=function(){
+	ChatStream.prototype.init.apply(this,arguments);
+	//タイマー
+	this.timerid=setInterval(this.check.bind(this),10000);
+	//フラグ 既に最初のログを受信したか
+	this.init_flg=false;
 };
-SocketChatStream.prototype.users=function(cb){
-	//ユーザー一覧をサーバーへ請求する
-	this.socket.emit("users",function(obj){
-		cb(obj);
-	});
+//sessionStorageに入れなくてもいいと思う
+ChatStream.prototype.setSessionid=function(id){
+	this.sessionid=id;
 };
+//サーバーへリクエストを送る
+APIStream.prototype.send=function(path,query,callback){
+	var http=new XMLHttpRequest();
+	if(!query)query={};
+	if(!callback)callback=this.normalresponse.bind(this);
+	
+	http.onload = function(){
+		if(this.status==200){
+			console.log(JSON.parse(this.responseText));
+			callback(JSON.parse(this.responseText));
+		}
+	};
+	var res=[];
+	for(var i in query){
+		res.push(encodeURIComponent(i)+"="+encodeURIComponent(query[i]));
+	}
+	if(this.sessionid){
+		res.push("sessionId="+this.sessionid);
+	}
+	console.log(path+(res.length? "?"+res.join("&"):""));
+	http.open("get",path+(res.length? "?"+res.join("&"):""));
+	http.send();
+};
+//サーバーからの応答
+APIStream.prototype.normalresponse=function(obj){
+	var t=this;
+	if(obj.error){
+		console.log(obj.errormessage);
+		return;
+	}
+	if(!this.init_flg){
+		//最初のログだ
+		em("init",obj);
+		this.init_flg=true;
+	}else{
+		//たまっているログを受信した
+		obj.logs.reverse().forEach(function(x){
+			em("log",x);
+		},this);
+	}
+	if(obj.sessionid)this.setSessionid(obj.sessionid);
+	
+	if(obj.inout){
+		em("userinfo",obj.inout);
+	}
+	obj.userinfos.forEach(function(x){
+		switch(x.name){
+		case "newuser":
+			em("newuser",x.user);
+			break;
+		case "deluser":
+			em("deluser",x.id);
+			break;
+		case "inout":
+			em("inout",x.user);
+			break;
+		case "users":
+			em("users",x.users);
+			break;
+		}
+	},this);
+	
+	function em(){
+		t.$emit.apply(t,arguments);
+	}
+};
+APIStream.prototype.check=function(){
+	//サーバーに更新を確認する
+	this.send("/api/");
+};
+APIStream.prototype.regist=function(){
+	this.check();
+};
+APIStream.prototype.emit=function(name){
+	var args=Array.prototype.slice.call(arguments,1);	//emitのパラメータ
+	switch(name){
+		case "say":
+			//発言
+			var obj=args[0];
+			this.send("/api/say",obj);
+			break;
+		case "inout":
+			var obj=args[0];
+			this.send("/api/inout",obj);
+			break;
+		case "find":
+			//JSONで送る
+			var query=args[0], cb=args[1];
+			//send!
+			this.send("/api/find",{query:JSON.stringify(query)},function(data){
+				cb(data);
+			});
+			break;
+		case "users":
+			var cb=args[0];
+			this.send("/api/users",null,function(data){
+				cb(data);
+			});
+			break;
+	}
+};
+
 //メインストリームからもらってくる（チャネルウィンドウ）
 function ChannelStream(){
 	ChatStream.apply(this,arguments);
@@ -711,7 +816,7 @@ ChannelStream.prototype.initPort=function(port){
 };
 //ストリームへイベント発生要求があった場合
 ChannelStream.prototype.emit=function(name){
-	this.$emit.apply(this,arguments);
+	//this.$emit.apply(this,arguments);
 	if(this.port){
 		//ポートへ送る
 		this.port.postMessage({
@@ -852,6 +957,22 @@ ChatClient.prototype={
 	},
 	cominit:function(){	
 		//通信部分初期化
+		var stream;
+		//socket=this.socket = io.connect(settings.SOCKET_HOST_NAME||location.origin);
+		this.stream=stream=this.getStream();
+
+		//ストリームに対しイベントを登録
+		stream.on("init",this.loginit.bind(this));
+		stream.on("log",this.recv.bind(this));
+		stream.on("users",this.userinit.bind(this));
+		stream.on("userinfo",this.userinfo.bind(this));
+		stream.on("disconnect",this.disconnect.bind(this));
+		stream.on("newuser",this.newuser.bind(this));
+		stream.on("deluser",this.deluser.bind(this));
+		stream.on("inout",this.inout.bind(this));
+
+		//サーバーへ登録
+		stream.regist();
 	},
 	//初期化情報が届いた logs:現在のログ
 	loginit:function(data){
@@ -1016,7 +1137,10 @@ ChatClient.prototype={
 		e.preventDefault();
 	},
 	//入退室をサーバーに伝える
-	inout_notify:function(name){},
+	inout_notify:function(name){
+		//サーバーに入室を伝える
+		this.stream.emit("inout",{"name":name});
+	},
 	
 	//フォームをもとに発言
 	sayform:function(f){
@@ -1024,6 +1148,7 @@ ChatClient.prototype={
 	},
 	//発言をサーバーに伝える
 	say:function(comment,response,channel){
+		this.stream.say(comment,response,channel);
 	},
 	
 	bot:function(func){
@@ -1188,33 +1313,6 @@ SocketChat.prototype=new ChatClient;
 SocketChat.prototype.useStream=function(){
 	return SocketChatStream;
 };
-SocketChat.prototype.cominit=function(){
-	var stream;
-	//socket=this.socket = io.connect(settings.SOCKET_HOST_NAME||location.origin);
-	this.stream=stream=this.getStream();
-	
-	//ストリームに対しイベントを登録
-	stream.on("init",this.loginit.bind(this));
-	stream.on("log",this.recv.bind(this));
-	stream.on("users",this.userinit.bind(this));
-	stream.on("userinfo",this.userinfo.bind(this));
-	stream.on("disconnect",this.disconnect.bind(this));
-	stream.on("newuser",this.newuser.bind(this));
-	stream.on("deluser",this.deluser.bind(this));
-	stream.on("inout",this.inout.bind(this));
-
-	//サーバーへ登録
-	stream.regist();
-	
-};
-SocketChat.prototype.inout_notify=function(name){
-	//サーバーに入室を伝える
-	this.stream.emit("inout",{"name":name});
-};
-SocketChat.prototype.say=function(comment,response,channel){
-	//サーバーに発言を伝える
-	this.stream.say(comment,response,channel);
-};
 /*SocketChat.prototype.HottoMotto=function(e,until){
 	if(until){
 		this.stream.emit("motto",{"time":this.oldest_time,"until":until});
@@ -1227,87 +1325,10 @@ SocketChat.prototype.say=function(comment,response,channel){
 function APIChat(){
 	ChatClient.apply(this,arguments);
 	
-	this.sessionId=null;
-	this.timerId=null;
-	
-	this.users={};
 }
 APIChat.prototype=new ChatClient;
-APIChat.prototype.send=function(path,query,callback){
-	var http=new XMLHttpRequest();
-	if(!query)query={};
-	
-	http.onreadystatechange = function(){
-		if(this.readyState==4 && this.status==200){
-			callback(JSON.parse(this.responseText));
-		}
-	};
-	var res=[];
-	for(var i in query){
-		res.push(encodeURIComponent(i)+"="+encodeURIComponent(query[i]));
-	}
-	if(this.sessionid){
-		res.push("sessionId="+this.sessionid);
-	}else if(sessionStorage.sessionid){
-		res.push("sessionId="+sessionStorage.sessionid);
-	}
-	http.open("get",path+(res.length? "?"+res.join("&"):""),true);
-	http.send();
-};
-APIChat.prototype.cominit=function(){
-	this.timerId=setInterval(this.check.bind(this),10000);
-	this.check();
-};
-APIChat.prototype.response=function(obj){
-	if(obj.error){
-		console.log(obj.errormessage);
-		return;
-	}
-	if(!this.oldest_time){
-		this.loginit(obj);
-	}else{
-		obj.logs.reverse().forEach(function(x){
-			this.recv(x);
-		},this);
-		if(obj.sessionid)sessionStorage.sessionid=this.sessionid=obj.sessionid;
-	}
-	
-	if(obj.inout){
-		this.userinfo(obj.inout);
-	}
-	obj.userinfos.forEach(function(x){
-		switch(x.name){
-		case "newuser":
-			this.newuser(x.user);
-			break;
-		case "deluser":
-			this.deluser(x.id);
-			break;
-		case "inout":
-			this.inout(x.user);
-			break;
-		case "users":
-			this.userinit(x.users);
-			break;
-		}
-	},this);
-	
-};
-APIChat.prototype.check=function(){
-	this.send("/api/",null,this.response.bind(this));
-};
-APIChat.prototype.inout_notify=function(name){
-	this.send("/api/inout",{"name":name},this.response.bind(this));
-};
-APIChat.prototype.say=function(comment,response,channel){
-	this.send("/api/say",{"comment":comment,"response":response,"channel":channel?channel:""},this.response.bind(this));
-};
-APIChat.prototype.HottoMotto=function(){
-	this.send("/api/motto",{"time":this.oldest_time},function(data){
-		console.log(data);
-		this.mottoResponse(data)
-	}.bind(this));
-//	this.send("/api/motto",{"time":this.oldest_time},this.mottoResponse.bind(this));
+APIChat.prototype.useStream=function(){
+	return APIStream;
 };
 
 //コマンドライン風

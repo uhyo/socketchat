@@ -326,6 +326,10 @@ User.prototype.inoutSplash=function(){
 };
 //何か探してあげる
 function findlog(query,callback){
+	if(!query){
+		callback([]);
+		return;
+	}
 	var q={};
 	var one_flag=false;
 	var number=parseInt(query.number) || settings.CHAT_MOTTO_LOG;
@@ -596,6 +600,24 @@ function toapi(callback){
 
 //HTTP API
 function api(mode,req,res){
+	//検索
+	if(mode==="find"){
+		var q;
+		try{
+			q=JSON.parse(req.query.query);
+		}catch(e){
+			res.json({error:true},{"Content-Type":"application/json"},400);
+			return;
+		}
+		findlog(q,function(logs){
+			res.send(logs,{"Content-Type":"application/json; charset=UTF-8"});
+		});
+		return;
+	}else if(mode==="users"){
+		//ユーザー一覧の請求
+		res.send(getUsersData(),{"Content-Type":"application/json; charset=UTF-8"});
+		return;
+	}
 	//sessionidを作る
 	var query=req.query;
 	var sessionId=query.sessionId;
@@ -642,7 +664,7 @@ function api(mode,req,res){
 		"sessionid":user.sessionId
 	};
 	if(inoutobj)put.inout=inoutobj;
-	res.send(put,{"Content-Type":"text/javascript; charset=UTF-8"});
+	res.send(put,{"Content-Type":"application/json; charset=UTF-8"});
 	
 	user.logs.length=0,user.userinfos.length=0;
 	user.oxygen();
