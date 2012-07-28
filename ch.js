@@ -334,7 +334,7 @@ function findlog(query,callback){
 	var one_flag=false;
 	var number=parseInt(query.number) || settings.CHAT_MOTTO_LOG;
 	if(query.channel){
-		q.channel=query.channel;
+		q.channel=new RegExp(query.channel.replace(/(\W)/g,"\\$1")+"(/.*)?$");
 	}
 	if(query.motto){
 		//time:この時間より前 until:この時間まで
