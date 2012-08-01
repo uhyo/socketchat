@@ -881,6 +881,7 @@ ChatClient.prototype={
 			};
 		}
 		this.log=document.getElementById(this.logid);
+		this.log.textContent="";
 		this.info=document.getElementById(this.infoid);
 		this.users=this.info.getElementsByClassName("users")[0];
 		this.usernumber=this.info.getElementsByClassName("usernumber")[0];
@@ -1387,6 +1388,7 @@ CommandLineChat.prototype.init=function(){
 	this.command.addEventListener("focus",function(){focus=true},false);
 	this.command.addEventListener("blur",function(){focus=false},false);
 	
+	this.indentSpace="";	//インデント用
 	//移動用フォーム
 	this.form=document.createElement("form");
 	this.form.method="get";
@@ -1523,26 +1525,57 @@ CommandLineChat.Process.prototype={
 		};
 	},
 	//プロセスからコンソールへ出力
-	put:function(str){
-		this.chat.cprint(str);
+	put:function(str,option){
+		this.chat.cput(str,option);
 	},
-	print:function(str){
-		this.chat.cprint(str);
+	print:function(str,option){
+		this.chat.cprint(str,option);
 	},
-	//行削除(num:後ろから何行消すか)
+	//内部をインデントして表示
+	indent:function(num,callback){
+		this.chat.indent(num,callback);
+	},
+	//行削除(num:後ろから何行消すか 省略:全部消す)
 	deletelines:function(num){
-		for(var i=0;i<num;i++){
-			this.chat.consoleo.textContent=this.chat.consoleo.textContent.replace(/.*\n?$/,"");
+		if(num==null){
+			this.chat.consoleo.textContent="";
+			return;
 		}
+		//囲むRange
+		var range=document.createRange();
+		range.selectNodeContents(this.chat.consoleo);	//いったん中身を全部囲っておく
+		for(var i=0;i<num;i++){
+			//後ろから改行を見つけていく
+			//this.chat.consoleo.textContent=this.chat.consoleo.textContent.replace(/.*\n?$/,"");
+			var cs=this.chat.consoleo.childNodes;
+			for(var j=cs.length-1;j>=0;j--){
+				var node=cs[j];
+				var iii=node.textContent.lastIndexOf("\n");
+				if(iii>=0){
+					//改行を見つけたのでそこまで取り除く
+					range.setStart(node,iii);	//改行の直前から
+					range.deleteContents();	//Rangeのおわりは一番最後になっている
+					break;
+				}
+			}
+			//もう改行がない
+			this.chat.consoleo.textContent="";
+			break;
+		}
+		range.detach();
 	},
 	//新しいコンテキスト（出力フィールドを空にする）
 	newContext:function(){
-		this.saves.push(this.chat.consoleo.textContent);
+		var range=document.createRange();
+		range.selectNodeContents(this.chat.consoleo);
+		this.saves.push(range.extractContents());
 		this.chat.consoleo.textContent="";
+		range.detach();
 	},
 	//もとに戻す
 	restoreContext:function(){
-		this.chat.consoleo.textContent=this.saves.pop();
+		this.chat.consoleo.textContent="";
+		this.chat.consoleo.appendChild(this.saves.pop());
 	},
 	//行単位で入力 結果はコールバック
 	input:function(cb){
@@ -1710,8 +1743,8 @@ CommandLineChat.prototype.commands=(function(){
 			}
 		}
 		["餃子無展開","餃子オンマウス","餃子常時"].forEach(function(x,i){
-			process.print( (localStorage.soc_highchat_gyoza==i ? "*"+i : i+" ")+
-				": "+x);
+			process.put((localStorage.soc_highchat_gyoza==i ? "*"+i : i+" "),{color:"#00ffff"});
+			process.print(": "+x);
 		});
 		process.die();
 	};
@@ -1777,12 +1810,83 @@ CommandLineChat.prototype.commands=(function(){
 					});
 				}};
 				try{
-					process.print(eval(line));
+					var result=eval(line);
+					//結果を表示
+					write(result,0);
+					process.print("");	//改行
 				}catch(e){
-					process.print(e);
+					//エラー
+					process.print(e,{color:"#ff0000",fontWeight:"bold"});
 				}
 				waitforline();
 			});
+		}
+		function write(obj,nest){
+			var color,flag;
+			if(!nest)nest=0;
+			if(nest>=2)debugger;
+			if(obj==null){
+				color="#eeeeee";
+			}else if(typeof obj==="function"){
+				color="#33ffff";
+			}else if(typeof obj==="number"){
+				color="#3333ff";
+			}else if(typeof obj==="boolean"){
+				color="#33ff33";
+			}else if(typeof obj==="string"){
+				flag=true;	//自前描画
+				process.put('"');
+				process.put(obj,{color:"#ff0000"});
+				process.put('"');
+			}else{
+				//オブジェクト
+				if(nest>=3){
+					//深追いしない
+				}else if(Array.isArray(obj)){
+					//配列
+					if(obj.length<200){
+						//あぶない
+						flag=true;
+						process.put("[");
+						var l=obj.length-1;
+						obj.forEach(function(x,i){
+							write(x,nest+1);
+							if(i<l){
+								process.put(", ");
+							}
+						});
+						process.put("]");
+					}else{
+						result=JSON.stringify(obj);
+					}
+				}else{
+					//オブジェクト
+					var keys=Object.getOwnPropertyNames(obj);
+					if(keys.length<50){
+						//あぶない
+						flag=true;
+						process.put("{\n");
+						//debugger;
+						process.indent(2,function(){
+							var l=keys.length-1;
+							keys.forEach(function(x,i){
+								write(x);
+								process.put(": ");
+								write(obj[x],nest+1);
+								if(i<l){
+									process.put(",\n");
+								}else{
+									process.put("\n");
+								}
+							});
+						});
+						process.put("}");
+					}
+				}
+			}
+			if(!flag){
+				process.put(obj,{color:color});
+			}
 		}
 	};
 	obj.sc=obj.scroll=function(process){
@@ -1857,14 +1961,33 @@ CommandLineChat.prototype.commands=(function(){
 		process.getkey(function(e){
 			//上下：返信先選択
 			if(e.keyCode==38){
-				index--;
-				if(index<0)index=0;
+				while(true){
+					index--;
+					if(index<=0){
+						index=0;
+					}else{
+						var node=process.chat.log.childNodes[index];
+						if(node && node.nodeType===Node.ELEMENT_NODE && node.classList.contains("resp")){
+							//とばす
+							continue;
+						}
+					}
+					break;
+				}
 				//書き換え
-				process.deletelines(maxlen);
+				process.deletelines();
 				view();
 			}else if(e.keyCode==40){
-				index++;
-				process.deletelines(maxlen);
+				while(true){
+					index++;
+					var node=process.chat.log.childNodes[index];
+					if(node && node.nodeType===Node.ELEMENT_NODE && node.classList.contains("resp")){
+						//とばす
+						continue;
+					}
+					break;
+				}
+				process.deletelines();
 				view();
 			}else if(e.keyCode==27){
 				//Esc
@@ -1902,7 +2025,9 @@ CommandLineChat.prototype.commands=(function(){
 			for(var i=0;i<maxlen;i++){
 				var m=st+i;
 				if(m>=lc.length)break;
-				process.print((m==index?"* ":"")+ lc[m].textContent);
+				process.put((m==index?"* ":"  "),{color:"#00ffff"});
+				if(lc[m].classList.contains("resp"))process.put("  ");	//返信のインデント
+				process.print(lc[m].textContent);
 			}
 		}
 		function end(){
@@ -2006,12 +2131,58 @@ CommandLineChat.prototype.commands=(function(){
 	return obj;
 })();
 
-CommandLineChat.prototype.cprint=function(str){
-	this.cput(str+"\n");
+CommandLineChat.prototype.cprint=function(str,option){
+	this.cput(str+"\n",option);
 };
-CommandLineChat.prototype.cput=function(str){
-	this.consoleo.textContent+=str;
+CommandLineChat.prototype.cput=function(str,option){
+	var ins;
+	str=String(str);
+	//まずインデント設定
+	if(this.indentSpace.length>0){
+		str=setIndent(str,this.indentSpace);
+		var con=this.consoleo.textContent;
+		if(con.length===0 || con.lastIndexOf("\n")===con.length-1){
+			str=this.indentSpace+str;	//最初にもつける
+		}
+	}
+	if(!option){
+		//ただの文字列
+		ins=document.createTextNode(str);
+	}else{
+		ins=document.createElement("span");
+		ins.textContent=str;
+		//cssプロパティ
+		for(var key in option){
+			if(option[key]!=null){
+				ins.style[key]=option[key];
+			}
+		}
+	}
+	//this.consoleo.textContent+=str;
+	this.consoleo.appendChild(ins);
+	this.consoleo.normalize();
 	this.cscrollDown();
+
+	function setIndent(str,space){
+		return str.split("\n").map(function(x,i){return x&&i>0?space+x:x}).join("\n");	//最初だけスペースいらない
+	}
+};
+	//内部をインデントして表示
+CommandLineChat.prototype.indent=function(num,callback){
+	var t=this;
+	setindent(num);
+	callback();
+	setindent(-num);
+
+	function setindent(n){
+		if(n>0){
+			for(var i=0;i<n;i++){
+				t.indentSpace+=" ";
+			}
+		}else if(n<0){
+			t.indentSpace=t.indentSpace.slice(-n);	//FIFOのスペース列
+		}
+	}
 };
 CommandLineChat.prototype.cfocus=function(){
 	//コマンドにフォーカスするとスクロールしてしまうので一時的にスクロール位置保存
