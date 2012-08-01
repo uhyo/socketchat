@@ -550,7 +550,7 @@ ChatStream.prototype.$emit=function(name,obj1){
 		});
 	}
 };
-ChatStream.prototype.regist=function(){
+ChatStream.prototype.register=function(){
 	//自分をサーバーに登録する
 };
 ChatStream.prototype.setSessionid=function(id){
@@ -641,7 +641,7 @@ SocketChatStream.prototype.emit=function(){
 	this.socket.emit.apply(this.socket,arguments);
 	//this.$emit.apply(this,arguments);
 };
-SocketChatStream.prototype.regist=function(){
+SocketChatStream.prototype.register=function(){
 	this.socket.emit("regist",{"mode":"client","lastid":this.lastid});
 };
 
@@ -660,7 +660,7 @@ APIStream.prototype.init=function(){
 	this.requestto= settings.SOCKET_HOST_NAME || "";
 };
 //sessionStorageに入れなくてもいいと思う
-ChatStream.prototype.setSessionid=function(id){
+APIStream.prototype.setSessionid=function(id){
 	this.sessionid=id;
 };
 //サーバーへリクエストを送る
@@ -733,7 +733,7 @@ APIStream.prototype.check=function(){
 	//サーバーに更新を確認する
 	this.send("/api/");
 };
-APIStream.prototype.regist=function(){
+APIStream.prototype.register=function(){
 	this.check();
 };
 APIStream.prototype.emit=function(name){
@@ -975,7 +975,7 @@ ChatClient.prototype={
 		stream.on("inout",this.inout.bind(this));
 
 		//サーバーへ登録
-		stream.regist();
+		stream.register();
 	},
 	//初期化情報が届いた logs:現在のログ
 	loginit:function(data){
