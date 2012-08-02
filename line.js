@@ -41,8 +41,8 @@ LineMaker.prototype={
 		df.appendChild(dt);
 		var dd=el("span","");
 		dd.classList.add("main");
-		//comsp: コメント部分のspan
-		var comsp=el("span");
+		//comsp: コメント部分のbdi
+		var comsp=el("bdi");
 		comsp.classList.add("comment");
 		comsp.appendChild(commentHTMLify(obj.comment));
 		dd.appendChild(comsp);
@@ -230,7 +230,7 @@ HighChatMaker.prototype.make=function(obj){
 	
 	//var dd=df.childNodes.item(1);
 	//コメント部分をパース
-	var dd=df.querySelector("span.comment");
+	var dd=df.querySelector(".comment");
 	parse(dd);
 	//余計なテキストノードなどを除去
 	df.normalize();
@@ -2208,7 +2208,10 @@ CommandLineChat.prototype.cscrollDown=function(){
 //サーバーからユーザー情報が送られてきたらコンソールに表示
 CommandLineChat.prototype.userinfo=function(obj){
 	SocketChat.prototype.userinfo.apply(this,arguments);
-	if(!obj.rom)this.cprint("Hello, "+obj.name);
+	if(!obj.rom){
+		this.cput("Hello, ");
+		this.cprint(obj.name,{color:"#ffff00"});
+	}
 	if(obj.rom && !this.autoin_flg && localStorage.socketchat_autoin){
 		this.inout_notify(localStorage.socketchat_autoin);
 	}
