@@ -31,7 +31,7 @@ div.logs{
 	color:#0084b4;
 	cursor:pointer;
 }
-#log span.comment span.channel{
+#log bdi.comment span.channel{
 	padding-left:0;
 }
 #log span.main span.channel:hover{
