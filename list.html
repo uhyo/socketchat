@@ -24,7 +24,7 @@ UserList.prototype={
 		socket.on("inout",this.inout.bind(this));
 		socket.on("deluser",this.deluser.bind(this));
 		
-		socket.emit("regist",{"mode":"userlist"});
+		socket.emit("register",{"mode":"userlist"});
 	},
 	users:function(data){
 		console.log(data);
