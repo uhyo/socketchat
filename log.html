@@ -43,7 +43,6 @@ ChalogViewer.prototype={
 				this.pager.elements["forward"].disabled=false;
 			}
 		}.bind(this));
-		socket.on("idresponse",this.idresponse.bind(this));
 		
 		this.log.addEventListener('click',this.click.bind(this),false);
 		this.form.addEventListener('change', function(e){
@@ -143,7 +142,9 @@ ChalogViewer.prototype={
 		if(dd.classList.contains("respto") && dd.dataset.open!="open"){
 			//開く
 			this.responding_to=dd;
-			this.socket.emit("idrequest",{"id":dd.dataset.respto});
+			this.socket.emit("find",{"id":dd.dataset.respto},function(data){
+				this.idresponse(data[0]);
+			}.bind(this));
 			dd.dataset.open="open";
 			return;
 		}
