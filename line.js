@@ -149,7 +149,7 @@ LineMaker.prototype={
 					var ch = channels[i];
 					var span = document.createElement("span");
 					span.className = "channel";
-					if(wholeChannel==""){
+					if(i==0){
 						wholeChannel = ch;
 						span.textContent = "#"+ch;
 					}else{
