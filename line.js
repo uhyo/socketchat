@@ -52,11 +52,7 @@ LineMaker.prototype={
 			for(var i=0,l=c.length;i<l;i++){
 				//ログのチャンネル名と、本文中のハッシュタグがかぶる場合は本文を優先
 				if(obj.comment.indexOf("#"+c[i])===-1){
-					var chnsp=el("span");
-					chnsp.classList.add("channel");
-					chnsp.textContent="#"+c[i];
-					chnsp.dataset.channel=c[i];
-					dd.appendChild(chnsp);
+					dd.appendChild(this.makeChannelSpan(c[i]));
 				}
 			}
 		}
@@ -141,6 +137,32 @@ LineMaker.prototype={
 		return "rgb("+Math.floor(parseInt(arr[0])*0.75)+", "+
 		Math.floor(parseInt(arr[1])*0.75)+", "+
 		Math.floor(parseInt(arr[2])*0.75)+")";
+	},
+	makeChannelSpan:function(channel){
+		return (function(){
+			var span = document.createElement("span");
+			span.className="channels";
+			var wholeChannel = "";
+			var channels = channel.split("/");
+			for(var i=0; i<channels.length; i++){
+				span.appendChild((function(){
+					var ch = channels[i];
+					var span = document.createElement("span");
+					span.className = "channel";
+					if(wholeChannel==""){
+						wholeChannel = ch;
+						span.textContent = "#"+ch;
+					}else{
+						wholeChannel += "/"+ch;
+						span.textContent = "/"+ch;
+					}
+					span.dataset.channel = wholeChannel;
+
+					return span;
+				})());
+			}
+			return span;
+		})();
 	},
 }
 
@@ -365,10 +387,7 @@ HighChatMaker.prototype.make=function(obj){
 						node=node.splitText(res[1].length);
 					}
 					//チャネルのスタイルを変える
-					var span=document.createElement("span");
-					span.classList.add("channel");
-					span.dataset.channel=res[2];
-					span.textContent="#"+res[2];
+					var span=this.makeChannelSpan(res[2])//document.createElement("span");
 					//チャネル部分を分離（スペースは既に分離したのでその分だけ文字数を減らしてカウント）
 					node=node.splitText(res[0].length-res[1].length);
 					node.parentNode.replaceChild(span,node.previousSibling);
