@@ -125,8 +125,9 @@ filters.push(function(logobj,user){
 			
 	}
 	function setxff(ip){
-		var add={"name":"span","attributes":{"class":"info"},"child":"(Forwarded For:"+ip+")"};
-		logobj.comment=pushLogobj(logobj.comment,add);
+//		var add={"name":"span","attributes":{"class":"info"},"child":"(Forwarded For:"+ip+")"};
+//		logobj.comment=pushLogobj(logobj.comment,add);
+		logobj.ipff=ip;
 	}
 });
 //hito-maru-gogo

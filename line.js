@@ -83,10 +83,10 @@ LineMaker.prototype={
 			df.dataset.respto=obj.response;
 			df.classList.add("respto");
 		}
-		dt.title=dat+" "+tim+", "+obj.ip;
+		dt.title=dat+" "+tim+", "+obj.ip+(obj.ipff ? " (forwarded for: "+obj.ipff+")" : "");
 	
 		//IPaddressのspan要素
-		var ipelement = el("span",obj.ip+"; ");
+		var ipelement = el("span",obj.ip+(obj.ipff ? " (forwarded for: "+obj.ipff+")" : "")+"; ");
 		ipelement.classList.add("ip");
 		infsp.appendChild(time);
 		infsp.appendChild(ipelement);
