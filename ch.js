@@ -444,7 +444,7 @@ APIUser.prototype.inoutSplash=function(){
 io.sockets.on('connection',function(socket){
 	//ユーザー登録
 	var user=null;
-	socket.on("regist",function(data){
+	socket.on("register",function(data){
 		if(data.mode=="client"){
 			//チャットクライアント
 			socket.join("chatuser");

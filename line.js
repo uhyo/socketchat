@@ -642,7 +642,7 @@ SocketChatStream.prototype.emit=function(){
 	//this.$emit.apply(this,arguments);
 };
 SocketChatStream.prototype.register=function(){
-	this.socket.emit("regist",{"mode":"client","lastid":this.lastid});
+	this.socket.emit("register",{"mode":"client","lastid":this.lastid});
 };
 
 //APIを利用したストリーム
@@ -1227,7 +1227,7 @@ ChatClient.prototype={
 	reconnect: function(){
 		document.body.classList.remove("discon");
 		this.clearLog();
-		this.stream.regist();
+		this.stream.register();
 	},
 	//サブチャンネルをオープンする
 	openChannel:function(channelname){
