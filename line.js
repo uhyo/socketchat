@@ -213,6 +213,7 @@ HighChatMaker.gyazoSetting = [
 		url: {
 			image: "http://gyazo.com/",
 			thumb: "http://gyazo.com/thumb/",
+			ext: true,
 		},
 		text: {
 			normal: "[Gyazo]",
@@ -226,6 +227,7 @@ HighChatMaker.gyazoSetting = [
 		url: {
 			image: "http://myazo.net/",
 			thumb: "http://myazo.net/s/",
+			ext:true,
 		},
 		text: {
 			normal: "[Myazo]",
@@ -237,6 +239,7 @@ HighChatMaker.gyazoSetting = [
 		url: {
 			image: "http://g.81.la/",
 			thumb: "http://g.81.la/thumbnail.php?id=",
+			ext: false,
 		},
 		text: {
 			normal: "[81g]",
@@ -334,7 +337,7 @@ HighChatMaker.prototype.make=function(obj){
 						//Gyazo
 						var a=document.createElement("a");
 						a.target="_blank";
-						a.href=settingObj.url.image+res2[1]+".png";
+						a.href=settingObj.url.image+res2[1]+(settingObj.url.ext?".png":"");
 						a.classList.add("gyoza");
 						if(settingObj.thumb && this.gyoza==2){
 							//餃子常時展開
