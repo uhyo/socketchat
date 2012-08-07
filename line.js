@@ -881,6 +881,24 @@ function ChatClient(log,info,infobar){
 	this.oldest_time=null;	//持っているもっとも古いログ
 	this.flags={"sound":true};
 }
+ChatClient.getAudio = function(filename){
+	var audio;
+	try{
+		audio=new Audio();
+		audio.removeAttribute("src");
+		["ogg", "mp3", "wav"].forEach(function(ext){
+			//source要素：複数候補を指定できる（再生できるものを再生）
+			var source=document.createElement("source");
+			source.src=filename+"."+ext;
+			source.type="audio/"+ext;
+			audio.appendChild(source);
+		});
+	}catch(e){
+		//オーディオなんてなかった　ダミーを用意
+		audio={play:function(){}};
+	}
+	return audio;
+}
 ChatClient.prototype={
 	//使用するChatStream
 	useStream:function(){return ChatStream},
@@ -922,28 +940,20 @@ ChatClient.prototype={
 		
 		//Audio
 		if(this.flags.sound){
-			var audio;
-			var soundSource=[
-				["./sound.ogg", "audio/ogg"],
-				["./sound.mp3", "audio/mp3"],
-				["./sound.wav", "audio/wav"]
-			];
-			try{
-				audio=new Audio();
-				audio.removeAttribute("src");
-				soundSource.forEach(function(arr){
-					//source要素：複数候補を指定できる（再生できるものを再生）
-					var source=document.createElement("source");
-					source.src=arr[0];
-					source.type=arr[1];
-					audio.appendChild(source);
-				});
-			}catch(e){
-				//オーディオなんてなかった　ダミーを用意
-				audio={play:function(){}};
-			}
-			this.audio=audio;
+			this.audio=ChatClient.getAudio("/sound");
 		}
+		var jihou = ChatClient.getAudio("/jihou");
+		var nextJihou = new Date();
+		if(nextJihou.getHours()>=2){
+			nextJihou.setDate(nextJihou.getDate()+1);
+		}
+		nextJihou.setHours(2);
+		nextJihou.setMinutes(0);
+		nextJihou.setSeconds(0);
+		nextJihou.setMilliseconds(0);
+		var sabun = nextJihou.getTime()-(new Date()).getTime();
+		console.log(sabun);
+		setTimeout(function(){jihou.play()}, sabun)
 		
 		//Responding tip(クリックすると右側に出るやつ）
 		this.responding_tip=document.createElement("span");
