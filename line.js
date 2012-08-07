@@ -200,10 +200,10 @@ HighChatMaker.prototype.init=function(){
 	audioc.type="range",audioc.min=0,audioc.max=100,audioc.step=10;
 	//localStorageから音量設定読み出し。未設定の場合50を設定
 	audioc.value = (localStorage.soc_highchat_audiovolume!=undefined ? localStorage.soc_highchat_audiovolume : (localStorage.soc_highchat_audiovolume=50));
-	if(this.parent && this.parent.audio)this.parent.audio.volume=audioc.value/100;
+	if(this.parent && this.parent.audio)this.parent.audio.volume = this.parent.jihou.volume=audioc.value/100;
 	audioc.addEventListener("change",function(e){
 		//console.log(audioc.value,this.parent.audio);
-		if(audioc.checkValidity() && this.parent.audio)this.parent.audio.volume=(localStorage.soc_highchat_audiovolume=audioc.value)/100;
+		if(audioc.checkValidity() && this.parent.audio)this.parent.audio.volume=this.parent.jihou.volume=(localStorage.soc_highchat_audiovolume=audioc.value)/100;
 	}.bind(this),false);
 	this.infobar.appendChild(audioc);
 };
@@ -942,16 +942,14 @@ ChatClient.prototype={
 		if(this.flags.sound){
 			this.audio=ChatClient.getAudio("/sound");
 		}
-		var jihou = ChatClient.getAudio("/jihou");
+		var jihou = this.jihou = ChatClient.getAudio("/jihou");
 		var nextJihou = new Date();
-		if(nextJihou.getHours()>=2){
-			nextJihou.setDate(nextJihou.getDate()+1);
-		}
 		nextJihou.setHours(2);
 		nextJihou.setMinutes(0);
 		nextJihou.setSeconds(0);
 		nextJihou.setMilliseconds(0);
 		var sabun = nextJihou.getTime()-(new Date()).getTime();
+		if(sabun<0)sabun+=86400000;
 		console.log(sabun);
 		setTimeout(function(){jihou.play()}, sabun)
 		
@@ -1740,7 +1738,7 @@ CommandLineChat.prototype.commands=(function(){
 				process.print("volume: invalid volume "+process.arg);
 			}else{
 				localStorage.soc_highchat_audiovolume=vo;
-				process.chat.audio.volume=vo/100;
+				process.chat.audio.volume=process.chat.audio.volume=vo/100;
 			}
 		}else{
 			//現在のボリュームを表示
