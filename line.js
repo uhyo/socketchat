@@ -200,10 +200,10 @@ HighChatMaker.prototype.init=function(){
 	audioc.type="range",audioc.min=0,audioc.max=100,audioc.step=10;
 	//localStorageから音量設定読み出し。未設定の場合50を設定
 	audioc.value = (localStorage.soc_highchat_audiovolume!=undefined ? localStorage.soc_highchat_audiovolume : (localStorage.soc_highchat_audiovolume=50));
-	if(this.parent && this.parent.audio)this.parent.audio.volume = this.parent.jihou.volume=audioc.value/100;
+	if(this.parent && this.parent.audio)this.parent.setVolume(audioc.value/100);
 	audioc.addEventListener("change",function(e){
 		//console.log(audioc.value,this.parent.audio);
-		if(audioc.checkValidity() && this.parent.audio)this.parent.audio.volume=this.parent.jihou.volume=(localStorage.soc_highchat_audiovolume=audioc.value)/100;
+		if(audioc.checkValidity() && this.parent.audio)this.parent.setVolume((localStorage.soc_highchat_audiovolume=audioc.value)/100);
 	}.bind(this),false);
 	this.infobar.appendChild(audioc);
 };
@@ -881,24 +881,6 @@ function ChatClient(log,info,infobar){
 	this.oldest_time=null;	//持っているもっとも古いログ
 	this.flags={"sound":true};
 }
-ChatClient.getAudio = function(filename){
-	var audio;
-	try{
-		audio=new Audio();
-		audio.removeAttribute("src");
-		["ogg", "mp3", "wav"].forEach(function(ext){
-			//source要素：複数候補を指定できる（再生できるものを再生）
-			var source=document.createElement("source");
-			source.src=filename+"."+ext;
-			source.type="audio/"+ext;
-			audio.appendChild(source);
-		});
-	}catch(e){
-		//オーディオなんてなかった　ダミーを用意
-		audio={play:function(){}};
-	}
-	return audio;
-}
 ChatClient.prototype={
 	//使用するChatStream
 	useStream:function(){return ChatStream},
@@ -938,11 +920,13 @@ ChatClient.prototype={
 		
 		this.responding_to=null;	//dd
 		
+		//getAudio,setVolume用
+		this.audioCollection=[];
 		//Audio
 		if(this.flags.sound){
-			this.audio=ChatClient.getAudio("/sound");
+			this.audio=this.getAudio("/sound");
 		}
-		var jihou = this.jihou = ChatClient.getAudio("/jihou");
+		var jihou = this.jihou = this.getAudio("/jihou");
 		var nextJihou = new Date();
 		nextJihou.setHours(2);
 		nextJihou.setMinutes(0);
@@ -1347,6 +1331,31 @@ ChatClient.prototype={
 	clearLog: function(){
 		while(this.log.firstChild)this.log.removeChild(this.log.firstChild);
 	},
+	getAudio: function(filename){
+		var audio;
+		try{
+			audio=new Audio();
+			audio.removeAttribute("src");
+			["ogg", "mp3", "wav"].forEach(function(ext){
+				//source要素：複数候補を指定できる（再生できるものを再生）
+				var source=document.createElement("source");
+				source.src=filename+"."+ext;
+				source.type="audio/"+ext;
+				audio.appendChild(source);
+			});
+			this.audioCollection.push(audio);
+		}catch(e){
+			//オーディオなんてなかった　ダミーを用意
+			audio={play:function(){}};
+		}
+		return audio;
+	},
+	setVolume: function(volume){
+		//ボリュームをセット
+		for(var i=0,l=this.audioCollection.length;i<l;i++){
+			this.audioCollection[i].volume=volume;
+		}
+	},
 };
 
 function SocketChat(){
@@ -1738,7 +1747,7 @@ CommandLineChat.prototype.commands=(function(){
 				process.print("volume: invalid volume "+process.arg);
 			}else{
 				localStorage.soc_highchat_audiovolume=vo;
-				process.chat.audio.volume=process.chat.audio.volume=vo/100;
+				process.chat.setVolume(vo/100);
 			}
 		}else{
 			//現在のボリュームを表示
