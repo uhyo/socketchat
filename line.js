@@ -74,6 +74,7 @@ LineMaker.prototype={
 		
 		//コメントの_idを保存（返信など用）
 		df.dataset.id=obj._id;
+		df.dataset.ip=obj.ip;
 		if(obj.response){
 			//そのコメントが返信の場合はdatasetに追加、クラス追加
 			df.dataset.respto=obj.response;
@@ -911,7 +912,9 @@ ChatClient.prototype={
 		this.usernumber.dataset.actives=this.usernumber.dataset.roms=0;
 		this.bots=[];
 		this.disip=[];	//IP list
-		if(localStorage.socketchat_disip)this.disip=JSON.parse(localStorage.socketchat_disip);
+		if(localStorage.socketchat_disip){
+			JSON.parse(localStorage.socketchat_disip).forEach(this.addDisip.bind(this));
+		}
 		
 		if(localStorage.socketchat_displaynone){
 			document.styleSheets[0].insertRule(localStorage.socketchat_displaynone+"{display:none}", 0)
@@ -953,6 +956,14 @@ ChatClient.prototype={
 		document.addEventListener("submit",this.submit.bind(this),false);
 		
 		this.log.addEventListener('click',this.click.bind(this),false);
+		this.info.addEventListener('click', function(e){
+			var t = e.target.parentNode;
+			if(t.tagName=="LI" && t.dataset.ip){
+				if(!this.addDisip(t.dataset.ip)){
+					this.removeDisip(t.dataset.ip);
+				}
+			}
+		}.bind(this));
 		
 		//フォームを用意
 		this.prepareForm();
@@ -1004,10 +1015,6 @@ ChatClient.prototype={
 	},
 	//ログを受信した
 	recv:function(obj){
-		if(this.disip.indexOf(obj.ip)>=0){
-			// disip
-			return;
-		}
 		this.bots.forEach(function(func){func(obj,this)},this);
 		if(this.flags.sound){
 			this.audio.play();
@@ -1026,6 +1033,7 @@ ChatClient.prototype={
 		sp.textContent=user.name;
 		sp.title=user.ip+" / "+user.ua;
 		li.dataset.id=user.id;
+		li.dataset.ip=user.ip;
 		if(user.rom){
 			li.classList.add("rom");
 			//rom+1
@@ -1354,6 +1362,32 @@ ChatClient.prototype={
 		//ボリュームをセット
 		for(var i=0,l=this.audioCollection.length;i<l;i++){
 			this.audioCollection[i].volume=volume;
+		}
+	},
+	addDisip: function(ip){
+		console.log(ip)
+		if(this.disip.some(function(x){return x==ip})) return false;
+		this.disip.push(ip);
+		localStorage.socketchat_disip=JSON.stringify(this.disip);
+
+		document.styleSheets.item(0).insertRule("#log p[data-ip=\""+ip+"\"]{display:none}",0);
+		document.styleSheets.item(0).insertRule("#info li[data-ip=\""+ip+"\"]{font-style:italic}",0);
+		return true;
+	},
+	removeDisip: function(ip){
+		this.disip=this.disip.filter(function(x){
+			return x!=ip;
+		});
+		localStorage.socketchat_disip=JSON.stringify(this.disip);
+		
+		var css=document.styleSheets.item(0);
+		for(var i=css.cssRules.length-1; i>=0; i--){
+			var rule = css.cssRules[i];
+			console.log(rule.cssText);
+			if(rule.selectorText=="#log p[data-ip=\""+ip+"\"]" ||
+					rule.selectorText=="#info li[data-ip=\""+ip+"\"]"){
+				css.deleteRule(i);
+			}
 		}
 	},
 };
@@ -1981,18 +2015,14 @@ CommandLineChat.prototype.commands=(function(){
 		if(ip){
 			if(pr.opt.indexOf("-d")>=0){
 				//削除
-				process.chat.disip=process.chat.disip.filter(function(x){
-					return x!=ip;
-				});
+				process.chat.removeDisip(ip);
 			}else{
-				if(process.chat.disip.some(function(x){return x==ip})){
-					process.print("disip: already exists:"+ip);
+				if(process.chat.addDisip(ip)){
+
 				}else{
-					process.chat.disip.push(ip);
+					process.print("disip: already exists:"+ip);
 				}
 			}
-			//localStorageに保存
-			localStorage.socketchat_disip=JSON.stringify(process.chat.disip);
 		}
 		//現在のdisipを表示して終了
 		process.chat.disip.forEach(process.print,process);
