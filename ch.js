@@ -580,6 +580,12 @@ function makelog(user,logobj){
 	filters.forEach(function(func){
 		func(logobj,user);
 	});
+	if("string"!==typeof logobj.comment){
+		//コメントがオブジェクトでない場合
+		//ここでstringに変換、commentObjectを新設
+		logobj.commentObject=logobj.comment;
+		logobj.comment=stringify(logobj.commentObject);
+	}
 	log.insert(logobj,{"safe":true},function(err,docs){
 		if(err){
 			console.log(err);
@@ -593,6 +599,18 @@ function makelog(user,logobj){
 			socket.broadcast.to("chatuser").emit("log",logobj);
 		}
 		toapi(function(x){x.logs.unshift(logobj)});
+	}
+	//オブジェクト交じりcommentを文字列のみに変換
+	function stringify(obj){
+		if("string"===typeof obj){
+			return obj;
+		}else if(Array.isArray(obj)){
+			//配列は全部連結する
+			return obj.map(stringify).join("");
+		}else{
+			//オブジェクト
+			return stringify(obj.child);
+		}
 	}
 }
 function toapi(callback){

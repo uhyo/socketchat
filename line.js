@@ -44,7 +44,9 @@ LineMaker.prototype={
 		//comsp: コメント部分のbdi
 		var comsp=el("bdi");
 		comsp.classList.add("comment");
-		comsp.appendChild(commentHTMLify(obj.comment));
+		//コメントは何かな
+		var comment = obj.commentObject || obj.comment;
+		comsp.appendChild(commentHTMLify(comment));
 		dd.appendChild(comsp);
 		//チャンネル
 		if(obj.channel){
