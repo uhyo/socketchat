@@ -909,7 +909,6 @@ ChatClient.prototype={
 		this.users=this.info.getElementsByClassName("users")[0];
 		this.usernumber=this.info.getElementsByClassName("usernumber")[0];
 		
-		this.usernumber.dataset.actives=this.usernumber.dataset.roms=0;
 		this.bots=[];
 		this.disip=[];	//IP list
 		if(localStorage.socketchat_disip){
@@ -1079,6 +1078,7 @@ ChatClient.prototype={
 		//console.log("userinit", obj);
 		while(this.users.firstChild)this.users.removeChild(this.users.firstChild);//textNode消す
 		
+		this.usernumber.dataset.actives=this.usernumber.dataset.roms=0;
 		obj.users.forEach(this.newuser, this);
 		//this.setusernumber(obj.actives, obj.roms);
 	},
@@ -2286,6 +2286,11 @@ CommandLineChat.prototype.userinfo=function(obj){
 	}
 	this.autoin_flg=true;
 	
+};
+//reconnect時はもう一度再入室がはたらく
+CommandLineChat.prototype.reconnect=function(){
+	SocketChat.prototype.reconnect.apply(this,arguments);
+	this.autoin_flg=false;
 };
 CommandLineChat.prototype.setConsoleHeight=function(){
 	var st=document.styleSheets.item(0);
