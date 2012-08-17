@@ -588,34 +588,6 @@ ChatStream.prototype.say=function(comment,response,channel){
 	else if(!Array.isArray(channel)){
 		channel=[channel];
 	}
-	var result;
-	var save_str=comment;	//とっておく
-	//コメントからチャネルを探す
-	var flag=false;
-	while(result=comment.match(/(?:^|\s+)#(\S+)\s*$/)){
-		//文末のハッシュタグはチャネルに組み入れる
-		if(channel.indexOf(result[1])<0){
-			channel.unshift(result[1]);
-		}
-		comment=comment.slice(0,comment.length-result[0].length);	//その部分をカット
-		flag=true;
-	}
-	if(flag && /^\s*$/.test(comment)){
-		//空っぽになってしまった場合は戻す
-		comment=save_str;
-	}
-
-	//普通にチャンネルを割り当てる
-	result=comment.match(/(?:^|\s+)#\S+/g);
-	if(result){
-		for(var i=0,l=result.length;i<l;i++){
-			var r=result[i].match(/#(\S+)$/);
-			var hash=r[1];	//チャンネル名
-			if(hash && channel.indexOf(hash)<0){
-				channel.push(hash);
-			}
-		}
-	}
 	//sayイベントを発行
 	this.emit("say",{"comment":comment,"response":response?response:"","channel":channel?channel:""});
 };

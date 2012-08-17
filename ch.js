@@ -255,27 +255,67 @@ User.prototype.says=function(data){
 		this.ss.push(Date.now());
 	}
 
-	var logobj={"name":this.name,
-		    "comment":data.comment,
-		    "ip":this.ip,
-		    "time":new Date()
-		    };
+	var channel=[];
 	if(data.channel){
 		//チャンネル
 		var c=data.channel;
 		if(Array.isArray(c)){
 			//配列だった
 			if(c.length===0 || c.some(function(x){return !x || 'string'!==typeof x})){
-				c=null;
+				//channel=null;
 			}else if(c.length===1){
 				c=c[0];	//文字列化
 				if(!c || 'string'!==typeof c)c=null;	//無効
+				else channel.push(c);
+			}else{
+				//全部採用
+				channel=c;
 			}
-		}else if('string' !== typeof c){
-			c=null;
+		}else if('string' === typeof c){
+			channel.push(c);
 		}
-		if(c)logobj.channel=c;
 	}
+	//発言中のハッシュタグを処理
+	var save_str=comment=data.comment;	//とっておく
+	//コメントからチャネルを探す
+	var flag=false, result;
+	while(result=comment.match(/(?:^|\s+)#(\S+)\s*$/)){
+		//文末のハッシュタグはチャネルに組み入れる
+		if(channel.indexOf(result[1])<0){
+			channel.unshift(result[1]);
+		}
+		comment=comment.slice(0,comment.length-result[0].length);	//その部分をカット
+		flag=true;
+	}
+	if(flag && /^\s*$/.test(comment)){
+		//空っぽになってしまった場合は戻す
+		comment=save_str;
+	}
+	//文末以外のチャンネルを割り当てる
+	result=comment.match(/(?:^|\s+)#\S+/g);
+	if(result){
+		for(var i=0,l=result.length;i<l;i++){
+			var r=result[i].match(/#(\S+)$/);
+			var hash=r[1];	//チャンネル名
+			if(hash && channel.indexOf(hash)<0){
+				channel.push(hash);
+			}
+		}
+	}
+	//チャネルの処理
+	if(channel.length===0){
+		channel=null;
+	}else if(channel.length===1){
+		channel=channel[0];
+	}
+
+	var logobj={"name":this.name,
+		    "comment":comment,
+		    "ip":this.ip,
+		    "time":new Date()
+		    };
+
+	if(channel)logobj.channel=channel;	//チャネルを追加
 	var say=makelog.bind(null,this,logobj);
 	if(data.response){
 		try{
