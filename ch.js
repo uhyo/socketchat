@@ -305,9 +305,9 @@ User.prototype.says=function(data){
 	//チャネルの処理
 	if(channel.length===0){
 		channel=null;
-	}else if(channel.length===1){
+	}/*else if(channel.length===1){
 		channel=channel[0];
-	}
+	}*/
 
 	var logobj={"name":this.name,
 		    "comment":comment,
