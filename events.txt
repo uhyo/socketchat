@@ -23,12 +23,17 @@ Logobj
 {"name":String,"rom":Boolean}
 
 [Client->Srv]
-*event regist:
+*event register:
  {"mode":"client"}
  
 *event say:
 
-{"comment":String}
+{"comment":SayingObject}
+
+SayingObject:
+    | String
+    | Number (Unicode codepoint: must be >=0x10000)
+    | [SayingObject, SayingObject, ...]
 
 *event inout:
 
@@ -41,7 +46,7 @@ Logobj
 function(usersdata){}
 
 [LogViewer->Srv]
-*event regist:
+*event register:
  {"mode":"chalog"}
 
 *event query:

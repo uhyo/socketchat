@@ -583,13 +583,37 @@ ChatStream.prototype.setSessionid=function(id){
 };
 //発言する
 ChatStream.prototype.say=function(comment,response,channel){
-	//コメントからハッシュタグを探す
+	//所属チャネルを配列で送る
 	if(!channel)channel=[];
 	else if(!Array.isArray(channel)){
 		channel=[channel];
 	}
+	//コメントも配列にする
+	var commentArray=[];
+	//サロゲートペアは数値にして送る（node.jsが処理できないので）
+	var result;
+	while(result=comment.match(/^(.*?)([\ud800-\udbff])([\udc00-\udfff])/)){
+		//符号位置
+		var h=result[2].charCodeAt(0), l=result[3].charCodeAt(0);
+		var code=0x10000+(h-0xd800)*0x400+ l-0xdc00;
+		if(result[1]){
+			commentArray.push(result[1],code);
+		}else{
+			commentArray.push(code);
+		}
+		comment=comment.slice(result[0].length);	//処理済みの部分を取り除く
+	}
+	if(comment){
+		//まだ残っている
+		commentArray.push(comment);
+	}
+	if(commentArray.length===1){
+		//配列でなくてよい
+		commentArray=commentArray[0];
+	}
 	//sayイベントを発行
-	this.emit("say",{"comment":comment,"response":response?response:"","channel":channel?channel:""});
+	this.emit("say",{"comment":commentArray,"response":response?response:"","channel":channel?channel:""});
+	
 };
 //発言をサーバーに問い合わせる
 ChatStream.prototype.find=function(query,cb){
@@ -910,7 +934,7 @@ ChatClient.prototype={
 		nextJihou.setMilliseconds(0);
 		var sabun = nextJihou.getTime()-(new Date()).getTime();
 		if(sabun<0)sabun+=86400000;
-		console.log(sabun);
+		//console.log(sabun);
 		setTimeout(function(){jihou.play()}, sabun)
 		
 		//Responding tip(クリックすると右側に出るやつ）

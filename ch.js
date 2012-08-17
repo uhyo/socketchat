@@ -240,12 +240,8 @@ User.prototype.type="user";
 //says,inout
 User.prototype.says=function(data){
 	if(this.rom)return;
-	if(!data || !data.comment || typeof data.comment != "string")return;
-	
-	if(data.comment.length>settings.CHAT_MAX_LENGTH){
-		return;
-	}
-
+	if(!data || !data.comment)return;
+	//連続発言
 	if(settings.CHAT_LIMIT_TIME>0){
 		var d=Date.now()-1000*settings.CHAT_LIMIT_TIME;
 		if((this.ss=this.ss.filter(function(x){return x>=d})).length>=settings.CHAT_LIMIT_NUMBER){
@@ -253,6 +249,91 @@ User.prototype.says=function(data){
 			return;
 		}
 		this.ss.push(Date.now());
+	}
+
+	if("string"!==typeof data.comment && !Array.isArray(data.comment))return;
+	//console.log(data);
+	//ログを生成する
+	var length, commentString;	//コメントの長さ、文字列バージョン
+	try{
+		length=0;	//足していく
+		//ログを生成
+		/*commentString="";
+		   commentObj=(function check(comment){
+			if("string"===typeof comment && comment.length>0){
+				length+=comment.length;
+				commentString+=comment;
+				return comment;
+			}else if(Array.isArray(comment)){
+				var result=[];
+				var lastUnicodeObj=null;	//U+10000以上の文字を表すオブジェクト
+				for(var i=0, l=comment.length;i<l;i++){
+					var r=check(comment[i]);
+					if(r.name==="#x-unicode"){
+					   if(lastUnicodeObj){
+						//前のやつに組み入れる
+						lastUnicodeObj.code=lastUnicodeObj.code.concat(r.code);
+					   }else{
+						   result.push(r);
+						   lastUnicodeObj=r;
+					   }
+					}else{
+						result.push(r);
+						lastUnicodeObj=null;
+					}
+				}
+				return result;
+			}else if("number"===typeof comment){
+				if(comment<0x10000 || 0x10ffff<comment){
+					//サポート範囲外
+					throw new Error;
+				}
+				length++;
+				//復元して文字列にも入れる（壊れるけど）
+				//サロゲートペアを復元
+				var l=(number & 0x3ff)+0xdc00;
+				var h=((number-0x10000)>>10)+0xd800;
+				commentString+=String.fromCharCode(h)+String.fromCharCode(l);
+				return {
+					name:"#x-unicode",
+					code:[comment],
+				};
+			}
+			throw new Error;
+		})(data.comment);*/
+		commentString=(function check(comment){
+			if("string"===typeof comment && comment.length>0){
+				length+=comment.length;
+				return comment;
+			}else if(Array.isArray(comment)){
+				var result="";
+				for(var i=0, l=comment.length;i<l;i++){
+					result+=check(comment[i]);
+				}
+				return result;
+			}else if("number"===typeof comment){
+				if(comment<0x10000 || 0x10ffff<comment){
+					//サポート範囲外
+					throw new Error;
+				}
+				length++;
+				//復元して文字列にも入れる（壊れるけど）
+				//サロゲートペアを復元
+				var l=(comment & 0x3ff)+0xdc00;
+				var h=((comment-0x10000)>>10)+0xd800;
+				return String.fromCharCode(h)+String.fromCharCode(l);
+			}
+			throw new Error;
+		})(data.comment);
+
+	}catch(e){
+		throw e;
+		return;
+	}
+
+				
+	if(length>settings.CHAT_MAX_LENGTH){
+		return;
 	}
 
 	var channel=[];
@@ -275,8 +356,9 @@ User.prototype.says=function(data){
 			channel.push(c);
 		}
 	}
+	//console.log(commentString);
 	//発言中のハッシュタグを処理
-	var save_str=comment=data.comment;	//とっておく
+	var save_str=comment=commentString;	//とっておく
 	//コメントからチャネルを探す
 	var flag=false, result;
 	while(result=comment.match(/(?:^|\s+)#(\S+)\s*$/)){

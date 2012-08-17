@@ -27,7 +27,7 @@ one of:
 * "String"
 * [ CommentObject, CommentObject, ...]
 * {
-    "name":"String",
+    "name":"String",	//tag name
     "attributes":{
       key: value, ...
     },
