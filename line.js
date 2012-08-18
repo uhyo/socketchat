@@ -1534,7 +1534,9 @@ CommandLineChat.prototype.doCommand=function(str){
 	result=str.match(new RegExp("^\\"+syschar+"(\\S+)(?:\\s+)?"));
 	if(!result){
 		//通常の発言
-		this.say(str);
+		if(str){
+			this.say(str);
+		}
 		return;
 	}
 	//履歴

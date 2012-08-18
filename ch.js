@@ -332,7 +332,7 @@ User.prototype.says=function(data){
 	}
 
 				
-	if(length>settings.CHAT_MAX_LENGTH){
+	if(length>settings.CHAT_MAX_LENGTH || length===0){
 		return;
 	}
 
