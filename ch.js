@@ -39,7 +39,8 @@ var mongoserver = new mongodb.Server(settings.DB_SERVER,settings.DB_PORT,{});
 var db = new mongodb.Db(settings.DB_NAME,mongoserver,{});
 
 
-var app = require('express').createServer();
+//var app = require('express').createServer();
+var app=require('express')();
 
 app.get(/^\/(index\.html)?$/, function(req, res){
 	res.sendfile(__dirname + '/index.html');
@@ -76,6 +77,12 @@ app.get('/show', function(req, res){
 	},{"Content-Type":"text/javascript; charset=UTF-8"});
 });
 
+//httpでラップ
+var srv=require('http').createServer(app);
+srv.listen(settings.HTTP_PORT);
+
+var io=socketio.listen(srv);
+io.set('log level',1);
 var log;
 //データベース使用準備
 db.open(function(err,_db){
@@ -222,10 +229,6 @@ function forEachTextLogobj(logobj,callback){
 	}
 }
 
-app.listen(settings.HTTP_PORT);
-
-var io=socketio.listen(app);
-io.set('log level',1);
 
 function User(id,name,ip,rom,ua){
 	this.id=id,this.name=name,this.ip=ip,this.rom=rom,this.ua=ua;
@@ -327,7 +330,6 @@ User.prototype.says=function(data){
 		})(data.comment);
 
 	}catch(e){
-		throw e;
 		return;
 	}
 
