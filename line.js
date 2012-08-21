@@ -477,13 +477,16 @@ HighChatMaker.prototype.gyozamouse=function(e){
 		img.hidden=false;
 	}
 };
-//通信を担当するオブジェクト
+//通信を管理するオブジェクト
 function ChatStream(){
 	//EventEmitter（onでlistener登録、emitでイベント発火）
 	io.EventEmitter.apply(this);
 }
 ChatStream.prototype=new io.EventEmitter;
-ChatStream.prototype.init=function(chat){
+//defaultConnection: デフォルトで使うChatConnectionのコンストラクタ
+ChatStream.prototype.init=function(chat,defaultConnection,channel){
+	if(!defaultConnection)defaultConnection=ChatConnection;
+	this.channel=channel;	//channel名
 	this.chat=chat;	//ChatClientオブジェクト
 	//ページを更新したときなどの復帰用にsessionid
 	this.lastid = this.sessionid = sessionStorage.sessionid || void 0;
@@ -496,13 +499,35 @@ ChatStream.prototype.init=function(chat){
 			c[i].window.close();
 		}
 	}.bind(this),false);
+	//コネクションを初期化
+	console.log(this);
+	this.initConnection(defaultConnection);
+};
+ChatStream.prototype.initConnection=function(connfunc){
+	var t=this;
+	var conn=this.connection=new connfunc();
+	conn.init();
+	conn.on("sessionid",function(id){
+		//sessionidが決まった
+		t.setSessionid(id);
+	});
+	//コネクションの$emitを乗っ取る
+	conn._old_$emit=conn.$emit;
+	console.log(conn);
+	conn.$emit=function(){
+		t.$emit.apply(t,arguments);
+		//本来の働きをさせる
+		conn._old_$emit.apply(conn,arguments);
+	};
+	//登録
+	conn.register(this.lastid,this.channel);
 };
 ChatStream.prototype.addChild=function(obj){
 	//こどもを追加する。メッセージを受けたらこどもにも送る
 	this.children.push(obj);
 	//メッセージを受け取る
 	var t=this;
-	var port=obj.port, channel=obj.channel;
+	var port=obj.port;
 	//messageイベントで受け取れる
 	port.addEventListener("message",message);
 
@@ -519,18 +544,11 @@ ChatStream.prototype.addChild=function(obj){
 
 		var obj1=d.args[0];
 		//フィルターをかける
-		if(d.name==="say"){
-			//こどもから来た発言
-			var ch= !obj1.channel? [] : (Array.isArray(obj1.channel) ? obj1.channel : [obj1.channel]);
-			if(ch.indexOf(channel)<0){
-				ch.push(channel);//チャンネルに加える
-				obj1.channel=ch;
-			}
-		}else if(d.name==="find"){
+		if(d.name==="find"){
 			//サブウィンドウのほうへ流す（関数は送れない）
 			//d.args[1]:func
 			//motto時はチャンネル限定してあげる
-			if(obj1.motto)obj1.channel=channel;
+			//if(obj1.motto)obj1.channel=channel;
 			t.find(obj1,function(arr){
 				//結果を送ってあげる
 				port.postMessage({
@@ -544,39 +562,58 @@ ChatStream.prototype.addChild=function(obj){
 		t.emit.apply(t,[d.name].concat(d.args));
 	}
 };
+ChatStream.prototype.emit=function(name){
+	//サーバー側へ送る
+	
+	//super filter!!!!
+	var obj1=arguments[1];
+	console.log("emit!!!");
+	if(name==="say"){
+		//チャネル追加
+		console.log(name,this.channel);
+		if(this.channel){
+			var ch= !obj1.channel? [] : (Array.isArray(obj1.channel) ? obj1.channel : [obj1.channel]);
+			if(ch.indexOf(this.channel)<0){
+				ch.push(this.channel);//チャンネルに加える
+				obj1.channel=ch;
+			}
+		}
+	}else if(name==="find"){
+		//motto時はチャンネル限定してあげる
+		if(obj1.motto)obj1.channel=this.channel;
+	}
+
+	this.connection.emit.apply(this.connection,arguments);
+};
 ChatStream.prototype.$emit=function(name,obj1){
 	//emitするときに内部的に呼ばれる
 	var em=io.EventEmitter.prototype.emit;
+	//super filter!!!!
+	if(name==="log" && this.channel){
+		var ch=Array.isArray(obj1.channel) ? obj1.channel : [obj1.channel];
+		if(ch.indexOf(this.channel)<0){
+			//チャンネルは知らない
+			return;
+		}
+	}
+
 	//本来のemitのはたらき
 	em.apply(this,arguments);
 	//子供たちにもイベントを送ってあげる
 	var c=this.children;
 	for(var i=0,l=c.length;i<l;i++){
 		//フィルタリングする
-		if(name==="log"){
-			var ch=obj1.channel;
-			if(Array.isArray(ch)){
-				if(ch.indexOf(c[i].channel)===-1){
-					//チャンネルではないログは送らない
-					continue;
-				}
-			}else if(ch!==c[i].channel){
-				//子どものチャンネルのログのみ送る
-				continue;
-			}
-		}else if(name==="find"){
+		/*if(name==="find"){
 			//関数が含まれるのでブロック
 			continue;
-		}
+		}*/
 		var port=c[i].port;
 		port.postMessage({
 			name:name,
 			args:Array.prototype.slice.call(arguments,1),
 		});
 	}
-};
-ChatStream.prototype.register=function(){
-	//自分をサーバーに登録する
+
 };
 ChatStream.prototype.setSessionid=function(id){
 	this.sessionid=sessionStorage.sessionid=id;
@@ -618,7 +655,7 @@ ChatStream.prototype.say=function(comment,response,channel){
 //発言をサーバーに問い合わせる
 ChatStream.prototype.find=function(query,cb){
 	//query:  channel?:"foo", id?:"deadbeef...", motto:{time,until}
-	this.emit("find",query,function(arr){
+	this.connection.emit("find",query,function(arr){
 		if(!Array.isArray(arr))cb([]);
 		cb(arr);
 	});
@@ -626,73 +663,81 @@ ChatStream.prototype.find=function(query,cb){
 //ユーザーをサーバーに問い合わせる
 ChatStream.prototype.users=function(cb){
 	//ユーザー一覧をサーバーへ請求する
-	this.emit("users",function(obj){
+	this.connection.emit("users",function(obj){
 		cb(obj);
 	});
 };
 
-//サーバーとソケットで通信するストリーム
-function SocketChatStream(){
-	ChatStream.apply(this,arguments);
-}
-SocketChatStream.prototype=new ChatStream;
-SocketChatStream.prototype.init=function(chat){
-	ChatStream.prototype.init.apply(this,arguments);
 
-	//ソケットを準備
-	var socket;
+//実際の通信を担う
+function ChatConnection(){
+	io.EventEmitter.apply(this);
+};
+ChatConnection.prototype=new io.EventEmitter;
+ChatConnection.prototype.init=function(){
+};
+//サーバー側へ送る何か
+ChatConnection.prototype.emit=function(){
+};
+//自分とこでイベントを発火させる
+ChatConnection.prototype.$emit=function(){
+	io.EventEmitter.prototype.emit.apply(this,arguments);
+};
+ChatConnection.prototype.register=function(){};
+//Socket通信
+function SocketConnection(){
+	ChatConnection.apply(this,arguments);
+};
+SocketConnection.prototype=new ChatConnection;
+SocketConnection.prototype.init=function(){
 	var t=this;
-	socket=this.socket = io.connect(settings.SOCKET_HOST_NAME||(location.protocol+"//"+location.host));
+	//コネクション
+	var socket=this.socket=io.connect(settings.SOCKET_HOST_NAME||(location.protocol+"//"+location.host));
 	socket.on("connect",function(){
-		//ソケットidがセッションid
-		t.setSessionid(socket.socket.sessionid);
+		//セッションIDを発行してあげる
+		t.$emit("sessionid",socket.socket.sessionid);
 	});
 	
 	//$emitを乗っ取る
 	socket._old_$emit=socket.$emit;
 	socket.$emit=function(){
-		//ソケットで発生したイベントはSocketChatStreamでも発生する
+		//ソケットで発生したイベントはSocketConnectionでも発生する
 		t.$emit.apply(t,arguments);
 		//本来の働きをさせる
 		socket._old_$emit.apply(socket,arguments);
 	};
 };
-SocketChatStream.prototype.emit=function(){
-	//ソケットへ送る
+SocketConnection.prototype.emit=function(){
+	//ソケットへ送る(自分のとこで発生させるには$emitを使おう）
 	this.socket.emit.apply(this.socket,arguments);
-	//this.$emit.apply(this,arguments);
 };
-SocketChatStream.prototype.register=function(){
-	this.socket.emit("register",{"mode":"client","lastid":this.lastid});
+//登録
+SocketConnection.prototype.register=function(lastid,channel){
+	this.socket.emit("register",{"mode":"client","lastid":lastid,channel:channel});
 };
-
-//APIを利用したストリーム
-function APIStream(){
-	ChatStream.apply(this,arguments);
+//API通信
+function APIConnection(){
+	ChatConnection.apply(this,arguments);
 }
-APIStream.prototype=new ChatStream;
-APIStream.prototype.init=function(){
-	ChatStream.prototype.init.apply(this,arguments);
+APIConnection.prototype=new ChatConnection;
+APIConnection.prototype.init=function(){
 	//タイマー
 	this.timerid=setInterval(this.check.bind(this),10000);
 	//フラグ 既に最初のログを受信したか
 	this.init_flg=false;
 	//リクエスト先
 	this.requestto= settings.SOCKET_HOST_NAME || "";
-};
-//sessionStorageに入れなくてもいいと思う
-APIStream.prototype.setSessionid=function(id){
-	this.sessionid=id;
+	this.sessionid=null;	//自分でも持っている
 };
 //サーバーへリクエストを送る
-APIStream.prototype.send=function(path,query,callback){
+APIConnection.prototype.send=function(path,query,callback){
 	var http=new XMLHttpRequest();
 	if(!query)query={};
 	if(!callback)callback=this.normalresponse.bind(this);
 	
 	http.onload = function(){
 		if(this.status==200){
-			console.log(JSON.parse(this.responseText));
+			//console.log(JSON.parse(this.responseText));
 			callback(JSON.parse(this.responseText));
 		}
 	};
@@ -703,19 +748,23 @@ APIStream.prototype.send=function(path,query,callback){
 	if(this.sessionid){
 		res.push("sessionId="+this.sessionid);
 	}
-	console.log(path+(res.length? "?"+res.join("&"):""));
+	//console.log(path+(res.length? "?"+res.join("&"):""));
 	http.open("get",this.requestto+path+(res.length? "?"+res.join("&"):""));
 	http.send();
 };
 //サーバーからの応答
-APIStream.prototype.normalresponse=function(obj){
+APIConnection.prototype.normalresponse=function(obj){
 	var t=this;
 	if(obj.error){
-		console.log(obj.errormessage);
+		console.error(obj.errormessage);
 		return;
 	}
 	if(!this.init_flg){
 		//最初のログだ
+		if(obj.sessionid){
+			//idセット
+			this.$emit("sessionid",obj.sessionid);
+		}
 		em("init",obj);
 		this.init_flg=true;
 	}else{
@@ -724,7 +773,7 @@ APIStream.prototype.normalresponse=function(obj){
 			em("log",x);
 		},this);
 	}
-	if(obj.sessionid)this.setSessionid(obj.sessionid);
+	if(obj.sessionid)this.sessionid=obj.sessionid;
 	
 	if(obj.inout){
 		em("userinfo",obj.inout);
@@ -750,14 +799,14 @@ APIStream.prototype.normalresponse=function(obj){
 		t.$emit.apply(t,arguments);
 	}
 };
-APIStream.prototype.check=function(){
+APIConnection.prototype.check=function(){
 	//サーバーに更新を確認する
 	this.send("/api/");
 };
-APIStream.prototype.register=function(){
+APIConnection.prototype.register=function(lastid,channel){
 	this.check();
 };
-APIStream.prototype.emit=function(name){
+APIConnection.prototype.emit=function(name){
 	var args=Array.prototype.slice.call(arguments,1);	//emitのパラメータ
 	switch(name){
 		case "say":
@@ -787,12 +836,12 @@ APIStream.prototype.emit=function(name){
 };
 
 //メインストリームからもらってくる（チャネルウィンドウ）
-function ChannelStream(){
-	ChatStream.apply(this,arguments);
+function ChildConnection(){
+	ChatConnection.apply(this,arguments);
 }
-ChannelStream.prototype=new ChatStream;
-ChannelStream.prototype.init=function(){
-	ChatStream.prototype.init.apply(this,arguments);
+ChildConnection.prototype=new ChatConnection;
+ChildConnection.prototype.init=function(){
+	ChatConnection.prototype.init.apply(this,arguments);
 	var t=this;
 	this.port=null;
 	//親ウィンドウから連絡がくるのを待つ
@@ -807,7 +856,6 @@ ChannelStream.prototype.init=function(){
 				throw new Error("no port");
 			}
 			t.initPort(t.port);
-			document.title+=" #"+d.channelname;
 			//準備ができたので伝える
 			t.port.postMessage({
 				name:"ready",
@@ -826,7 +874,7 @@ ChannelStream.prototype.init=function(){
 	},false);
 };
 //ポート初期化
-ChannelStream.prototype.initPort=function(port){
+ChildConnection.prototype.initPort=function(port){
 	//ポートが届いた
 	var t=this;
 	port.start();
@@ -838,8 +886,24 @@ ChannelStream.prototype.initPort=function(port){
 	},false);
 };
 //ストリームへイベント発生要求があった場合
-ChannelStream.prototype.emit=function(name){
+ChildConnection.prototype.emit=function(name){
 	//this.$emit.apply(this,arguments);
+
+	//super filter!!!!
+	console.log(name,arguments);
+	var p=this.port;
+	var query,cb;	//find用
+	if(name==="find"){
+		query=arguments[1], cb=arguments[2];	//cb:コールバック
+		this.port.addEventListener("message",listener);
+		if(p){
+			p.postMessage({
+				name:"find",
+				query:query,
+			});
+		}
+		return;
+	}
 	if(this.port){
 		//ポートへ送る
 		this.port.postMessage({
@@ -847,18 +911,6 @@ ChannelStream.prototype.emit=function(name){
 			args:Array.prototype.slice.call(arguments,1),
 		});
 	}
-};
-//親へログ検索要求
-ChannelStream.prototype.find=function(query,cb){
-	var p=this.port;
-	//メッセージを
-	p.addEventListener("message",listener);
-	//リクエスト送信
-	/*p.postMessage({
-		name:"find",
-		query:query,
-	});*/
-	this.emit("find",query);
 
 	//コールバック関数を送れないので帰りもメッセージで
 	function listener(ev){
@@ -872,6 +924,7 @@ ChannelStream.prototype.find=function(query,cb){
 
 
 
+
 //チャットクライアント
 function ChatClient(log,info,infobar){
 	//logid, infoid, infobarid : それぞれのid
@@ -882,10 +935,12 @@ function ChatClient(log,info,infobar){
 }
 ChatClient.prototype={
 	//使用するChatStream
-	useStream:function(){return ChatStream},
-	getStream:function(){
-		var s= new (this.useStream())();
-		s.init(this);
+	useConnection:function(){return ChatConnection},
+	getStream:function(channel,child){
+		var s= new ChatStream();
+		//child: こどもフラグ
+		var connection= child ? ChildConnection : this.useConnection();
+		s.init(this,connection, channel);
 		return s;
 	},
 	init:function(){
@@ -894,13 +949,6 @@ ChatClient.prototype={
 			name:null,
 			rom:null,
 		};
-	
-		//ハッシュによってストリームを切り替えられる
-		if(location.hash==="#channel"){
-			this.useStream=function(){
-				return ChannelStream;
-			};
-		}
 		this.log=document.getElementById(this.logid);
 		this.log.textContent="";
 		this.info=document.getElementById(this.infoid);
@@ -943,7 +991,18 @@ ChatClient.prototype={
 		this.responding_tip.classList.add("responding_tip");
 		
 		//通信部分初期化
-		this.cominit();
+		var channel,child;	//child: 子どもフラグ
+		if(location.hash){
+			//チャンネルだ!!
+			channel=location.hash.slice(1);	//先頭の#を除く
+			document.title += " #"+channel;
+		}
+		if(sessionStorage.independent_flag==="true"){
+			//親から通信がくるぞ!
+			child=true;
+			delete sessionStorage.independent_flag;
+		}
+		this.cominit(channel,child);
 		
 		
 		/*document.forms["inout"].addEventListener("submit",this.submit.bind(this),false);
@@ -980,11 +1039,14 @@ ChatClient.prototype={
 			document.forms["inout"].elements["uname"].value=localStorage.socketchat_name;
 		}
 	},
-	cominit:function(){	
+	//channel: 属するチャネル名 child: 子どもかどうか
+	cominit:function(channel,child){	
 		//通信部分初期化
 		var stream;
 		//socket=this.socket = io.connect(settings.SOCKET_HOST_NAME||location.origin);
-		this.stream=stream=this.getStream();
+		var con;	//コンストラクタ
+
+		this.stream=stream=this.getStream(channel,child);
 
 		//ストリームに対しイベントを登録
 		stream.on("init",this.loginit.bind(this));
@@ -997,8 +1059,6 @@ ChatClient.prototype={
 		stream.on("inout",this.inout.bind(this));
 		stream.on("reconnect",this.reconnect.bind(this));
 
-		//サーバーへ登録
-		stream.register();
 	},
 	//初期化情報が届いた logs:現在のログ
 	loginit:function(data){
@@ -1251,7 +1311,9 @@ ChatClient.prototype={
 	},
 	//サブチャンネルをオープンする
 	openChannel:function(channelname){
-		var win=window.open(location.pathname+"#channel");
+		sessionStorage.independent_flag="true";	//子ウィンドウに対して子ウィンドウであることを知らせる
+		var win=window.open(location.pathname+"#"+channelname);
+		delete sessionStorage.independent_flag;
 		//まず通信を確立する
 		var wait=100, count=0;
 		var timerid=null;
@@ -1286,7 +1348,6 @@ ChatClient.prototype={
 						//ストリームに子として登録
 						t.stream.addChild({
 							port:channel.port1,
-							channel:channelname,
 							window:win,
 						});
 						t.initChild(channel.port1,channelname);
@@ -1295,7 +1356,6 @@ ChatClient.prototype={
 
 				win.postMessage({
 					name:"init",
-					channelname:channelname,
 				},"*",[channel.port2]);
 
 			}
@@ -1394,8 +1454,8 @@ function SocketChat(){
 	ChatClient.apply(this,arguments);
 }
 SocketChat.prototype=new ChatClient;
-SocketChat.prototype.useStream=function(){
-	return SocketChatStream;
+SocketChat.prototype.useConnection=function(){
+	return SocketConnection;
 };
 /*SocketChat.prototype.HottoMotto=function(e,until){
 	if(until){
@@ -1411,8 +1471,8 @@ function APIChat(){
 	
 }
 APIChat.prototype=new ChatClient;
-APIChat.prototype.useStream=function(){
-	return APIStream;
+APIChat.prototype.useConnection=function(){
+	return APIConnection;
 };
 
 //コマンドライン風

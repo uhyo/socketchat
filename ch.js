@@ -53,17 +53,15 @@ app.get(/^\/((?:line|storagefs)\.js|css\.css|(sound|jihou)\.(mp3|wav|ogg))$/, fu
 });
 
 app.get(/^\/settings.js$/, function(req, res){
-	res.send("settings="+JSON.stringify({SOCKET_HOST_NAME:settings.SOCKET_HOST_NAME}), {
-			//"Content-Length":result.length,
-			"Content-Type":"text/javascript; charset=UTF-8",
-		}, 200);
+	res.charset="UTF-8";
+	res.type("text/javascript");
+	res.send("settings="+JSON.stringify({SOCKET_HOST_NAME:settings.SOCKET_HOST_NAME}));
 });
 app.get('/chalog', function(req, res){
 	chalog(req.query,function(resobj){
-		res.send(resobj, {
-			//"Content-Length":result.length,
-			"Content-Type":"text/javascript; charset=UTF-8",
-		}, 200);
+		res.charset="UTF-8";
+		res.type("text/javascript");
+		res.send(resobj);
 	});
 });
 app.get(/^\/api\/(.*)$/, function(req,res){
@@ -574,7 +572,7 @@ io.sockets.on('connection',function(socket){
 			socket.join("chatuser");
 			socket.join("useruser");
 			user=addSocketUser(socket,data.lastid);
-			sendFirstLog(user);
+			sendFirstLog(user,data.channel || void 0);
 			sendFirstUsers(user);
 
 			//発言
@@ -620,8 +618,10 @@ io.sockets.on('connection',function(socket){
 	});
 	
 });
-function sendFirstLog(user,callback){
-	log.find({},{"sort":[["time","desc"]],"limit":settings.CHAT_FIRST_LOG}).toArray(function(err,docs){
+function sendFirstLog(user,channel,callback){
+	var query={};
+	if(channel)query.channel=channel;
+	log.find(query,{"sort":[["time","desc"]],"limit":settings.CHAT_FIRST_LOG}).toArray(function(err,docs){
 		if(user.socket){
 			user.socket.emit("init",{"logs":docs});
 		}else if(user.sessionId){
@@ -789,7 +789,7 @@ function api(mode,req,res){
 		sendFirstUsers(user);
 		users_next++;
 		req.query.sessionId=sessionId;
-		sendFirstLog(user,api.bind(this,mode,req,res));
+		sendFirstLog(user,null,api.bind(this,mode,req,res));
 		return;
 	}
 	user.lastreq=req;
