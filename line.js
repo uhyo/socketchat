@@ -697,6 +697,10 @@ SocketConnection.prototype.init=function(){
 		//セッションIDを発行してあげる
 		t.$emit("sessionid",socket.socket.sessionid);
 	});
+	socket.on("reconnect",function(){
+		//再接続した
+		t.register();
+	});
 	
 	//$emitを乗っ取る
 	socket._old_$emit=socket.$emit;
@@ -1307,7 +1311,7 @@ ChatClient.prototype={
 	reconnect: function(){
 		document.body.classList.remove("discon");
 		this.clearLog();
-		this.stream.register();
+		//this.stream.register();
 	},
 	//サブチャンネルをオープンする
 	openChannel:function(channelname){
