@@ -1317,7 +1317,7 @@ ChatClient.prototype={
 	openChannel:function(channelname){
 		sessionStorage.independent_flag="true";	//子ウィンドウに対して子ウィンドウであることを知らせる
 		var win=window.open(location.pathname+"#"+channelname);
-		delete sessionStorage.independent_flag;
+		//delete sessionStorage.independent_flag;
 		//まず通信を確立する
 		var wait=100, count=0;
 		var timerid=null;
@@ -1355,6 +1355,8 @@ ChatClient.prototype={
 							window:win,
 						});
 						t.initChild(channel.port1,channelname);
+						//このタイミングで削除
+						delete sessionStorage.independent_flag;
 					}
 				});
 
