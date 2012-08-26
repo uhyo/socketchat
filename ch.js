@@ -588,7 +588,9 @@ io.sockets.on('connection',function(socket){
 			//ユーザー情報
 			socket.on("users",function(func){
 				//即返す
-				func(getUsersData());
+				if("function"===typeof func){
+					func(getUsersData());
+				}
 			});
 			
 
@@ -612,7 +614,9 @@ io.sockets.on('connection',function(socket){
 			});
 			//ログ検索
 			socket.on("find",function(query,func){
-				findlog(query,func);
+				if("function"===typeof func){
+					findlog(query,func);
+				}
 			});
 		}
 	});
