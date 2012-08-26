@@ -567,7 +567,6 @@ ChatStream.prototype.emit=function(name){
 	
 	//super filter!!!!
 	var obj1=arguments[1];
-	console.log("emit!!!");
 	if(name==="say"){
 		//チャネル追加
 		console.log(name,this.channel);
@@ -894,7 +893,7 @@ ChildConnection.prototype.emit=function(name){
 	//this.$emit.apply(this,arguments);
 
 	//super filter!!!!
-	console.log(name,arguments);
+	//console.log(name,arguments);
 	var p=this.port;
 	var query,cb;	//find用
 	if(name==="find"){
@@ -903,7 +902,7 @@ ChildConnection.prototype.emit=function(name){
 		if(p){
 			p.postMessage({
 				name:"find",
-				query:query,
+				args:[query],
 			});
 		}
 		return;
