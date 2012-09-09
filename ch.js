@@ -45,10 +45,10 @@ var app=require('express')();
 app.get(/^\/(index\.html)?$/, function(req, res){
 	res.sendfile(__dirname + '/index.html');
 });
-app.get(/^\/(log|list|apiclient|com)$/, function(req, res){
-	res.sendfile(__dirname + "/"+req.params[0]+'.html');
+app.get(/^\/(log|list|apiclient|com)(\.js)?$/, function(req, res){
+	res.sendfile(__dirname + "/"+req.params[0]+'.'+(req.params[1]?'js':'html'));
 });
-app.get(/^\/((?:line|storagefs)\.js|css\.css|(sound|jihou)\.(mp3|wav|ogg))$/, function(req, res){
+app.get(/^\/((?:line|connection)\.js|css\.css|(sound|jihou)\.(mp3|wav|ogg))$/, function(req, res){
 	res.sendfile(__dirname + "/"+req.params[0]);
 });
 
