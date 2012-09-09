@@ -77,6 +77,7 @@ LineMaker.prototype={
 		//コメントの_idを保存（返信など用）
 		df.dataset.id=obj._id;
 		df.dataset.ip=obj.ip;
+		if(obj.channel) df.dataset.channel="#"+obj.channel.join("#")+"#";//# is magic
 		if(obj.response){
 			//そのコメントが返信の場合はdatasetに追加、クラス追加
 			df.dataset.respto=obj.response;
@@ -965,6 +966,10 @@ ChatClient.prototype={
 		if(localStorage.socketchat_disip){
 			JSON.parse(localStorage.socketchat_disip).forEach(this.addDisip.bind(this));
 		}
+		this.dischannel=[];	//channel list
+		if(localStorage.socketchat_dischannel){
+			JSON.parse(localStorage.socketchat_dischannel).forEach(this.addDischannel.bind(this));
+		}
 		
 		if(localStorage.socketchat_displaynone){
 			document.styleSheets[0].insertRule(localStorage.socketchat_displaynone+"{display:none}", 0)
@@ -1429,28 +1434,66 @@ ChatClient.prototype={
 			this.audioCollection[i].volume=volume;
 		}
 	},
-	addDisip: function(ip){
-		console.log(ip)
+	addDisip: function(ip, temporal){
 		if(this.disip.some(function(x){return x==ip})) return false;
-		this.disip.push(ip);
-		localStorage.socketchat_disip=JSON.stringify(this.disip);
-
-		document.styleSheets.item(0).insertRule("#log p[data-ip=\""+ip+"\"]{display:none}",0);
-		document.styleSheets.item(0).insertRule("#info li[data-ip=\""+ip+"\"]{font-style:italic}",0);
+		if(!temporal){
+			this.disip.push(ip);
+			localStorage.socketchat_disip=JSON.stringify(this.disip);
+		}
+		this.addCSSRules([
+			'#log p[data-ip="'+ip+'"]{display:none}',
+			'#info li[data-ip="'+ip+'"]{font-style:italic}',
+		]);
 		return true;
 	},
-	removeDisip: function(ip){
-		this.disip=this.disip.filter(function(x){
-			return x!=ip;
+	removeDisip: function(ip, temporal){
+		if(!temporal){
+			this.disip=this.disip.filter(function(x){
+				return x!=ip;
+			});
+			localStorage.socketchat_disip=JSON.stringify(this.disip);
+		}
+		this.removeCSSRules([
+			'#log p[data-ip="'+ip+'"]',
+			'#info li[data-ip="'+ip+'"]',
+		]);
+	},
+	addDischannel: function(channel, temporal){
+		if(this.dischannel.some(function(x){return x==channel})) return false;
+		if(!temporal){
+			this.dischannel.push(channel);
+			localStorage.socketchat_dischannel=JSON.stringify(this.dischannel);
+		}
+		this.addCSSRules([
+			'#log p[data-channel*="#'+channel+'#"]{display:none}',
+		]);
+		return true;
+	},
+	removeDischannel: function(channel, temporal){
+		if(!temporal){
+			this.dischannel=this.dischannel.filter(function(x){
+				return x!=channel;
+			});
+			localStorage.socketchat_dischannel=JSON.stringify(this.dischannel);
+		}
+		this.removeCSSRules([
+			'#log p[data-channel*="#'+channel+'#"]',
+		]);
+	},
+	addCSSRules: function(cssTexts){
+		if(!(cssTexts instanceof Array)) cssTexts=[cssTexts];
+		cssTexts.forEach(function(cssText){
+			console.log(cssText)
+			document.styleSheets.item(0).insertRule(cssText,0);
 		});
-		localStorage.socketchat_disip=JSON.stringify(this.disip);
-		
+	},
+	removeCSSRules: function(cssSelectors){
+		if(!(cssSelectors instanceof Array)) cssSelectors=[cssSelectors];
 		var css=document.styleSheets.item(0);
 		for(var i=css.cssRules.length-1; i>=0; i--){
 			var rule = css.cssRules[i];
 			console.log(rule.cssText);
-			if(rule.selectorText=="#log p[data-ip=\""+ip+"\"]" ||
-					rule.selectorText=="#info li[data-ip=\""+ip+"\"]"){
+			if(cssSelectors.indexOf(rule.selectorText)>=0){
 				css.deleteRule(i);
 			}
 		}
@@ -2093,6 +2136,26 @@ CommandLineChat.prototype.commands=(function(){
 		}
 		//現在のdisipを表示して終了
 		process.chat.disip.forEach(process.print,process);
+		process.die();
+	};
+	obj.dischannel=function(process){
+		//disip設定
+		var pr=process.parse(process.arg);
+		var channel=pr.arg[0];
+		if(channel){
+			if(pr.opt.indexOf("-d")>=0){
+				//削除
+				process.chat.removeDischannel(channel);
+			}else{
+				if(process.chat.addDischannel(channel)){
+
+				}else{
+					process.print("dischannel: already exists:"+channel);
+				}
+			}
+		}
+		//現在のdisipを表示して終了
+		process.chat.dischannel.forEach(process.print,process);
 		process.die();
 	};
 	obj.resp=function(process){
