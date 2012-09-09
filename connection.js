@@ -111,7 +111,7 @@ ChatStream.prototype.$emit=function(name,obj1){
 	//super filter!!!!
 	if(name==="log" && this.channel){
 		var ch=Array.isArray(obj1.channel) ? obj1.channel : [obj1.channel];
-		if(ch.indexOf(this.channel)<0){
+		if(!ch.some(function(c){ return c.match(new RegExp("^"+this.channel.replace(/(\W)/g,"\\$1")+"(/.*)?$")) }.bind(this))){
 			//チャンネルは知らない
 			return;
 		}
