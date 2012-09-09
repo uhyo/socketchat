@@ -567,6 +567,7 @@ io.sockets.on('connection',function(socket){
 	//ユーザー登録
 	var user=null;
 	socket.on("register",function(data){
+		if(!data)return;
 		if(data.mode=="client"){
 			//チャットクライアント
 			socket.join("chatuser");

@@ -624,6 +624,7 @@ ChatStream.prototype.say=function(comment,response,channel){
 	else if(!Array.isArray(channel)){
 		channel=[channel];
 	}
+	/*
 	//コメントも配列にする
 	var commentArray=[];
 	//サロゲートペアは数値にして送る（node.jsが処理できないので）
@@ -647,8 +648,9 @@ ChatStream.prototype.say=function(comment,response,channel){
 		//配列でなくてよい
 		commentArray=commentArray[0];
 	}
+	*/
 	//sayイベントを発行
-	this.emit("say",{"comment":commentArray,"response":response?response:"","channel":channel?channel:""});
+	this.emit("say",{"comment":comment,"response":response?response:"","channel":channel?channel:""});
 	
 };
 //発言をサーバーに問い合わせる
