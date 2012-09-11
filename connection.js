@@ -100,7 +100,7 @@ ChatStream.prototype.emit=function(name){
 		}
 	}else if(name==="find"){
 		//motto時はチャンネル限定してあげる
-		if(obj1.motto)obj1.channel=this.channel;
+		if(obj1.motto && !obj1.channel && this.channel)obj1.channel=this.channel;
 	}
 
 	this.connection.emit.apply(this.connection,arguments);
@@ -177,7 +177,7 @@ ChatStream.prototype.say=function(comment,response,channel){
 //発言をサーバーに問い合わせる
 ChatStream.prototype.find=function(query,cb){
 	//query:  channel?:"foo", id?:"deadbeef...", motto:{time,until}
-	this.connection.emit("find",query,function(arr){
+	this.emit("find",query,function(arr){
 		if(!Array.isArray(arr))cb([]);
 		cb(arr);
 	});
