@@ -37,15 +37,15 @@ db.open(function(err,_db){
 					log.find({comment: {$type:4},commentObject:{$exists:false}}).count(function(err,anum){
 						console.log("Array-commented logs:"+anum);
 						//確認を入れる
-						rl.question("Start converting? [Y/N]",function(answer){
+						rl.question("Start converting? D for dry run.[Y/D/N]",function(answer){
 							rl.close();
-							if(!/^y$/i.test(answer)){
+							if(!/^[yd]$/i.test(answer)){
 								console.log("aborted.");
 								db.close();
 								return;
 							}
 							//変更する
-							convert(log);
+							convert(log,/^d$/.test(answer));
 						});
 					});
 				});
@@ -54,16 +54,20 @@ db.open(function(err,_db){
 	});
 });
 //インデントを下げる
-function convert(log){
+function convert(log,dry){
 	var count=0;
 	var nextCount=100;
-	log.find({comment:{$type:3},commentObject:{$exists:false}}).each(function(err,doc){
+	var c=log.find({comment:{$type:3},commentObject:{$exists:false}});
+	c.nextObject(function h1(err,doc){
 		if(doc){
-			handle(doc);
+			if(handle(doc))return;
+			c.nextObject(h1);
 		}else{
-			log.find({comment:{$type:4},commentObject:{$exists:false}}).each(function(err,doc){
+			var c2=log.find({comment:{$type:4},commentObject:{$exists:false}});
+			c2.nextObject(function h2(err,doc){
 				if(doc){
-					handle(doc);
+					if(handle(doc))return;
+					c2.nextObject(h2);
 				}else{
 					//すべて終了した
 					console.log(count+" logs converted.");
@@ -83,13 +87,20 @@ function convert(log){
 			},
 		};
 		//console.log(query);
-		log.update({_id:doc._id},query,{safe:true},function(err){
-			if(err)console.warn(err);
-		});
+
+		if(!dry){
+			log.update({_id:doc._id},query,{safe:true},function(err){
+				if(err)console.warn(err);
+			});
+		}else{
+			console.log(doc,"=>",query);
+		}
 		if(++count >=nextCount){
 			console.log(count+" logs converted.");
 			nextCount+=500;
+			return dry;
 		}
+		return false;
 	}
 	function stringify(obj){
 		if("string"===typeof obj){
