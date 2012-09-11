@@ -32,9 +32,9 @@ db.open(function(err,_db){
 					return;
 				}
 				//まず該当のログを数える(3と4が何か怪しい）
-				log.find({ comment: {$type:3}}).count(function(err,onum){
+				log.find({ comment: {$type:3},commentObject:{$exists:false}}).count(function(err,onum){
 					console.log("Object-commented logs: "+onum);
-					log.find({comment: {$type:4}}).count(function(err,anum){
+					log.find({comment: {$type:4},commentObject:{$exists:false}}).count(function(err,anum){
 						console.log("Array-commented logs:"+anum);
 						//確認を入れる
 						rl.question("Start converting? [Y/N]",function(answer){
@@ -57,11 +57,11 @@ db.open(function(err,_db){
 function convert(log){
 	var count=0;
 	var nextCount=100;
-	log.find({comment:{$type:3}}).each(function(err,doc){
+	log.find({comment:{$type:3},commentObject:{$exists:false}}).each(function(err,doc){
 		if(doc){
 			handle(doc);
 		}else{
-			log.find({comment:{$type:4}}).each(function(err,doc){
+			log.find({comment:{$type:4},commentObject:{$exists:false}}).each(function(err,doc){
 				if(doc){
 					handle(doc);
 				}else{
@@ -97,9 +97,12 @@ function convert(log){
 		}else if(Array.isArray(obj)){
 			//配列は全部連結する
 			return obj.map(stringify).join("");
-		}else{
+		}else if(obj.child){
 			//オブジェクト
 			return stringify(obj.child);
+		}else{
+			//??????
+			return obj.toString();
 		}
 	}
 }
