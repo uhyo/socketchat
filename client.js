@@ -308,7 +308,7 @@ ChatClient.prototype={
 	
 	//フォームをもとに発言
 	sayform:function(f){
-		this.say(f.elements["comment"].value,f.elements["response"].value);
+		this.say(f.elements["comment"].value,f.elements["response"].value,f.elements["channel"].value||null);
 	},
 	//発言をサーバーに伝える
 	say:function(comment,response,channel){
