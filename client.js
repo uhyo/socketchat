@@ -511,10 +511,10 @@ ChatClient.prototype={
 			this.disip.push(ip);
 			localStorage.socketchat_disip=JSON.stringify(this.disip);
 		}
-//		this.addCSSRules([
-//			'#log p[data-ip="'+ip+'"]{display:none}',
+		this.addCSSRules([
+			'#log p[data-ip="'+ip+'"]{display:none}',
 //			'#info li[data-ip="'+ip+'"]{font-style:italic}',
-//		]);
+		]);
 		elm.classList.add("disip");
 		return true;
 	},
@@ -526,10 +526,10 @@ ChatClient.prototype={
 			});
 			localStorage.socketchat_disip=JSON.stringify(this.disip);
 		}
-//		this.removeCSSRules([
-//			'#log p[data-ip="'+ip+'"]',
+		this.removeCSSRules([
+			'#log p[data-ip="'+ip+'"]',
 //			'#info li[data-ip="'+ip+'"]',
-//		]);
+		]);
 		elm.classList.remove("disip");
 	},
 
