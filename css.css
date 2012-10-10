@@ -104,9 +104,13 @@ div.forms p{
 .responding_tip.checked{
 	color:rgb(127,39,255);
 }
-li.rom{
+#info li.rom{
 	display: none;
 }
+#info li.disip{
+	font-style:italic;
+}
+
 /* コンソール風 */
 #console{
 	font-family:monospace;
