@@ -92,8 +92,8 @@ ChatClient.prototype={
 		this.info.addEventListener('click', function(e){
 			var t = e.target.parentNode;
 			if(t.tagName=="LI" && t.dataset.ip){
-				if(!this.addDisip(t.dataset.ip)){
-					this.removeDisip(t.dataset.ip);
+				if(!this.addDisip(t)){
+					this.removeDisip(t);
 				}
 			}
 		}.bind(this));
@@ -504,30 +504,35 @@ ChatClient.prototype={
 			this.audioCollection[i].volume=volume;
 		}
 	},
-	addDisip: function(ip, temporal){
+	addDisip: function(elm, temporal){
+		var ip=elm.dataset.ip;
 		if(this.disip.some(function(x){return x==ip})) return false;
 		if(!temporal){
 			this.disip.push(ip);
 			localStorage.socketchat_disip=JSON.stringify(this.disip);
 		}
-		this.addCSSRules([
-			'#log p[data-ip="'+ip+'"]{display:none}',
-			'#info li[data-ip="'+ip+'"]{font-style:italic}',
-		]);
+//		this.addCSSRules([
+//			'#log p[data-ip="'+ip+'"]{display:none}',
+//			'#info li[data-ip="'+ip+'"]{font-style:italic}',
+//		]);
+		elm.classList.add("disip");
 		return true;
 	},
-	removeDisip: function(ip, temporal){
+	removeDisip: function(elm, temporal){
+		var ip=elm.dataset.ip;
 		if(!temporal){
 			this.disip=this.disip.filter(function(x){
 				return x!=ip;
 			});
 			localStorage.socketchat_disip=JSON.stringify(this.disip);
 		}
-		this.removeCSSRules([
-			'#log p[data-ip="'+ip+'"]',
-			'#info li[data-ip="'+ip+'"]',
-		]);
+//		this.removeCSSRules([
+//			'#log p[data-ip="'+ip+'"]',
+//			'#info li[data-ip="'+ip+'"]',
+//		]);
+		elm.classList.remove("disip");
 	},
+
 	addDischannel: function(channel, temporal){
 		if(this.dischannel.some(function(x){return x==channel})) return false;
 		if(!temporal){
