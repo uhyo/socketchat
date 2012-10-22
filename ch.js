@@ -82,7 +82,7 @@ srv.listen(settings.HTTP_PORT);
 
 var io=socketio.listen(srv);
 io.set('log level',1);
-var log;
+var log, chcoll;
 //データベース使用準備
 db.open(function(err,_db){
 	if(err){
@@ -96,13 +96,16 @@ db.open(function(err,_db){
 		}
 		db.collection("log",function(err,collection){
 			log=collection;
-			var syslog={"name" : "■起動通知",
-				    "time":new Date(),
-				    "ip":"127.0.0.1",
-				    "comment":"「サーバー」さんが起動",
-				    "syslog":true
-			};
-			makelog({"type":"system"},syslog);
+			db.collection("channel",function(err,collection){
+				chcoll=collection;
+				var syslog={"name" : "■起動通知",
+					"time":new Date(),
+				"ip":"127.0.0.1",
+				"comment":"「サーバー」さんが起動",
+				"syslog":true
+				};
+				makelog({"type":"system"},syslog);
+			});
 		});
 	});
 });
@@ -357,7 +360,7 @@ User.prototype.says=function(data){
 			channel.push(c);
 		}
 	}
-	if(channel.map(function(c){return c.length;}).reduce(function(a,b){return a+b;})>exports.CHAT_CHANNEL_MAX_LENGTH_SUM){
+	if(channel.map(function(c){return c.length;}).reduce(function(a,b){return a+b;},0)>exports.CHAT_CHANNEL_MAX_LENGTH_SUM){
 		return;
 	}
 	//console.log(commentString);
@@ -725,6 +728,20 @@ function makelog(user,logobj){
 			throw err;
 		}
 	});
+	if(logobj.channel){
+		var channels={}; //重複を除くため
+		logobj.channel.forEach(function(c){
+			var str="";
+			c.split("/").forEach(function(token){
+				str+=token;
+				channels[str]=1;
+				str+="/";
+			});
+		});
+		for(var ch in channels){
+			incrementChannel(ch)
+		}
+	}
 	splashlog(logobj,user.socket || getAvailableSocket());
 	function splashlog(logobj,socket){
 		if(socket){
@@ -744,6 +761,17 @@ function makelog(user,logobj){
 			//オブジェクト
 			return stringify(obj.child);
 		}
+	}
+	function incrementChannel(channel){
+		console.log("inc",channel)
+		chcoll.findOne({_id:channel}, function(err,obj){
+			if(obj){
+				obj.count++
+				chcoll.save(obj);
+			}else{
+				chcoll.insert({_id:channel, count:1});
+			}
+		});
 	}
 }
 function toapi(callback){
