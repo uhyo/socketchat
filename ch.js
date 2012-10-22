@@ -18,6 +18,7 @@ exports.CHAT_MOTTO_MAX_LOG=500;	//1回のHttoMottoで最大どれだけ表示す
 
 exports.CHAT_NAME_MAX_LENGTH = 25;
 exports.CHAT_MAX_LENGTH = 1000;
+exports.CHAT_CHANNEL_MAX_LENGTH_SUM = 1000; //data.channelのチャネル名の合計長さの最大
 
 exports.CHAT_LIMIT_TIME = 10;	//0なら無効
 exports.CHAT_LIMIT_NUMBER=10;	//CHAT_LIMIT_TIME以内にCHAT_LIMIT_NUMBER回発言したらそれ以上発言できない
@@ -355,6 +356,9 @@ User.prototype.says=function(data){
 		}else if('string' === typeof c){
 			channel.push(c);
 		}
+	}
+	if(channel.map(function(c){return c.length;}).reduce(function(a,b){return a+b;})>exports.CHAT_CHANNEL_MAX_LENGTH_SUM){
+		return;
 	}
 	//console.log(commentString);
 	//発言中のハッシュタグを処理
