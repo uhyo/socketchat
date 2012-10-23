@@ -1,0 +1,125 @@
+body{
+	font-family: Helvetica, HiraKakuProN-W3, sans-serif;
+}
+body.discon{
+	background-color:#f4f4f4;
+}
+
+div.forms{
+	white-space:nowrap;
+}
+div.logs{
+	margin-top:0.4em;
+}
+
+#log{
+	margin:0;
+}
+#log p{
+	height: 43px;
+	border-bottom: solid 1px #D9D9D9;
+	font-family: HiraKakuProN-W6;
+	line-height: 19px;
+	overflow: hidden;
+}
+#log .name.syslog{
+	color:#0000ff !important;
+}
+#log span.main span.info{
+	font-size:smaller;
+	color:#cccccc;
+	padding-left:0.8ex;
+	display: block;
+}
+#log span.main span.channel{
+	padding-left:1.5ex;
+	color:#0084b4;
+	cursor:pointer;
+}
+#log span.comment span.channel{
+	padding-left:0;
+}
+#log span.main span.channel:hover{
+	text-decoration:underline;
+}
+#log .name{
+	font-weight:bold;
+}
+#log .name:after{
+	content:'> ';
+	font-weight:normal;
+}
+#log p.respto > span.main:before{
+	color:rgb(255,127,39);
+	content: '⇓';
+}
+#log span.respto:not([data-open="open"]){
+	cursor:pointer;
+}
+#log blockquote.resp{
+	margin:0 0 0 3em;
+}
+
+ul.users{
+	margin:0;
+}
+ul.users li{
+	list-style:none;
+}
+ul.users li span{
+	background-color:#dddddd;
+	font-weight:bold;
+}
+span.s{
+	text-decoration:line-through;
+}
+span.small{
+	font-size:smaller;
+}
+span.code{
+	font-family:monospace;
+	white-space: pre;
+}
+
+div.forms form{
+	display:block;
+}
+div.forms p{
+	margin:0;
+}
+div.forms p input[type=text]{
+	width:60%;
+}
+#log img{
+	vertical-align:middle;
+}
+
+.responding_tip{
+	color:rgb(255,127,39);
+	cursor:pointer;
+	font-weight:bold;
+}
+.responding_tip.checked{
+	color:rgb(127,39,255);
+}
+li.rom{
+	display: none;
+}
+div#infobar{
+	display: none;
+}
+div#info{
+	display: none;
+}
+.gyozainfo{
+	width: 100%;
+	height: 43px;
+	border-bottom: solid 1px #D9D9D9;
+	font-family: HiraKakuProN-W6;
+	line-height: 19px;
+	overflow: hidden;
+	background-color: white;
+}
+input[type=range]{
+	width: 100%;
+}
