@@ -39,9 +39,13 @@ function back(){
 	v_true.style.display = 'block';
 }
 
+function hideAddrBar(){
+	setTimeout('scrollTo(0,1)',100);
+}
+
     </script>
   </head>
-  <body>
+  <body onload="hideAddrBar();" onOrientationChange="hideAddrBar();">
   <div id="main">
 	  <div class="forms">
 	    <button onclick="config();">設定</button><button onclick="userlist();">入室者</button>
