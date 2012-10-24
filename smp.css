@@ -96,10 +96,10 @@ input[type=range]{
 button,input[type=submit]{
 	-webkit-border-radius: 10px;
 	-webkit-appearance: none;
-	padding: 5px 15px;
+	padding: 10px 15px;
 }
 input[type=text]{
-	height: 2em;
+	height: 3em;
 }
 #log img{
 	vertical-align:middle;
