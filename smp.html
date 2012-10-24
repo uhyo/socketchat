@@ -30,6 +30,12 @@ function userlist(){
 	var v_true = document.getElementById("info"); 
 	v_true.style.display = 'block';
 }
+function link(){
+	var v_false = document.getElementById("main"); 
+	v_false.style.display = 'none';
+	var v_true = document.getElementById("link"); 
+	v_true.style.display = 'block';
+}
 function channelview(){
 	var v_true = document.getElementById("channelview");
 	if(v_true.style.display == 'inline'){
@@ -46,6 +52,8 @@ function back(){
 	v_false.style.display = 'none';
 	var v_false = document.getElementById("infobar"); 
 	v_false.style.display = 'none';
+	var v_false = document.getElementById("link"); 
+	v_false.style.display = 'none';
 	var v_true = document.getElementById("main"); 
 	v_true.style.display = 'block';
 }
@@ -58,7 +66,7 @@ function hideAddrBar(){
   <body onload="hideAddrBar();" onOrientationChange="hideAddrBar();">
   <div id="main">
 	  <div class="forms">
-	    <button onclick="config();">設定</button><button onclick="userlist();">入室者</button><button onclick="channelview();">チャネル</button>
+	    <button onclick="config();">設定</button><button onclick="userlist();">入室者</button><button onclick="channelview();">チャネル</button><button onclick="link();">リンク</button>
 	    <form name="inout">
 	      <p><input type="text" name="uname" size="20" maxlength="25" required><input type="submit" value="入室"></p>
 	    </form>
@@ -85,6 +93,16 @@ function hideAddrBar(){
     <div id="infobar">
   	  <p><button onclick="back();">戻る</button></p>
     </div>
-  <p style="font-size:xx-small"><a href="https://github.com/uhyo/socketchat" target="_blank">github</a></p>
+    <div id="link">
+  	  <p><button onclick="back();">戻る</button></p>
+  	  <ul>
+  	  	<li><a href="http://shogitter.com/" target="_blank">Shogitter</a></li>
+  	  	<li><a href="http://81.la/shogiwiki/" target="_blank">Shogi Wiki</a></li>
+  	  	<li><a href="http://81.la/cgi-bin/up/" target="_blank">アップローダ</a></li>
+  	  	<li><a href="http://chat.81.la/list" target="_blank">UserList</a></li>
+  	  	<li><a href="http://chat.81.la/log" target="_blank">Log</a></li>
+  	  	<li><a href="https://github.com/uhyo/socketchat" target="_blank">github</a></li>
+  	  </ul>
+    </div>
   </body>
 </html>

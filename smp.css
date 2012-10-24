@@ -129,6 +129,9 @@ div#info{
 div#channelview{
 	display: none;
 }
+div#link{
+	display: none;
+}
 .gyozainfo{
 	width: 100%;
 	height: 43px;
@@ -137,4 +140,7 @@ div#channelview{
 	line-height: 19px;
 	overflow: hidden;
 	background-color: white;
+}
+div#link ul{
+	line-height: 200%;
 }
