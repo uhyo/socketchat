@@ -92,8 +92,8 @@ ChatClient.prototype={
 		this.info.addEventListener('click', function(e){
 			var t = e.target.parentNode;
 			if(t.tagName=="LI" && t.dataset.ip){
-				if(!this.addDisip(t)){
-					this.removeDisip(t);
+				if(!this.addDisip(t.dataset.ip)){
+					this.removeDisip(t.dataset.ip);
 				}
 			}
 		}.bind(this));
@@ -504,8 +504,7 @@ ChatClient.prototype={
 			this.audioCollection[i].volume=volume;
 		}
 	},
-	addDisip: function(elm, temporal){
-		var ip=elm.dataset.ip;
+	addDisip: function(ip, temporal){
 		if(this.disip.some(function(x){return x==ip})) return false;
 		if(!temporal){
 			this.disip.push(ip);
@@ -513,13 +512,11 @@ ChatClient.prototype={
 		}
 		this.addCSSRules([
 			'#log p[data-ip="'+ip+'"]{display:none}',
-//			'#info li[data-ip="'+ip+'"]{font-style:italic}',
+			'#info li[data-ip="'+ip+'"]{font-style:italic}',
 		]);
-		elm.classList.add("disip");
 		return true;
 	},
-	removeDisip: function(elm, temporal){
-		var ip=elm.dataset.ip;
+	removeDisip: function(ip, temporal){
 		if(!temporal){
 			this.disip=this.disip.filter(function(x){
 				return x!=ip;
@@ -528,11 +525,9 @@ ChatClient.prototype={
 		}
 		this.removeCSSRules([
 			'#log p[data-ip="'+ip+'"]',
-//			'#info li[data-ip="'+ip+'"]',
+			'#info li[data-ip="'+ip+'"]',
 		]);
-		elm.classList.remove("disip");
 	},
-
 	addDischannel: function(channel, temporal){
 		if(this.dischannel.some(function(x){return x==channel})) return false;
 		if(!temporal){

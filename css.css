@@ -107,9 +107,6 @@ div.forms p{
 #info li.rom{
 	display: none;
 }
-#info li.disip{
-	font-style:italic;
-}
 
 /* コンソール風 */
 #console{
