@@ -30,32 +30,51 @@ function userlist(){
 	var v_true = document.getElementById("info"); 
 	v_true.style.display = 'block';
 }
+function link(){
+	var v_false = document.getElementById("main"); 
+	v_false.style.display = 'none';
+	var v_true = document.getElementById("link"); 
+	v_true.style.display = 'block';
+}
+function channelview(){
+	var v_true = document.getElementById("channelview");
+	if(v_true.style.display == 'inline'){
+		v_true.style.display = 'none';
+	}else{
+		v_true.style.display = 'inline';
+	}
+}function channelclose(){
+	var v_true = document.getElementById("channelview"); 
+	v_true.style.display = 'none';
+}
 function back(){
 	var v_false = document.getElementById("info"); 
 	v_false.style.display = 'none';
 	var v_false = document.getElementById("infobar"); 
+	v_false.style.display = 'none';
+	var v_false = document.getElementById("link"); 
 	v_false.style.display = 'none';
 	var v_true = document.getElementById("main"); 
 	v_true.style.display = 'block';
 }
 
 function hideAddrBar(){
-	setTimeout('scrollTo(0,1)',100);
+	setTimeout(function(){scrollTo(0,1);},100);
 }
-
     </script>
   </head>
   <body onload="hideAddrBar();" onOrientationChange="hideAddrBar();">
   <div id="main">
 	  <div class="forms">
-	    <button onclick="config();">設定</button><button onclick="userlist();">入室者</button>
+	    <button onclick="config();">設定</button><button onclick="userlist();">入室者</button><button onclick="channelview();">チャネル</button><button onclick="link();">リンク</button>
 	    <form name="inout">
-	      <p><input name="uname" size="20" maxlength="25" required><input type="submit" value="入室"></p>
+	      <p><input type="text" name="uname" size="20" maxlength="25" required><input type="submit" value="入室"></p>
 	    </form>
 	    <form name="comment">
-	      <p><input name="comment" size="40" autocomplete="off" required></p>
-	      <p><input type="submit" value="発言">
-	      　#<input name="channel" size="10"></p>
+	      <p><input type="text" name="comment" size="35" autocomplete="off" required><input type="submit" value="発言"></p>
+	      <div id="channelview">
+	      <p>#<input type="text" name="channel" size="20"><button onclick="channelclose();">隠す</button></p>
+	      </div>
 	      <input type="hidden" name="response" value="">
 	    </form>
 	  </div>
@@ -74,6 +93,16 @@ function hideAddrBar(){
     <div id="infobar">
   	  <p><button onclick="back();">戻る</button></p>
     </div>
-  <p style="font-size:xx-small"><a href="https://github.com/uhyo/socketchat" target="_blank">github</a></p>
+    <div id="link">
+  	  <p><button onclick="back();">戻る</button></p>
+  	  <ul>
+  	  	<li><a href="http://shogitter.com/" target="_blank">Shogitter</a></li>
+  	  	<li><a href="http://81.la/shogiwiki/" target="_blank">Shogi Wiki</a></li>
+  	  	<li><a href="http://81.la/cgi-bin/up/" target="_blank">アップローダ</a></li>
+  	  	<li><a href="http://chat.81.la/list" target="_blank">UserList</a></li>
+  	  	<li><a href="http://chat.81.la/log" target="_blank">Log</a></li>
+  	  	<li><a href="https://github.com/uhyo/socketchat" target="_blank">github</a></li>
+  	  </ul>
+    </div>
   </body>
 </html>
