@@ -16,7 +16,7 @@ div.logs{
 	margin:0;
 }
 #log p{
-	height: 43px;
+	min-height: 43px;
 	border-bottom: solid 1px #D9D9D9;
 	font-family: HiraKakuProN-W6;
 	line-height: 19px;
@@ -98,6 +98,10 @@ div.forms p input[type=text]{
 	color:rgb(255,127,39);
 	cursor:pointer;
 	font-weight:bold;
+	font-size: x-large;
+}
+.responding_tip:before{
+	content: "返信";
 }
 .responding_tip.checked{
 	color:rgb(127,39,255);

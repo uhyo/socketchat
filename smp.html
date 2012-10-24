@@ -30,10 +30,18 @@ function userlist(){
 	var v_true = document.getElementById("info"); 
 	v_true.style.display = 'block';
 }
+function channelview(){
+	var v_false = document.getElementById("main"); 
+	v_false.style.display = 'none';
+	var v_true = document.getElementById("channel"); 
+	v_true.style.display = 'block';
+}
 function back(){
 	var v_false = document.getElementById("info"); 
 	v_false.style.display = 'none';
 	var v_false = document.getElementById("infobar"); 
+	v_false.style.display = 'none';
+	var v_false = document.getElementById("channel"); 
 	v_false.style.display = 'none';
 	var v_true = document.getElementById("main"); 
 	v_true.style.display = 'block';
@@ -42,20 +50,19 @@ function back(){
 function hideAddrBar(){
 	setTimeout(function(){scrollTo(0,1);},100);
 }
-
     </script>
   </head>
   <body onload="hideAddrBar();" onOrientationChange="hideAddrBar();">
   <div id="main">
 	  <div class="forms">
-	    <button onclick="config();">設定</button><button onclick="userlist();">入室者</button>
+	    <button onclick="config();">設定</button><button onclick="userlist();">入室者</button><button onclick="channelview();">チャネル</button>
 	    <form name="inout">
 	      <p><input name="uname" size="20" maxlength="25" required><input type="submit" value="入室"></p>
 	    </form>
 	    <form name="comment">
 	      <p><input name="comment" size="40" autocomplete="off" required></p>
-	      <p><input type="submit" value="発言">
-	      　#<input name="channel" size="10"></p>
+	      <p><input type="submit" value="発言"></p>
+	      <div id="channel">#<input name="channel" size="10"></div>
 	      <input type="hidden" name="response" value="">
 	    </form>
 	  </div>
