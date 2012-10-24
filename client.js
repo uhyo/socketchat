@@ -512,7 +512,7 @@ ChatClient.prototype={
 		}
 		this.addCSSRules([
 			'#log p[data-ip="'+ip+'"]{display:none}',
-			'#info li[data-ip="'+ip+'"]{font-style:italic}',
+			'#info li[data-ip="'+ip+'"]{text-decoration:line-through}',
 		]);
 		return true;
 	},
