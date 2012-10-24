@@ -87,8 +87,19 @@ div.forms form{
 div.forms p{
 	margin:0;
 }
-div.forms p input[type=text]{
-	width:60%;
+div.forms p input[name=comment]{
+	width:70%;
+}
+input[type=range]{
+	width: 100%;
+}
+button,input[type=submit]{
+	-webkit-border-radius: 10px;
+	-webkit-appearance: none;
+	padding: 5px 15px;
+}
+input[type=text]{
+	height: 2em;
 }
 #log img{
 	vertical-align:middle;
@@ -115,6 +126,9 @@ div#infobar{
 div#info{
 	display: none;
 }
+div#channelview{
+	display: none;
+}
 .gyozainfo{
 	width: 100%;
 	height: 43px;
@@ -123,7 +137,4 @@ div#info{
 	line-height: 19px;
 	overflow: hidden;
 	background-color: white;
-}
-input[type=range]{
-	width: 100%;
 }

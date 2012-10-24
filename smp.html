@@ -31,17 +31,20 @@ function userlist(){
 	v_true.style.display = 'block';
 }
 function channelview(){
-	var v_false = document.getElementById("main"); 
-	v_false.style.display = 'none';
-	var v_true = document.getElementById("channel"); 
-	v_true.style.display = 'block';
+	var v_true = document.getElementById("channelview");
+	if(v_true.style.display == 'inline'){
+		v_true.style.display = 'none';
+	}else{
+		v_true.style.display = 'inline';
+	}
+}function channelclose(){
+	var v_true = document.getElementById("channelview"); 
+	v_true.style.display = 'none';
 }
 function back(){
 	var v_false = document.getElementById("info"); 
 	v_false.style.display = 'none';
 	var v_false = document.getElementById("infobar"); 
-	v_false.style.display = 'none';
-	var v_false = document.getElementById("channel"); 
 	v_false.style.display = 'none';
 	var v_true = document.getElementById("main"); 
 	v_true.style.display = 'block';
@@ -57,12 +60,13 @@ function hideAddrBar(){
 	  <div class="forms">
 	    <button onclick="config();">設定</button><button onclick="userlist();">入室者</button><button onclick="channelview();">チャネル</button>
 	    <form name="inout">
-	      <p><input name="uname" size="20" maxlength="25" required><input type="submit" value="入室"></p>
+	      <p><input type="text" name="uname" size="20" maxlength="25" required><input type="submit" value="入室"></p>
 	    </form>
 	    <form name="comment">
-	      <p><input name="comment" size="40" autocomplete="off" required></p>
-	      <p><input type="submit" value="発言"></p>
-	      <div id="channel">#<input name="channel" size="10"></div>
+	      <p><input type="text" name="comment" size="35" autocomplete="off" required><input type="submit" value="発言"></p>
+	      <div id="channelview">
+	      <p>#<input type="text" name="channel" size="20"><button onclick="channelclose();">隠す</button></p>
+	      </div>
 	      <input type="hidden" name="response" value="">
 	    </form>
 	  </div>
