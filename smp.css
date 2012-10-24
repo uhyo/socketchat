@@ -89,6 +89,9 @@ div.forms form{
 div.forms p{
 	margin:0;
 }
+div.forms p input[name=uname]{
+	width:45%;
+}
 div.forms p input[name=comment]{
 	width:70%;
 }
