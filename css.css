@@ -84,6 +84,7 @@ span.small{
 span.code{
 	font-family:monospace;
 	white-space: pre;
+	background:#f0f0f0;
 }
 
 div.forms form{
