@@ -6,6 +6,7 @@
     <link href="/css.css" rel="stylesheet">
     <script src="/settings.js"></script>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="/smpjump.js"></script>
     <script src="/line.js"></script>
     <script src="/client.js"></script>
     <script src="/connection.js"></script>
@@ -15,11 +16,6 @@ chat=new SocketChat("log","info","infobar");
 window.addEventListener('load',function(){
 	chat.init();
 },false);
-
-if ((navigator.userAgent.indexOf('iPhone') > 0)||(navigator.userAgent.indexOf('iPod') > 0)||(navigator.userAgent.indexOf('Android') > 0)){
-   location.replace("/smp");
-}
-
     </script>
   </head>
   <body>
