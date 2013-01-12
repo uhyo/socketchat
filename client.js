@@ -420,6 +420,7 @@ ChatClient.prototype={
 			//次のpingを用意
 			timerid=setTimeout(ping,wait);
 		}
+		var _this = this;
 		//pongリスナ
 		function listener(ev){
 			var d=ev.data;
@@ -444,6 +445,11 @@ ChatClient.prototype={
 						t.initChild(channel.port1,channelname);
 						//このタイミングで削除
 						delete sessionStorage.independent_flag;
+						
+						win.addEventListener("beforeunload",function(){
+							_this.removeDischannel(channelname, true, false);
+						});
+						_this.addDischannel(channelname, true, false);
 					}
 				});
 
