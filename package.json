@@ -1,0 +1,15 @@
+{
+	"name":"socketchat",
+	"version":"0.2.0",
+	"dependencies":{
+		"socket.io":">=0.9",
+		"mongodb":">=1.0",
+		"express":"~0.3"
+	},
+	"engines":{
+		"node":">=0.8"
+	}
+}
+
+
+

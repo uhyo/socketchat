@@ -22,14 +22,18 @@ if (!Function.prototype.bind) {
 
 }
 
+//ログオブジェクトからログのHTML要素を生成するオブジェクト
+//parentはChatClientオブジェクト
 function LineMaker(parent){
 	this.parent=parent;
 }
 LineMaker.prototype={
+	//ログオブジェクトを渡されると1行(p要素)を返すメソッド
 	make:function(obj){
 		var df=document.createElement("p");
 		var color=this.getColor(obj.ip);
-		var dt=el("span",obj.name);
+		//名前部分の生成
+		var dt=el("bdi",obj.name);	//bdi要素を使うと名前に右から左の文字を使われても表示が崩れない
 		if(obj.syslog)dt.classList.add("syslog");
 		dt.classList.add("name");
 		df.style.color=color;
@@ -37,47 +41,84 @@ LineMaker.prototype={
 		df.appendChild(dt);
 		var dd=el("span","");
 		dd.classList.add("main");
-		var comsp=document.createElement("span");
+		//comsp: コメント部分のbdi
+		var comsp=el("bdi");
 		comsp.classList.add("comment");
-		comsp.appendChild(commentHTMLify(obj.comment));
+		//コメントは何かな
+		var comment = obj.commentObject || obj.comment;
+		comsp.appendChild(commentHTMLify(comment));
 		dd.appendChild(comsp);
-		var infsp=el("span","(");
+		//チャンネル
+		if(obj.channel){
+			var c= Array.isArray(obj.channel) ? obj.channel : [obj.channel];
+			for(var i=0,l=c.length;i<l;i++){
+				//ログのチャンネル名と、本文中のハッシュタグがかぶる場合は本文を優先
+				if(obj.comment.indexOf("#"+c[i])===-1){
+					dd.appendChild(this.makeChannelSpan(c[i]));
+				}
+			}
+		}
+		//時間、IPアドレスなど
+		var infsp=el("span");
 		infsp.classList.add("info");
 		var date=new Date(obj.time);
 		var dat=date.getFullYear()+"-"+zero2(date.getMonth()+1)+"-"+zero2(date.getDate()), tim=zero2(date.getHours())+":"+zero2(date.getMinutes())+":"+zero2(date.getSeconds());
-		var time=el("time",dat+" "+tim);
-		time.datetime=dat+"T"+tim+"+09:00";
+		//時間はtime要素
+		var time=el("time");
+		var datelement=el("span",dat+" "), timelement=el("span",tim);
+		datelement.classList.add("date");
+		timelement.classList.add("time");
+		time.appendChild(datelement);
+		time.appendChild(timelement);
+		time.appendChild(document.createTextNode("; "));
+		//time.datetime=dat+"T"+tim+"+09:00";
+		//time.dateTime=date.toISOString();	//datetime属性は廃止された
 		
+		//コメントの_idを保存（返信など用）
 		df.dataset.id=obj._id;
+		df.dataset.ip=obj.ip;
+		if(obj.channel) df.dataset.channel="#"+(Array.isArray(obj.channel) ? obj.channel.join("#") : obj.channel)+"#";//# is magic
 		if(obj.response){
+			//そのコメントが返信の場合はdatasetに追加、クラス追加
 			df.dataset.respto=obj.response;
 			df.classList.add("respto");
 		}
+		dt.title=dat+" "+tim+", "+obj.ip+(obj.ipff ? " (forwarded for: "+obj.ipff+")" : "");
 	
+		//IPaddressのspan要素
+		var ipelement = el("span",obj.ip+(obj.ipff ? " (forwarded for: "+obj.ipff+")" : "")+"; ");
+		ipelement.classList.add("ip");
 		infsp.appendChild(time);
-		infsp.appendChild(document.createTextNode(", "+obj.ip+")"));
+		infsp.appendChild(ipelement);
 		dd.appendChild(infsp);
 		dd.style.color=color;
 		df.appendChild(dd);
 		return df;
 
+		//要素名と中身のテキストを指定すると生成する関数el
 		function el(name,text){
 			var ret=document.createElement(name);
-			ret.textContent=text;
+			if(typeof text!=="undefined") ret.textContent=text;
 			return ret;
 		}
 		function zero2(str){
+			//2桁に0埋めする
 			return ("00"+str).slice(-2);
 		}
+		//obj.commentをHTML化する
 		function commentHTMLify(comment){
-			if(typeof comment=="object"){
-				if(comment instanceof Array){
+			if(typeof comment==="object"){
+				if(Array.isArray(comment)){
+					//配列の場合はそれぞれを再帰的に処理して連結
 					var df=document.createDocumentFragment();
 					comment.forEach(function(x){
 						df.appendChild(commentHTMLify(x));
 					});
 					return df;
 				}else{
+					//オブジェクトの場合HTML要素を生成
+					//name:要素名 attributes: key-valueのオブジェクト style: key-valueのCSSスタイル
+					//childの中身を再帰的に処理して子にする
 					var elm=document.createElement(comment.name);
 					for(var i in comment.attributes){
 						elm.setAttribute(i,comment.attributes[i]);
@@ -89,25 +130,55 @@ LineMaker.prototype={
 					return elm;
 				}
 			}else{
+				//テキストならテキストノードを生成
 				return document.createTextNode(comment);
 			}
 		}
 	},
+	//IPアドレスから色を生成
 	getColor:function(ip){
 		var arr=ip.split(/\./);
 		return "rgb("+Math.floor(parseInt(arr[0])*0.75)+", "+
 		Math.floor(parseInt(arr[1])*0.75)+", "+
 		Math.floor(parseInt(arr[2])*0.75)+")";
 	},
+	makeChannelSpan:function(channel){
+		return (function(){
+			var span = document.createElement("span");
+			span.className="channels";
+			var wholeChannel = "";
+			var channels = channel.split("/");
+			for(var i=0; i<channels.length; i++){
+				span.appendChild((function(){
+					var ch = channels[i];
+					var span = document.createElement("span");
+					span.className = "channel";
+					if(i==0){
+						wholeChannel = ch;
+						span.textContent = "#"+ch;
+					}else{
+						wholeChannel += "/"+ch;
+						span.textContent = "/"+ch;
+					}
+					span.dataset.channel = wholeChannel;
+
+					return span;
+				})());
+			}
+			return span;
+		})();
+	},
 }
 
 
+//LineMakerを継承。HTML化されたコメントをさらに加工
 function HighChatMaker(parent,infobar){
 	this.parent=parent;
 	this.gyoza1_on=null;	//mouseoverがonになっているか
 	this.gyozas=["餃子無展開","餃子オンマウス","餃子常時"];
-	this.infobar=infobar;
+	this.infobar=infobar;	//餃子ボタンなどを置く場所
 	if(!infobar){
+		//infobarがない場合のエラー防止（見えないdiv）
 		this.infobar=document.createElement("div");
 	}
 	this.init();
@@ -120,6 +191,7 @@ HighChatMaker.prototype.init=function(){
 	//infobar
 	//while(this.infobar.firstChild)this.infobar.removeChild(this.infobar.firstChild);
 	
+	//餃子ボタン
 	this.gyozab=document.createElement("button");
 	this.gyozab.textContent=this.gyozas[this.gyoza];
 	this.gyozab.classList.add("gyozainfo");
@@ -127,14 +199,15 @@ HighChatMaker.prototype.init=function(){
 	this.gyozab.addEventListener("click",this.gyozabutton.bind(this),false);
 	this.infobar.appendChild(this.gyozab);
 	
-	//audio
+	//audio音量調整
 	var audioc=this.audioc=document.createElement("input");
 	audioc.type="range",audioc.min=0,audioc.max=100,audioc.step=10;
+	//localStorageから音量設定読み出し。未設定の場合50を設定
 	audioc.value = (localStorage.soc_highchat_audiovolume!=undefined ? localStorage.soc_highchat_audiovolume : (localStorage.soc_highchat_audiovolume=50));
-	if(this.parent && this.parent.audio)this.parent.audio.volume=audioc.value/100;
+	if(this.parent && this.parent.audio)this.parent.setVolume(audioc.value/100);
 	audioc.addEventListener("change",function(e){
-		console.log(audioc.value,this.parent.audio);
-		if(audioc.checkValidity() && this.parent.audio)this.parent.audio.volume=(localStorage.soc_highchat_audiovolume=audioc.value)/100;
+		//console.log(audioc.value,this.parent.audio);
+		if(audioc.checkValidity() && this.parent.audio)this.parent.setVolume((localStorage.soc_highchat_audiovolume=audioc.value)/100);
 	}.bind(this),false);
 	this.infobar.appendChild(audioc);
 };
@@ -144,6 +217,7 @@ HighChatMaker.gyazoSetting = [
 		url: {
 			image: "http://gyazo.com/",
 			thumb: "http://gyazo.com/thumb/",
+			ext: true,
 		},
 		text: {
 			normal: "[Gyazo]",
@@ -151,10 +225,13 @@ HighChatMaker.gyazoSetting = [
 		}
 	},
 	{
-		thumb: true,
+//		thumb: true,
+//Myazoがサムネイル機能を撤廃したため
+		thumb: false,
 		url: {
 			image: "http://myazo.net/",
 			thumb: "http://myazo.net/s/",
+			ext:true,
 		},
 		text: {
 			normal: "[Myazo]",
@@ -162,10 +239,11 @@ HighChatMaker.gyazoSetting = [
 		}
 	},
 	{
-		thumb: false,
+		thumb: true,
 		url: {
 			image: "http://g.81.la/",
-			thumb: null,
+			thumb: "http://g.81.la/thumbnail.php?id=",
+			ext: false,
 		},
 		text: {
 			normal: "[81g]",
@@ -174,21 +252,29 @@ HighChatMaker.gyazoSetting = [
 	}
 ];
 HighChatMaker.prototype.make=function(obj){
+	//LineMakerにHTML要素を生成してもらう
 	var df=LineMaker.prototype.make.apply(this,arguments);
 	var parse=_parse.bind(this);
 	var allowed_tag=["s","small","code"];
 	
-	var dd=df.childNodes.item(1);
+	//var dd=df.childNodes.item(1);
+	//コメント部分をパース
+	var dd=df.querySelector(".comment");
 	parse(dd);
+	//余計なテキストノードなどを除去
+	df.normalize();
 	return df;
 	
 	function _parse(node){
+		//Text#splitText: テキストノードを先頭からn文字のところで2つに分ける。返り値はあとのノード
+		//DocumentFragment: 複数の並列のノードをまとめる親。appendChildしたときは兄弟のみが追加される
 		if(node.nodeType==Node.TEXT_NODE){
 			//テキストノード
 			if(!node.parentNode)return;
 			var result=document.createDocumentFragment();
+			//全て処理し終えるまで続ける。先頭から順番に処理
 			while(node.nodeValue){
-				//開始タグ
+				//先頭が開始タグ
 				var res=node.nodeValue.match(/^\[(\w+?)\]/);
 				if(res){
 					if(allowed_tag.indexOf(res[1])<0){
@@ -196,14 +282,20 @@ HighChatMaker.prototype.make=function(obj){
 						node=node.splitText(res[0].length);
 						continue;
 					}
+					//タグが適用される部分をspanで囲む
 					var span=document.createElement("span");
+					//タグ名はクラスにする
 					span.classList.add(res[1]);
+					//タグより後ろを一旦全てspan要素の中に突っ込む
 					span.textContent=node.nodeValue.slice(res[0].length);
 					if(!span.textContent){
+						//空だったのでキャンセル。spanは破棄してただのテキスト扱い
 						node=node.splitText(res[0].length);
 						continue;
 					}
+					//処理対象のノード（後ろ全て含む）をspan（後ろ全てコピーされた）に置き換え
 					node.parentNode.replaceChild(span,node);
+					//これからはspanの中のテキストノードを処理していく
 					node=span.firstChild;
 					continue;
 				}
@@ -217,18 +309,20 @@ HighChatMaker.prototype.make=function(obj){
 					}
 					//閉じるべきタグを探す
 					var p=node;
-					while(p=p.parentNode){
+					while(p=p.parentNode){	//nodeはテキストノードなのでnodeの親からスタート
 						if(p.classList && p.classList.contains(res[1])){
+							//問題のタグである
 							break;
 						}
 					}
+					//タグを閉じる
 					if(p){
-						//タグを閉じる
+						//終了タグを取り除いて、nodeの中には終了タグより右側が残る
 						node.nodeValue=node.nodeValue.slice(res[0].length);
-						//うしろにひとまるGOGOとかがあると挟まってしまうので修正
-						//p.parentNode.appendChild(node);
+						//nodeをタグの外へ移動（pの後ろへ）
 						p.parentNode.insertBefore(node,p.nextSibling);
 					}else{
+						//そのタグは無かった。ただのテキストとして処理
 						node=node.splitText(res[0].length);
 						continue;
 					}
@@ -238,73 +332,88 @@ HighChatMaker.prototype.make=function(obj){
 				res=node.nodeValue.match(/^https?:\/\/\S+/);
 				if(res){
 					var matched=false;
+					//URLがgyazo系かどうか調べる
 					for(var i=0, l=HighChatMaker.gyazoSetting.length; i<l; i++){
 						var settingObj = HighChatMaker.gyazoSetting[i];
-						var res2=res[0].match(new RegExp("^"+settingObj.url.image.replace(".", "\\.")+"([0-9a-f]{32})(?:\\.png)?$"));
+						var res2=res[0].match(new RegExp("^"+settingObj.url.image.replace(".", "\\.")+"([0-9a-f]{32})(?:\\.png)?"));
 						if(!res2) continue;
 						
 						//Gyazo
 						var a=document.createElement("a");
 						a.target="_blank";
-						a.href=settingObj.url.image+res2[1]+".png";
+						a.href=settingObj.url.image+res2[1]+(settingObj.url.ext?".png":"");
 						a.classList.add("gyoza");
 						if(settingObj.thumb && this.gyoza==2){
 							//餃子常時展開
 							(function(a){
+								//クロージャによりa要素への参照を保存（複数Gyazoがあった場合for文の中でaが書き換わってしまうため）
 								var img=document.createElement("img");
 								img.classList.add("thumbnail");
-								img.hidden=true;
+								img.hidden=true;	//読み込み終わるまで表示しない
 								a.appendChild(img);
+								//読み込み中の文字列
 								var temp_node=document.createTextNode(settingObj.text.opening);
 								a.appendChild(temp_node);
 								img.addEventListener('load',function(e){
+									//文字列を消して画像を表示
 									a.removeChild(temp_node);
 									img.hidden=false;
 								},false);
 								img.src=settingObj.url.thumb+res2[1]+".png";
+								img.alt=settingObj.url.image+res2[1]+".png";
 							})(a);
 						}else{
 							a.textContent=settingObj.text.normal;
 						}
 						node=node.splitText(res2[0].length);
+						//node.previousSiblingは、 splitTextで切断されたurl部分のテキストノード
 						node.parentNode.replaceChild(a,node.previousSibling);
 						matched=true;
 						break;
 					}
 					if(matched) continue;
-						
+					//通常のリンクだった
 					var a=document.createElement("a");
 					a.href=res[0];
 					a.target="_blank";
-					a.textContent=res[0];
+					try{
+						//%xxなどを普通の文字列に変換する。不正な%があると困るのでtryで囲む
+						a.textContent=decodeURIComponent(res[0]);
+					}catch(e){
+						a.textContent=res[0];
+					}
 					node=node.splitText(res[0].length);
 					node.parentNode.replaceChild(a,node.previousSibling);
 					continue;
 				}
-				//正男リンク
-				res=node.nodeValue.match(/^#(\d{4})/);
+				//チャネルリンク
+				res=node.nodeValue.match(/^(\s*)#(\S+)/);
 				if(res){
-					var a=document.createElement("a");
-					a.target="_blank";
-					a.href="http://81.la/"+res[1];
-					a.textContent=res[0];
-					node=node.splitText(res[0].length);
-					node.parentNode.replaceChild(a,node.previousSibling);
+					if(res[1]){
+						//前の空白はいらないのでそのまま流す
+						node=node.splitText(res[1].length);
+					}
+					//チャネルのスタイルを変える
+					var span=this.makeChannelSpan(res[2])//document.createElement("span");
+					//チャネル部分を分離（スペースは既に分離したのでその分だけ文字数を減らしてカウント）
+					node=node.splitText(res[0].length-res[1].length);
+					node.parentNode.replaceChild(span,node.previousSibling);
 					continue;
 				}
-				//その他
-				res=node.nodeValue.match(/^(.+?)(?=\[\/?\w+?\]|https?:\/\/|#\d{4})/)
+				//その他 上記のマークアップを発見するまではただの文字列なので普通にテキストノードを生成
+				res=node.nodeValue.match(/^(.+?)(?=\[\/?\w+?\]|https?:\/\/|\s+#\S+)/)
 				if(res){
 					node=node.splitText(res[0].length);
 					continue;
 				}
+				//もう最後まで何もない。nodeは空のテキストノードになる
 				node=node.splitText(node.nodeValue.length);
 //				throw new Error("parse failed");
-				
-				
 			}
 		}else if(node.childNodes){
+			//elementノードの場合 子のテキストを再帰的処理
 			var nodes=[];
+			//途中でchildNodesが変化するので、処理対象のノードをリストアップ
 			for(var i=0,l=node.childNodes.length;i<l;i++){
 				nodes.push(node.childNodes[i]);
 			}
@@ -315,10 +424,14 @@ HighChatMaker.prototype.make=function(obj){
 		}
 	}
 };
+//餃子ボタンにより餃子モードが変更されたりした処理
 HighChatMaker.prototype.setGyoza=function(gyoza){
+	//localStorageに保存
 	this.gyoza=localStorage.soc_highchat_gyoza=gyoza%this.gyozas.length;
+	//餃子ボタンを変更
 	this.gyozab.textContent=this.gyozas[this.gyoza];
 
+	//イベントをセット/除去
 	if(this.gyoza==1 && !this.gyoza1_on){
 		this.gyoza1_on=this.gyozamouse.bind(this);
 		document.addEventListener("mouseover",this.gyoza1_on,false);
@@ -330,9 +443,15 @@ HighChatMaker.prototype.setGyoza=function(gyoza){
 HighChatMaker.prototype.gyozabutton=function(e){
 	this.setGyoza(this.gyoza+1);
 };
+//餃子の上に乗った（餃子オンマウス時）
 HighChatMaker.prototype.gyozamouse=function(e){
 	var t=e.target;
 	if(t.classList.contains("gyoza")){
+		//既に展開処理を行っている場合はとばす
+		if(t.dataset.gyazoloaded) return;
+		t.dataset.gyazoloaded=true;
+
+		//どの餃子が調べる
 		for(var i=0, l=HighChatMaker.gyazoSetting.length; i<l; i++){
 			var settingObj = HighChatMaker.gyazoSetting[i];
 			if(!settingObj.thumb) continue;
@@ -340,10 +459,13 @@ HighChatMaker.prototype.gyozamouse=function(e){
 			if(result){
 				var img=document.createElement("img");
 				img.src=settingObj.url.thumb+result[1]+".png";
+				img.alt=settingObj.url.image+result[1]+".png";
 			
+				//非表示のimg要素を生成してloadを待つ
 				img.addEventListener("load",ev,false);
-				img.style.display="none";
-				t.textContent=settingObj.text.opening;
+				//img.style.display="none";
+				img.hidden=true;
+				t.textContent=settingObj.text.opening;	//テキストはオープン状態に変更
 				t.appendChild(img);
 				return;
 			}
@@ -351,402 +473,10 @@ HighChatMaker.prototype.gyozamouse=function(e){
 	}
 	
 	function ev(e){
+		//ロード完了したらオープン中のテキストは除去
 		t.removeChild(t.firstChild);
-		img.style.display="";
+		img.hidden=false;
 	}
-};
-
-
-function ChatClient(log,info,infobar){
-	this.logid=log,this.infoid=info,this.infobarid=infobar;
-	
-	this.oldest_time=null;
-	this.flags={"sound":true};
-}
-ChatClient.prototype={
-	init:function(){
-		this.log=document.getElementById(this.logid);
-		this.info=document.getElementById(this.infoid);
-		this.users=this.info.getElementsByClassName("users")[0];
-		this.usernumber=this.info.getElementsByClassName("usernumber")[0];
-		
-		this.usernumber.dataset.actives=this.usernumber.dataset.roms=0;
-		this.bots=[];
-		this.disip=[];	//IP list
-		if(localStorage.socketchat_disip)this.disip=JSON.parse(localStorage.socketchat_disip);
-		
-		
-		this.responding_to=null;	//dd
-		
-		//Audio
-		if(this.flags.sound){
-			var audio;
-			var soundSource=[
-				["./sound.ogg", "audio/ogg"],
-				["./sound.mp3", "audio/mp3"],
-				["./sound.wav", "audio/wav"]
-			];
-			try{
-				audio=new Audio();
-				audio.removeAttribute("src");
-				soundSource.forEach(function(arr){
-					var source=document.createElement("source");
-					source.src=arr[0];
-					source.type=arr[1];
-					audio.appendChild(source);
-				});
-			}catch(e){
-				audio={play:function(){}};
-			}
-			this.audio=audio;
-		}
-		
-		//Responding tip
-		this.responding_tip=document.createElement("span");
-		this.responding_tip.textContent="⇒";
-		this.responding_tip.classList.add("responding_tip");
-		
-		this.cominit();
-		
-		
-		/*document.forms["inout"].addEventListener("submit",this.submit.bind(this),false);
-		document.forms["comment"].addEventListener("submit",this.submit.bind(this),false);*/
-		document.addEventListener("submit",this.submit.bind(this),false);
-		
-		this.log.addEventListener('click',this.click.bind(this),false);
-		
-		this.prepareForm();
-		this.prepareHottoMottoButton();
-		this.line=new HighChatMaker(this,document.getElementById(this.infobarid));
-		
-	},
-	//HottoMottoボタン初期化
-	prepareHottoMottoButton:function(){
-		var hottomottob=document.getElementsByClassName("logs")[0].getElementsByClassName("hottomottobutton")[0];
-		hottomottob.addEventListener("click",this.HottoMotto.bind(this),false);
-	},
-	//フォーム準備
-	prepareForm:function(){
-		if(localStorage.socketchat_name){
-			document.forms["inout"].elements["uname"].value=localStorage.socketchat_name;
-		}
-	},
-	cominit:function(){	
-		//通信部分初期化
-	},
-	loginit:function(data){
-		console.log("loginit",data,this.oldest_time);
-		if(sessionStorage){
-			if(this.socket){
-				sessionStorage.socketid=this.socket.socket.sessionid;
-			}else{
-				sessionStorage.sessionid=this.sessionId;
-			}
-		}
-		data.logs.reverse().forEach(function(line){
-			this.write(line);
-		},this);
-		if(data.logs.length){
-			this.oldest_time=data.logs.shift().time;
-		}
-	},
-	recv:function(obj){
-		if(this.disip.indexOf(obj.ip)>=0){
-			// disip
-			return;
-		}
-		this.bots.forEach(function(func){func(obj,this)},this);
-		if(this.flags.sound){
-			this.audio.play();
-		}
-		this.write(obj);
-	},
-	write:function(obj){
-		this.log.insertBefore(this.line.make(obj),this.log.firstChild);
-	},
-	//誰かが来た
-	newuser: function(user){
-		console.log("newuser", user);
-		var li=document.createElement("li");
-		var sp=document.createElement("span");
-		sp.textContent=user.name;
-		sp.title=user.ip+" / "+user.ua;
-		li.dataset.id=user.id;
-		if(user.rom){
-			li.classList.add("rom");
-			this.setusernumber(0, 1);
-		}else{
-			this.setusernumber(1, 0);
-		}
-		
-		li.appendChild(sp);
-		this.users.appendChild(li);
-		console.log("newuser out");
-	},
-	getuserelement: function(id){
-		var ul=this.users.childNodes;
-		for(var i=0, l=ul.length; i<l; i++){
-			if(ul[i].dataset && ul[i].dataset.id==id){
-				return ul[i];
-			}
-		}
-		return null;
-	},
-	//誰かがお亡くなりに
-	deluser: function(id){
-		console.log("deluser", id);
-		var elem=this.getuserelement(id);
-		if(!elem) return;
-		
-		var actives=this.usernumber.dataset.actives, roms=this.usernumber.dataset.roms;
-		if(elem.classList.contains("rom")){
-			this.setusernumber(0, -1);
-		}else{
-			this.setusernumber(-1, 0);
-		}
-		this.users.removeChild(elem);
-		console.log("deluser out");
-	},
-	//最初にユーザリストを得る
-	userinit:function(obj){
-		console.log("userinit", obj);
-		while(this.users.firstChild)this.users.removeChild(this.users.firstChild);//textNode消す
-		
-		obj.users.forEach(this.newuser, this);
-		//this.setusernumber(obj.actives, obj.roms);
-	},
-	//人数をセットして反映
-	setusernumber: function(actives, roms){
-		var dataset=this.usernumber.dataset;
-		dataset.actives=parseInt(dataset.actives)+actives;
-		dataset.roms=parseInt(dataset.roms)+roms;
-		this.usernumber.textContent="入室"+dataset.actives+(dataset.roms!=0? " (ROM"+dataset.roms+")":"");
-	},
-	//誰かが入退室
-	inout: function(obj){
-		console.log("inout", obj);
-		var elem=this.getuserelement(obj.id);
-		if(!elem)return;
-		elem.firstChild.textContent=obj.name;
-		if(obj.rom){
-			elem.classList.add("rom");
-			this.setusernumber(-1, 1);
-		}else{
-			elem.classList.remove("rom");
-			this.setusernumber(1, -1);
-		}
-		console.log("inout out");
-	},
-	//自分が入退室
-	userinfo:function(obj){
-		console.log("userinfo",obj);
-		var f=document.forms["inout"];
-		if(f){
-			f.elements["uname"].disabled=!obj.rom;
-			if(!obj.rom)f.elements["uname"].value=obj.name;
-		
-			var result=document.evaluate('descendant::input[@type="submit"]',f,null,XPathResult.ANY_UNORDERED_NODE_TYPE,null);
-			var bt=result.singleNodeValue;
-			bt.value=obj.rom?"入室":"退室";
-		}
-		if(!obj.refresh)this.inout(obj);
-	},
-	mottoResponse:function(data){
-		data.logs.forEach(function(line){
-			this.log.appendChild(this.line.make(line));
-		},this);
-		if(data.logs.length)this.oldest_time=data.logs.pop().time;
-	},
-	
-	submit:function(e){
-		var f=e.target;
-		if(f.name=="inout"){
-			//入退室
-			var el=f.elements["uname"];
-			this.inout_notify(el.value);
-			
-			localStorage.socketchat_name=el.value;
-		}else if(f.name=="comment"){
-			//発言
-			var el=f.elements["comment"];
-			this.sayform(f);
-			el.value="";
-			f.elements["response"].value="";
-			this.responding_tip.parentNode && this.responding_tip.parentNode.removeChild(this.responding_tip);
-		}
-		e.preventDefault();
-	},
-	inout_notify:function(name){},
-	
-	sayform:function(f){
-		this.say(f.elements["comment"].value,f.elements["response"].value);
-	},
-	say:function(comment,response){
-	},
-	
-	bot:function(func){
-		this.bots.push(func);
-	},
-	click:function(e){
-		var t=e.target;
-		if(t===this.responding_tip){
-			e.stopPropagation();
-			
-			document.forms["comment"].elements["response"].value=this.responding_tip.dataset.to;
-			document.forms["comment"].elements["comment"].focus();
-			this.responding_tip.classList.add("checked");
-			console.log(document.forms["comment"]);
-			return;
-		}
-		var dd=document.evaluate('ancestor-or-self::p',t,null,XPathResult.ANY_UNORDERED_NODE_TYPE,null).singleNodeValue;
-		if(!dd){
-
-			this.responding_tip.parentNode && this.responding_tip.parentNode.removeChild(this.responding_tip);
-			return;
-		}
-		if(dd.classList.contains("respto") && dd.dataset.open!="open"){
-			//開く
-			this.responding_to=dd;
-			this.socket.emit("idrequest",{"id":dd.dataset.respto});
-			dd.dataset.open="open";
-			return;
-		}
-		//コメント
-		this.responding_tip.classList.remove("checked");
-
-		if(document.forms["comment"])document.forms["comment"].elements["response"].value="";
-		dd.appendChild(this.responding_tip);
-		this.responding_tip.dataset.to=dd.dataset.id;
-	},
-	idresponse:function(data){
-		if(!this.responding_to || !data)return;
-		var line=this.line.make(data);
-		var bq=document.createElement("blockquote");
-		bq.classList.add("resp");
-		bq.appendChild(line);
-
-		var r=this.responding_to;
-		r.parentNode.insertBefore(bq,r.nextSibling);
-		
-	},
-	disconnect:function(){
-		document.body.classList.add("discon");
-	}
-};
-
-function SocketChat(){
-	ChatClient.apply(this,arguments);
-}
-SocketChat.prototype=new ChatClient;
-SocketChat.prototype.cominit=function(){
-	var socket;
-	socket=this.socket = io.connect(location.origin);
-	
-	socket.on("init",this.loginit.bind(this));
-	socket.on("log",this.recv.bind(this));
-	socket.on("users",this.userinit.bind(this));
-	socket.on("userinfo",this.userinfo.bind(this));
-	socket.on("mottoResponse",this.mottoResponse.bind(this));
-	socket.on("idresponse",this.idresponse.bind(this));
-	socket.on("disconnect",this.disconnect.bind(this));
-	socket.on("newuser",this.newuser.bind(this));
-	socket.on("deluser",this.deluser.bind(this));
-	socket.on("inout",this.inout.bind(this));
-
-	socket.emit("regist",{"mode":"client","lastid":sessionStorage.socketid});
-	
-};
-SocketChat.prototype.inout_notify=function(name){
-	this.socket.emit("inout",{"name":name});
-};
-SocketChat.prototype.say=function(comment,response){
-	this.socket.emit("say",{"comment":comment,"response":response?response:""});
-};
-SocketChat.prototype.HottoMotto=function(e,until){
-	if(until){
-		this.socket.emit("motto",{"time":this.oldest_time,"until":until});
-	}else{
-		this.socket.emit("motto",{"time":this.oldest_time});
-	}
-};
-
-function APIChat(){
-	ChatClient.apply(this,arguments);
-	
-	this.sessionId=null;
-	this.timerId=null;
-	
-	this.users={};
-}
-APIChat.prototype=new ChatClient;
-APIChat.prototype.send=function(path,query,callback){
-	var http=new XMLHttpRequest();
-	if(!query)query={};
-	
-	http.onreadystatechange = function(){
-		if(this.readyState==4 && this.status==200){
-			callback(JSON.parse(this.responseText));
-		}
-	};
-	var res=[];
-	for(var i in query){
-		res.push(encodeURIComponent(i)+"="+encodeURIComponent(query[i]));
-	}
-	if(this.sessionid){
-		res.push("sessionId="+this.sessionid);
-	}else if(sessionStorage.sessionid){
-		res.push("sessionId="+sessionStorage.sessionid);
-	}
-	http.open("get",path+(res.length? "?"+res.join("&"):""),true);
-	http.send();
-};
-APIChat.prototype.cominit=function(){
-	this.timerId=setInterval(this.check.bind(this),10000);
-	this.check();
-};
-APIChat.prototype.response=function(obj){
-	if(obj.error){
-		console.log(obj.errormessage);
-		return;
-	}
-	if(!this.oldest_time){
-		this.loginit(obj);
-	}else{
-		obj.logs.reverse().forEach(function(x){
-			this.recv(x);
-		},this);
-		if(obj.sessionid)sessionStorage.sessionid=this.sessionid=obj.sessionid;
-	}
-	
-	if(obj.inout){
-		this.userinfo(obj.inout);
-	}
-	obj.userinfos.forEach(function(x){
-		switch(x.name){
-		case "newuser":
-			this.newuser(x.user);
-			break;
-		case "deluser":
-			this.deluser(x.id);
-			break;
-		case "inout":
-			this.inout(x.user);
-			break;
-		case "users":
-			this.userinit(x.users);
-			break;
-		}
-	},this);
-	
-};
-APIChat.prototype.check=function(){
-	this.send("/api/",null,this.response.bind(this));
-};
-APIChat.prototype.inout_notify=function(name){
-	this.send("/api/inout",{"name":name},this.response.bind(this));
-};
-APIChat.prototype.say=function(comment,response){
-	this.send("/api/say",{"comment":comment,"response":response},this.response.bind(this));
 };
 APIChat.prototype.HottoMotto=function(){
 	this.send("/api/motto",{"time":this.oldest_time},function(data){

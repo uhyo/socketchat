@@ -8,7 +8,8 @@ exports.DB_PORT=27017;
 exports.DB_NAME="socketchat";
 exports.DB_USER="test";
 exports.DB_PASS="test";
-exports.HTTP_PORT = 8080;*/
+exports.HTTP_PORT = 8080;
+exports.SOCKET_HOST_NAME = null;*/
 
 exports.CHAT_FIRST_LOG=50;	//最初どれだけログ表示するか
 exports.CHAT_MOTTO_LOG=50;	//HottoMotto時デフォルト時にログをどれだけ表示するか
@@ -17,6 +18,7 @@ exports.CHAT_MOTTO_MAX_LOG=500;	//1回のHttoMottoで最大どれだけ表示す
 
 exports.CHAT_NAME_MAX_LENGTH = 25;
 exports.CHAT_MAX_LENGTH = 1000;
+exports.CHAT_CHANNEL_MAX_LENGTH_SUM = 1000; //data.channelのチャネル名の合計長さの最大
 
 exports.CHAT_LIMIT_TIME = 10;	//0なら無効
 exports.CHAT_LIMIT_NUMBER=10;	//CHAT_LIMIT_TIME以内にCHAT_LIMIT_NUMBER回発言したらそれ以上発言できない
@@ -38,23 +40,29 @@ var mongoserver = new mongodb.Server(settings.DB_SERVER,settings.DB_PORT,{});
 var db = new mongodb.Db(settings.DB_NAME,mongoserver,{});
 
 
-var app = require('express').createServer();
+//var app = require('express').createServer();
+var app=require('express')();
 
 app.get(/^\/(index\.html)?$/, function(req, res){
 	res.sendfile(__dirname + '/index.html');
 });
-app.get(/^\/(log|list|apiclient|com)$/, function(req, res){
-	res.sendfile(__dirname + "/"+req.params[0]+'.html');
+app.get(/^\/(log|list|apiclient|com|smp|smpjump)(\.js)?$/, function(req, res){
+	res.sendfile(__dirname + "/"+req.params[0]+'.'+(req.params[1]?'js':'html'));
 });
-app.get(/^\/((?:line|storagefs)\.js|css\.css|sound\.(mp3|wav|ogg))$/, function(req, res){
+app.get(/^\/((?:line|connection|client)\.js|css\.css|(sound|jihou)\.(mp3|wav|ogg)|smp.css)$/, function(req, res){
 	res.sendfile(__dirname + "/"+req.params[0]);
+});
+
+app.get(/^\/settings.js$/, function(req, res){
+	res.charset="UTF-8";
+	res.type("text/javascript");
+	res.send("settings="+JSON.stringify({SOCKET_HOST_NAME:settings.SOCKET_HOST_NAME}));
 });
 app.get('/chalog', function(req, res){
 	chalog(req.query,function(resobj){
-		res.send(resobj, {
-			//"Content-Length":result.length,
-			"Content-Type":"text/javascript; charset=UTF-8",
-		}, 200);
+		res.charset="UTF-8";
+		res.type("text/javascript");
+		res.send(resobj);
 	});
 });
 app.get(/^\/api\/(.*)$/, function(req,res){
@@ -68,7 +76,13 @@ app.get('/show', function(req, res){
 	},{"Content-Type":"text/javascript; charset=UTF-8"});
 });
 
-var log;
+//httpでラップ
+var srv=require('http').createServer(app);
+srv.listen(settings.HTTP_PORT);
+
+var io=socketio.listen(srv);
+io.set('log level',1);
+var log, chcoll;
 //データベース使用準備
 db.open(function(err,_db){
 	if(err){
@@ -82,13 +96,16 @@ db.open(function(err,_db){
 		}
 		db.collection("log",function(err,collection){
 			log=collection;
-			var syslog={"name" : "■起動通知",
-				    "time":Date.now(),
-				    "ip":"127.0.0.1",
-				    "comment":"「サーバー」さんが起動",
-				    "syslog":true
-			};
-			makelog({"type":"system"},syslog);
+			db.collection("channel",function(err,collection){
+				chcoll=collection;
+				var syslog={"name" : "■起動通知",
+					"time":new Date(),
+				"ip":"127.0.0.1",
+				"comment":"「サーバー」さんが起動",
+				"syslog":true
+				};
+				makelog({"type":"system"},syslog);
+			});
 		});
 	});
 });
@@ -117,12 +134,13 @@ filters.push(function(logobj,user){
 			
 	}
 	function setxff(ip){
-		var add={"name":"span","attributes":{"class":"info"},"child":"(Forwarded For:"+ip+")"};
-		logobj.comment=pushLogobj(logobj.comment,add);
+//		var add={"name":"span","attributes":{"class":"info"},"child":"(Forwarded For:"+ip+")"};
+//		logobj.comment=pushLogobj(logobj.comment,add);
+		logobj.ipff=ip;
 	}
 });
 //hito-maru-gogo
-filters.push(function(logobj){
+/*filters.push(function(logobj){
 	var tms=["まる","ひと","ふた","さん","よん","GO!","ろく","なな","はち","きゅう"];
 	var date=new Date(logobj.time);
 	if(date.getMinutes()==55){
@@ -131,7 +149,7 @@ filters.push(function(logobj){
 		var add={"name":"span","attributes":{},"style":{"font-size":"2em"},"child":com};
 		logobj.comment=pushLogobj(logobj.comment,add);
 	}
-});
+});*/
 //ｼｬﾍﾞｯﾀｰ
 filters.push(function(logobj){
 	var date=new Date(logobj.time);
@@ -213,9 +231,6 @@ function forEachTextLogobj(logobj,callback){
 	}
 }
 
-app.listen(settings.HTTP_PORT);
-
-var io=socketio.listen(app);
 
 function User(id,name,ip,rom,ua){
 	this.id=id,this.name=name,this.ip=ip,this.rom=rom,this.ua=ua;
@@ -227,15 +242,11 @@ User.prototype.getUserObj=function(){
 	return {"id":this.id,"name":this.name,"ip":this.ip,"rom":this.rom,"ua":this.ua};
 };
 User.prototype.type="user";
-//says,inout,motto,idRequest
+//says,inout
 User.prototype.says=function(data){
 	if(this.rom)return;
-	if(!data || !data.comment || !data.comment.length)return;
-	
-	if(data.comment.length>settings.CHAT_MAX_LENGTH){
-		return;
-	}
-
+	if(!data || !data.comment)return;
+	//連続発言
 	if(settings.CHAT_LIMIT_TIME>0){
 		var d=Date.now()-1000*settings.CHAT_LIMIT_TIME;
 		if((this.ss=this.ss.filter(function(x){return x>=d})).length>=settings.CHAT_LIMIT_NUMBER){
@@ -245,11 +256,155 @@ User.prototype.says=function(data){
 		this.ss.push(Date.now());
 	}
 
+	if("string"!==typeof data.comment && !Array.isArray(data.comment))return;
+	//console.log(data);
+	//ログを生成する
+	var length, commentString;	//コメントの長さ、文字列バージョン
+	try{
+		length=0;	//足していく
+		//ログを生成
+		/*commentString="";
+		   commentObj=(function check(comment){
+			if("string"===typeof comment && comment.length>0){
+				length+=comment.length;
+				commentString+=comment;
+				return comment;
+			}else if(Array.isArray(comment)){
+				var result=[];
+				var lastUnicodeObj=null;	//U+10000以上の文字を表すオブジェクト
+				for(var i=0, l=comment.length;i<l;i++){
+					var r=check(comment[i]);
+					if(r.name==="#x-unicode"){
+					   if(lastUnicodeObj){
+						//前のやつに組み入れる
+						lastUnicodeObj.code=lastUnicodeObj.code.concat(r.code);
+					   }else{
+						   result.push(r);
+						   lastUnicodeObj=r;
+					   }
+					}else{
+						result.push(r);
+						lastUnicodeObj=null;
+					}
+				}
+				return result;
+			}else if("number"===typeof comment){
+				if(comment<0x10000 || 0x10ffff<comment){
+					//サポート範囲外
+					throw new Error;
+				}
+				length++;
+				//復元して文字列にも入れる（壊れるけど）
+				//サロゲートペアを復元
+				var l=(number & 0x3ff)+0xdc00;
+				var h=((number-0x10000)>>10)+0xd800;
+				commentString+=String.fromCharCode(h)+String.fromCharCode(l);
+				return {
+					name:"#x-unicode",
+					code:[comment],
+				};
+			}
+			throw new Error;
+		})(data.comment);*/
+		commentString=(function check(comment){
+			if("string"===typeof comment && comment.length>0){
+				length+=comment.length;
+				return comment;
+			}else if(Array.isArray(comment)){
+				var result="";
+				for(var i=0, l=comment.length;i<l;i++){
+					result+=check(comment[i]);
+				}
+				return result;
+			}else if("number"===typeof comment){
+				if(comment<0x10000 || 0x10ffff<comment){
+					//サポート範囲外
+					throw new Error;
+				}
+				length++;
+				//復元して文字列にも入れる（壊れるけど）
+				//サロゲートペアを復元
+				var l=(comment & 0x3ff)+0xdc00;
+				var h=((comment-0x10000)>>10)+0xd800;
+				return String.fromCharCode(h)+String.fromCharCode(l);
+			}
+			throw new Error;
+		})(data.comment);
+
+	}catch(e){
+		return;
+	}
+
+				
+	if(length>settings.CHAT_MAX_LENGTH || length===0){
+		return;
+	}
+
+	var channel=[];
+	if(data.channel){
+		//チャンネル
+		var c=data.channel;
+		if(Array.isArray(c)){
+			//配列だった
+			if(c.length===0 || c.some(function(x){return !x || 'string'!==typeof x})){
+				//channel=null;
+			}else if(c.length===1){
+				c=c[0];	//文字列化
+				if(!c || 'string'!==typeof c)c=null;	//無効
+				else channel.push(c);
+			}else{
+				//全部採用
+				channel=c;
+			}
+		}else if('string' === typeof c){
+			channel.push(c);
+		}
+	}
+	if(channel.map(function(c){return c.length;}).reduce(function(a,b){return a+b;},0)>exports.CHAT_CHANNEL_MAX_LENGTH_SUM){
+		return;
+	}
+	//console.log(commentString);
+	//発言中のハッシュタグを処理
+	var save_str=comment=commentString;	//とっておく
+	//コメントからチャネルを探す
+	var flag=false, result;
+	while(result=comment.match(/(?:^|\s+)#(\S+)\s*$/)){
+		//文末のハッシュタグはチャネルに組み入れる
+		if(channel.indexOf(result[1])<0){
+			channel.unshift(result[1]);
+		}
+		comment=comment.slice(0,comment.length-result[0].length);	//その部分をカット
+		flag=true;
+	}
+	if(flag && /^\s*$/.test(comment)){
+		//空っぽになってしまった場合は戻す
+		comment=save_str;
+	}
+	//文末以外のチャンネルを割り当てる
+	result=comment.match(/(?:^|\s+)#\S+/g);
+	if(result){
+		for(var i=0,l=result.length;i<l;i++){
+			var r=result[i].match(/#(\S+)$/);
+			var hash=r[1];	//チャンネル名
+			if(hash && channel.indexOf(hash)<0){
+				channel.push(hash);
+			}
+		}
+	}
+	//チャネルの処理
+	if(channel.length===0){
+		channel=null;
+	}/*else if(channel.length===1){
+		channel=channel[0];
+	}*/
+
 	var logobj={"name":this.name,
-		    "comment":data.comment,
+		    "comment":comment,
 		    "ip":this.ip,
-		    "time":Date.now()
+		    "time":new Date()
 		    };
+
+	if(channel)logobj.channel=channel;	//チャネルを追加
 	var say=makelog.bind(null,this,logobj);
 	if(data.response){
 		try{
@@ -281,7 +436,7 @@ User.prototype.inout=function(data){
 	}
 	//シスログ
 	var syslog={"name" : (this.rom?"■退室通知":"■入室通知"),
-		    "time":Date.now(),
+		    "time":new Date(),
 		    "ip":this.ip,
 		    "comment":"「"+this.name+"」さんが"+(this.rom?"退室":"入室"),
 		    "syslog":true
@@ -299,23 +454,58 @@ User.prototype.inoutSplash=function(){
 		x==this || x.userinfos.push({"name":"inout","user":obj});
 	}.bind(this));*/
 };
-//mottoの該当レス探す処理
-User.prototype.findMotto=function(data,callback){
-	var time=data.time;
-	var until=data.until;
-	if(!time)return;
-	if(typeof until=="number"){
-		log.find({"time":{$lt:time,$gt:until}},{"sort":[["time","desc"]],"limit":settings.CHAT_MOTTO_MAX_LOG}).toArray(callback);
+//何か探してあげる
+function findlog(query,callback){
+	if(!query){
+		callback([]);
+		return;
+	}
+	var q={};
+	var one_flag=false;
+	var number=parseInt(query.number) || settings.CHAT_MOTTO_LOG;
+	if(query.channel){
+		q.channel=new RegExp("^"+query.channel.replace(/(\W)/g,"\\$1")+"(/.*)?$");
+	}
+	if(query.motto){
+		//time:この時間より前 until:この時間まで
+		var m=query.motto;
+		q.time={$lt:new Date(m.time)};
+		if(m.until){
+			q.time.$gte=new Date(m.until);
+			//最大までにしてあげる
+			if(!query.number)number=settings.CHAT_MOTTO_MAX_LOG;
+		}
+	}
+	number=Math.min(number, settings.CHAT_MOTTO_MAX_LOG);
+	if(query.id){
+		one_flag=true;
+		if(query.id.length!=24 && query.id.length!=12){
+			callback([]);
+			return;
+		}
+		q=db.bson_serializer.ObjectID.createFromHexString(query.id);
+	}
+
+	if(one_flag){
+		//1件
+		log.findOne(q,function(err,obj){
+			callback([obj]);
+		});
 	}else{
-	
-		log.find({"time":{$lt:time}},{"sort":[["time","desc"]],"limit":settings.CHAT_MOTTO_LOG}).toArray(callback);
+		log.find(q,{"sort":[["time","desc"]],"limit":number}).toArray(function(err,arr){
+			if(err){
+				callback({error:err});
+			}else{
+				callback(arr);
+			}
+		});
 	}
 };
 //いなくなった！❾
 User.prototype.discon=function(){
 	if(!this.rom){
 		var syslog={"name" : "■失踪通知",
-			    "time":Date.now(),
+			    "time":new Date(),
 			    "ip":this.ip,
 			    "comment":"「"+this.name+"」さんいない",
 			    "syslog":true
@@ -346,18 +536,6 @@ function SocketUser(id,name,ip,rom,ua,socket){
 }
 SocketUser.prototype=new User;
 SocketUser.prototype.type="socket";
-SocketUser.prototype.motto=function(data){
-	this.findMotto(data,function(err,docs){
-		var resobj={"logs":docs};
-		this.socket.emit("mottoResponse",resobj);
-	}.bind(this));
-};
-SocketUser.prototype.idrequest=function(data){
-	if(data.id.length!=24 && data.id.length!=12)return;
-	log.findOne(db.bson_serializer.ObjectID.createFromHexString(data.id),function(err,obj){
-		this.socket.emit("idresponse",obj);
-	}.bind(this));
-};
 SocketUser.prototype.inoutSplash=function(){
 	var obj={"rom":this.rom, id: this.id, name: this.name};
 	this.socket.emit("userinfo",obj), this.socket.broadcast.to("useruser").emit("inout",obj);
@@ -379,19 +557,6 @@ function APIUser(id,name,ip,rom,ua,sessionId){
 }
 APIUser.prototype=new User;
 APIUser.prototype.type="api";
-APIUser.prototype.motto=function(data,res){
-	this.findMotto(data,function(err,docs){
-		res.send({"error":false,
-			"logs":docs,
-		},{"Content-Type":"text/javascript; charset=UTF-8"});
-	}.bind(this));
-};
-APIUser.prototype.idrequest=function(data,res){
-	if(data.id.length!=24 && data.id.length!=12)return;
-	log.findOne(db.bson_serializer.ObjectID.createFromHexString(data.id),function(err,obj){
-		res.send(obj,{"Content-Type":"text/javascript; charset=UTF-8"});
-	}.bind(this));
-};
 APIUser.prototype.oxygen=function(){
 	clearTimeout(this.timerid);
 	this.timerid=setTimeout(this.discon.bind(this),1000*settings.CHAT_APIUSER_TIMEOUT);
@@ -408,13 +573,14 @@ APIUser.prototype.inoutSplash=function(){
 io.sockets.on('connection',function(socket){
 	//ユーザー登録
 	var user=null;
-	socket.on("regist",function(data){
+	socket.on("register",function(data){
+		if(!data)return;
 		if(data.mode=="client"){
 			//チャットクライアント
 			socket.join("chatuser");
 			socket.join("useruser");
 			user=addSocketUser(socket,data.lastid);
-			sendFirstLog(user);
+			sendFirstLog(user,data.channel || void 0);
 			sendFirstUsers(user);
 
 			//発言
@@ -427,15 +593,14 @@ io.sockets.on('connection',function(socket){
 				user.inout(data);
 			});
 	
-			//HottoMotto
-			socket.on("motto",function(data){
-				user.motto(data);
+			//ユーザー情報
+			socket.on("users",function(func){
+				//即返す
+				if("function"===typeof func){
+					func(getUsersData());
+				}
 			});
 			
-			//IDrequest（返信用）
-			socket.on("idrequest",function(data){
-				user.idrequest(data);
-			});
 
 			//いなくなった
 			socket.on("disconnect",function(data){
@@ -455,12 +620,20 @@ io.sockets.on('connection',function(socket){
 					socket.emit("result",resobj);
 				});
 			});
+			//ログ検索
+			socket.on("find",function(query,func){
+				if("function"===typeof func){
+					findlog(query,func);
+				}
+			});
 		}
 	});
 	
 });
-function sendFirstLog(user,callback){
-	log.find({},{"sort":[["time","desc"]],"limit":settings.CHAT_FIRST_LOG}).toArray(function(err,docs){
+function sendFirstLog(user,channel,callback){
+	var query={};
+	if(channel)query.channel=channel;
+	log.find(query,{"sort":[["time","desc"]],"limit":settings.CHAT_FIRST_LOG}).toArray(function(err,docs){
 		if(user.socket){
 			user.socket.emit("init",{"logs":docs});
 		}else if(user.sessionId){
@@ -470,11 +643,7 @@ function sendFirstLog(user,callback){
 	});
 }
 function sendFirstUsers(user,socket_flg){
-	var roms=users.filter(function(x){return x.rom}).length, p={
-		"users":users.map(function(y){return y.getUserObj()}),
-		"roms": roms,
-		"actives": users.length-roms
-	};
+	var p=getUsersData();
 	if(socket_flg){
 		user.emit("users",p);
 	}else if(user.socket){
@@ -483,13 +652,20 @@ function sendFirstUsers(user,socket_flg){
 		user.userinfos.push({"name":"users","users":p});
 	}
 }
+function getUsersData(){
+	var roms=users.filter(function(x){return x.rom}).length, p={
+		"users":users.map(function(y){return y.getUserObj()}),
+		"roms": roms,
+		"actives": users.length-roms
+	};
+	return p;
+}
 function addSocketUser(socket,lastid){
 	var zombie=dead.filter(function(x){return x.socket && x.socket.id==lastid})[0];
 	var user, zombie_rom;
 	user=users.filter(function(x){return x.socket && x.socket.id==lastid && x.timerid})[0];
 	if(user && !user.rom){
 		//音もなく復帰
-		console.log(user.timerid);
 		clearTimeout(user.timerid);
 		user.timerid=null;
 		user.socket=socket;
@@ -540,12 +716,32 @@ function makelog(user,logobj){
 	filters.forEach(function(func){
 		func(logobj,user);
 	});
+	if("string"!==typeof logobj.comment){
+		//コメントがオブジェクトでない場合
+		//ここでstringに変換、commentObjectを新設
+		logobj.commentObject=logobj.comment;
+		logobj.comment=stringify(logobj.commentObject);
+	}
 	log.insert(logobj,{"safe":true},function(err,docs){
 		if(err){
 			console.log(err);
 			throw err;
 		}
 	});
+	if(logobj.channel){
+		var channels={}; //重複を除くため
+		logobj.channel.forEach(function(c){
+			var str="";
+			c.split("/").forEach(function(token){
+				str+=token;
+				channels[str]=1;
+				str+="/";
+			});
+		});
+		for(var ch in channels){
+			incrementChannel(ch)
+		}
+	}
 	splashlog(logobj,user.socket || getAvailableSocket());
 	function splashlog(logobj,socket){
 		if(socket){
@@ -554,30 +750,54 @@ function makelog(user,logobj){
 		}
 		toapi(function(x){x.logs.unshift(logobj)});
 	}
+	//オブジェクト交じりcommentを文字列のみに変換
+	function stringify(obj){
+		if("string"===typeof obj){
+			return obj;
+		}else if(Array.isArray(obj)){
+			//配列は全部連結する
+			return obj.map(stringify).join("");
+		}else{
+			//オブジェクト
+			return stringify(obj.child);
+		}
+	}
+	function incrementChannel(channel){
+		console.log("inc",channel)
+		chcoll.findOne({_id:channel}, function(err,obj){
+			if(obj){
+				obj.count++
+				chcoll.save(obj);
+			}else{
+				chcoll.insert({_id:channel, count:1});
+			}
+		});
+	}
 }
 function toapi(callback){
 	users.filter(function(x){return x.type=="api"}).forEach(callback);
 }
 
-function motto(socket,user,data){
-	var time=data.time;
-	if(!time)return;
-	
-	log.find({"time":{$lt:time}},{"sort":[["time","desc"]],"limit":settings.CHAT_MOTTO_LOG}).toArray(function(err,docs){
-		var resobj={"logs":docs};
-		socket.emit("mottoResponse",resobj);
-	});
-}
-function idrequest(socket,data){
-	console.log(data.id);
-	if(data.id.length!=24 && data.id.length!=12)return;
-	log.findOne(db.bson_serializer.ObjectID.createFromHexString(data.id),function(err,obj){
-		socket.emit("idresponse",obj);
-	});
-}
-
 //HTTP API
 function api(mode,req,res){
+	//検索
+	if(mode==="find"){
+		var q;
+		try{
+			q=JSON.parse(req.query.query);
+		}catch(e){
+			reply({error:true},400);
+			return;
+		}
+		findlog(q,function(logs){
+			reply(logs);
+		});
+		return;
+	}else if(mode==="users"){
+		//ユーザー一覧の請求
+		reply(getUsersData());
+		return;
+	}
 	//sessionidを作る
 	var query=req.query;
 	var sessionId=query.sessionId;
@@ -606,7 +826,7 @@ function api(mode,req,res){
 		sendFirstUsers(user);
 		users_next++;
 		req.query.sessionId=sessionId;
-		sendFirstLog(user,api.bind(this,mode,req,res));
+		sendFirstLog(user,null,api.bind(this,mode,req,res));
 		return;
 	}
 	user.lastreq=req;
@@ -616,15 +836,7 @@ function api(mode,req,res){
 		inoutobj=user.getUserObj();
 	}else if(mode=="say"){
 		user.says(query);
-	}else if(mode=="motto"){
-		user.motto(query,res);
-		return;
-	}else if(mode=="idrequest"){
-		user.idrequest(query,res);
-		return;
 	}
-
-
 	var put={"error":false,
 		"userinfos":user.userinfos,
 		"myid":user.id,
@@ -632,10 +844,19 @@ function api(mode,req,res){
 		"sessionid":user.sessionId
 	};
 	if(inoutobj)put.inout=inoutobj;
-	res.send(put,{"Content-Type":"text/javascript; charset=UTF-8"});
+	reply(put);
 	
 	user.logs.length=0,user.userinfos.length=0;
 	user.oxygen();
+
+	//返答する
+	function reply(resp,status){
+		if("object"===typeof resp){
+			res.json(resp,{"Content-Type":"application/json; charset=UTF-8","Access-Control-Allow-Origin":"*"},status);
+		}else{
+			res.send(resp,{"Content-Type":"text/plain; charset=UTF-8","Access-Control-Allow-Origin":"*"},status);
+		}
+	}
 }
 
 
@@ -651,18 +872,18 @@ function chalog(query,callback){
 	optobj.limit=value;
 	
 	if(!isNaN(query.starttime)){
-		queryobj.time={$gte:parseInt(query.starttime)};
+		queryobj.time={$gte:new Date(parseInt(query.starttime))};
 	}
 	if(!isNaN(query.endtime)){
 		if(queryobj.time){
-			queryobj.time["$lte"]=parseInt(query.endtime);
+			queryobj.time["$lte"]=new Date(parseInt(query.endtime));
 		}else{
-			queryobj.time={$lte:parseInt(query.endtime)};
+			queryobj.time={$lte:new Date(parseInt(query.endtime))};
 		}
 	}
 	if(query.name){
 		//一致
-		queryobj.name=query.name;
+		queryobj.name=new RegExp(query.name.replace(/(\W)/g,"\\$1")+"(@.*)?$");
 	}
 	if(query.ip){
 		//一致
@@ -671,6 +892,9 @@ function chalog(query,callback){
 	if(query.comment){
 		//服務
 		queryobj.comment=new RegExp(query.comment.replace(/(\W)/g,"\\$1"));
+	}
+	if(query.channel){
+		queryobj.channel = new RegExp("^"+query.channel.replace(/(\W)/g,"\\$1")+"(/.*)?$");
 	}
 	
 	var result=log.find(queryobj,optobj).toArray(function(err,docs){

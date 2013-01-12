@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <title>socket chat</title>
+    <link href="/smp.css" rel="stylesheet">
+    <script src="/settings.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/line.js"></script>
+    <script src="/client.js"></script>
+    <script src="/connection.js"></script>
+
+    <script>
+chat=new SocketChat("log","info","infobar");
+window.addEventListener('load',function(){
+	chat.init();
+},false);
+
+//SmartPhone UI
+function config(){
+	var v_false = document.getElementById("main"); 
+	v_false.style.display = 'none';
+	var v_true = document.getElementById("infobar"); 
+	v_true.style.display = 'block';
+}
+function userlist(){
+	var v_false = document.getElementById("main"); 
+	v_false.style.display = 'none';
+	var v_true = document.getElementById("info"); 
+	v_true.style.display = 'block';
+}
+function link(){
+	var v_false = document.getElementById("main"); 
+	v_false.style.display = 'none';
+	var v_true = document.getElementById("link"); 
+	v_true.style.display = 'block';
+}
+function channelview(){
+	var v_true = document.getElementById("channelview");
+	if(v_true.style.display == 'inline'){
+		v_true.style.display = 'none';
+	}else{
+		v_true.style.display = 'inline';
+	}
+}function channelclose(){
+	var v_true = document.getElementById("channelview"); 
+	v_true.style.display = 'none';
+}
+function back(){
+	var v_false = document.getElementById("info"); 
+	v_false.style.display = 'none';
+	var v_false = document.getElementById("infobar"); 
+	v_false.style.display = 'none';
+	var v_false = document.getElementById("link"); 
+	v_false.style.display = 'none';
+	var v_true = document.getElementById("main"); 
+	v_true.style.display = 'block';
+}
+
+function hideAddrBar(){
+	setTimeout(function(){scrollTo(0,1);},100);
+}
+    </script>
+  </head>
+  <body onload="hideAddrBar();" onOrientationChange="hideAddrBar();">
+  <div id="main">
+	  <div class="forms">
+	    <button onclick="config();">設定</button><button onclick="userlist();">入室者</button><button onclick="channelview();">チャネル</button><button onclick="link();">リンク</button>
+	    <form name="inout">
+	      <p><input type="text" name="uname" size="20" maxlength="25" required><input type="submit" value="入室"></p>
+	    </form>
+	    <form name="comment">
+	      <p><input type="text" name="comment" size="35" autocomplete="off" required><input type="submit" value="発言"></p>
+	      <div id="channelview">
+	      <p>#<input type="text" name="channel" size="20"><button onclick="channelclose();">隠す</button></p>
+	      </div>
+	      <input type="hidden" name="response" value="">
+	    </form>
+	  </div>
+	  <div class="logs">
+	    <div id="log">
+	    </div>
+	    <p><button class="hottomottobutton">HottoMotto</button></p>
+	  </div>
+  </div>
+  <div id="info">
+  	<p><button onclick="back();">戻る</button></p>
+    <span class="usernumber"></span>
+    <ul class="users">
+    </ul>
+  </div>
+    <div id="infobar">
+  	  <p><button onclick="back();">戻る</button></p>
+    </div>
+    <div id="link">
+  	  <p><button onclick="back();">戻る</button></p>
+  	  <ul>
+  	  	<li><a href="/?pcpage">PC版を開く</a></li>
+  	  	<li><a href="http://shogitter.com/" target="_blank">Shogitter</a></li>
+  	  	<li><a href="http://81.la/shogiwiki/" target="_blank">Shogi Wiki</a></li>
+  	  	<li><a href="http://81.la/cgi-bin/up/" target="_blank">アップローダ</a></li>
+  	  	<li><a href="http://chat.81.la/list" target="_blank">UserList</a></li>
+  	  	<li><a href="http://chat.81.la/log" target="_blank">Log</a></li>
+  	  	<li><a href="https://github.com/uhyo/socketchat" target="_blank">github</a></li>
+  	  </ul>
+    </div>
+  </body>
+</html>

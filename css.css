@@ -18,18 +18,32 @@ div.logs{
 #log p{
 	margin:0;
 }
-#log span.name.syslog{
+#log .name.syslog{
 	color:#0000ff !important;
 }
 #log span.main span.info{
 	font-size:smaller;
 	color:#cccccc;
-	padding-left:0.8ex;
+	margin-left:0.8ex;
 }
-#log span.name{
+#log span.main span.channels{
+	margin-left:1.5ex;
+	color:#0084b4;
+	cursor:pointer;
+}
+#log bdi.comment span.channels{
+	margin-left:0;
+}
+#log span.main span.channels:hover span.channel{
+	text-decoration:underline;
+}
+#log span.main span.channels:hover span.channel:hover ~ span.channel{
+	text-decoration:none;
+}
+#log .name{
 	font-weight:bold;
 }
-#log span.name:after{
+#log .name:after{
 	content:'> ';
 	font-weight:normal;
 }
@@ -69,6 +83,7 @@ span.small{
 }
 span.code{
 	font-family:monospace;
+	white-space: pre;
 }
 
 div.forms form{
@@ -89,9 +104,10 @@ div.forms p{
 .responding_tip.checked{
 	color:rgb(127,39,255);
 }
-li.rom{
+#info li.rom{
 	display: none;
 }
+
 /* コンソール風 */
 #console{
 	font-family:monospace;

@@ -1,11 +1,15 @@
 <!doctype html>
-<html>
+<html lang="ja">
   <head>
     <meta charset="UTF-8">
     <title>socket chat</title>
     <link href="/css.css" rel="stylesheet">
+    <script src="/settings.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/line.js"></script>
+    <script src="/client.js"></script>
+    <script src="/connection.js"></script>
+    <script src="/apiclient.js"></script>
 
     <script>
 Chat=new APIChat("log","info","infobar");
@@ -29,7 +33,7 @@ window.addEventListener('load',function(){
       <p><input name="uname" size="20" maxlength="25" required><input type="submit" value="入室"></p>
     </form>
     <form name="comment">
-      <p><input name="comment" size="70" autocomplete="off" required><input type="submit" value="発言"></p>
+      <p><input name="comment" size="60" autocomplete="off" required>#<input name="channel" size="10"><input type="submit" value="発言"></p>
       <input type="hidden" name="response" value="">
     </form>
   </div>
