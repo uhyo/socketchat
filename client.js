@@ -42,6 +42,10 @@ ChatClient.prototype={
 			document.styleSheets[0].insertRule(localStorage.socketchat_displaynone+"{display:none}", 0)
 		}
 
+		this.windowb = document.createElement("button");
+		this.windowb.addEventListener("click",function(){this.setWindowMode(!this.windowMode);}.bind(this));
+		this.setWindowMode(localStorage.soc_highchat_window=="true");
+		document.getElementById(this.infobarid).appendChild(this.windowb);
 		
 		this.responding_to=null;	//dd
 		
@@ -339,6 +343,11 @@ ChatClient.prototype={
 			this.bots=eval(localStorage.socketchat_bot)||[];
 		}catch(e){}
 	},
+	setWindowMode: function(flag){
+		this.windowMode = localStorage.soc_highchat_window = flag;
+		this.windowb.textContent = flag ? "窓#" : "欄#";
+	},
+	windowMode: null,
 	//クリック
 	click:function(e){
 		var t=e.target;
@@ -354,7 +363,17 @@ ChatClient.prototype={
 			return;
 		}else if(t.classList.contains("channel")&&t.dataset.channel){
 			//チャンネルだ
-			this.openChannel(t.dataset.channel);
+			if(this.windowMode){
+				this.openChannel(t.dataset.channel);
+			}else{
+				var chElem = document.forms["comment"].elements["channel"];
+				var comElem = document.forms["comment"].elements["comment"];
+				chElem.value = t.dataset.channel;
+				comElem.focus();
+				var evt = document.createEvent("HTMLEvents");  
+				evt.initEvent("change", true, false);  
+				chElem.dispatchEvent(evt); // イベントを強制的に発生させる
+			}
 			return;
 		}
 		//ログをクリックしたとき
