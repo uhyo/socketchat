@@ -35,7 +35,7 @@ ChatClient.prototype={
 		}
 		this.dischannel=[];	//channel list
 		if(localStorage.socketchat_dischannel){
-			JSON.parse(localStorage.socketchat_dischannel).forEach(this.addDischannel.bind(this));
+			JSON.parse(localStorage.socketchat_dischannel).forEach(function(ip){this.addDischannel(ip)}.bind(this));
 		}
 		
 		if(localStorage.socketchat_displaynone){
