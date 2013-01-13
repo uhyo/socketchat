@@ -110,7 +110,11 @@ ChatClient.prototype={
 				this.removeDischannel(lastChannel, true, true);
 			}
 			if(channel!=""){
-				this.addDischannel(channel, true, true);
+				if(channel==lastChannel){
+					this.focusChannel = "";
+				}else{
+					this.addDischannel(channel, true, true);
+				}
 			}
 		}.bind(this));
 		
