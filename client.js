@@ -103,19 +103,7 @@ ChatClient.prototype={
 			}
 		}.bind(this));
 		document.forms["comment"].elements["channel"].addEventListener("change", function(e){
-			var channel = e.target.value;
-			var lastChannel = this.focusChannel;
-			this.focusChannel = channel;
-			if(lastChannel!=""){
-				this.removeDischannel(lastChannel, true, true);
-			}
-			if(channel!=""){
-				if(channel==lastChannel){
-					this.focusChannel = "";
-				}else{
-					this.addDischannel(channel, true, true);
-				}
-			}
+			this.setFocusChannel(e.target.value);
 		}.bind(this));
 		
 		//フォームを用意
@@ -124,6 +112,18 @@ ChatClient.prototype={
 		this.line=new HighChatMaker(this,document.getElementById(this.infobarid));
 		
 		this.loadBot();
+	},
+	setFocusChannel: function(channel){
+		var lastChannel = this.focusChannel;
+		if(lastChannel==channel) channel="";
+		this.focusChannel = channel;
+		if(lastChannel!=""){
+			this.removeDischannel(lastChannel, true, true);
+		}
+		if(channel!=""){
+			this.addDischannel(channel, true, true);
+		}
+		if(document.forms["comment"].elements["channel"].value!=channel) document.forms["comment"].elements["channel"].value = channel;
 	},
 	//HottoMottoボタン初期化
 	prepareHottoMottoButton:function(){
@@ -371,13 +371,8 @@ ChatClient.prototype={
 			if(this.windowMode){
 				this.openChannel(t.dataset.channel);
 			}else{
-				var chElem = document.forms["comment"].elements["channel"];
-				var comElem = document.forms["comment"].elements["comment"];
-				chElem.value = t.dataset.channel;
-				comElem.focus();
-				var evt = document.createEvent("HTMLEvents");  
-				evt.initEvent("change", true, false);  
-				chElem.dispatchEvent(evt); // イベントを強制的に発生させる
+				this.setFocusChannel(t.dataset.channel);
+				document.forms["comment"].elements["comment"].focus();
 			}
 			return;
 		}
