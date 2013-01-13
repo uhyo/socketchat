@@ -16,6 +16,7 @@ ChatClient.prototype={
 		s.init(this,connection, channel);
 		return s;
 	},
+	focusChannel: "",
 	init:function(){
 		this.me={
 			//自分の情報
@@ -572,7 +573,7 @@ ChatClient.prototype={
 			localStorage.socketchat_dischannel=JSON.stringify(this.dischannel);
 		}
 		this.addCSSRules([
-			'#log p'+this.createDisCSS('[data-channel*="#'+channel+'#"]', temporal, anti),
+			'#log p'+this.createDisCSS('[data-channel|="'+this.line.createChannelDatasetString(channel)+'"]', temporal, anti),
 		]);
 		return true;
 	},
@@ -584,7 +585,7 @@ ChatClient.prototype={
 			localStorage.socketchat_dischannel=JSON.stringify(this.dischannel);
 		}
 		this.removeCSSRules([
-			'#log p'+this.createDisSelector('[data-channel*="#'+channel+'#"]', anti),
+			'#log p'+this.createDisSelector('[data-channel|="'+this.line.createChannelDatasetString(channel)+'"]', anti),
 		]);
 	},
 	createDisSelector: function(selector, anti){
@@ -595,18 +596,18 @@ ChatClient.prototype={
 		return this.createDisSelector(selector, anti)+(temporal ? "{opacity:0.3}" : "{display:none}");
 	},
 	addCSSRules: function(cssTexts){
+		console.log("addCSS", cssTexts);
 		if(!(cssTexts instanceof Array)) cssTexts=[cssTexts];
 		cssTexts.forEach(function(cssText){
-			console.log(cssText)
 			document.styleSheets.item(0).insertRule(cssText,0);
 		});
 	},
 	removeCSSRules: function(cssSelectors){
+		console.log("removeCSS", cssSelectors);
 		if(!(cssSelectors instanceof Array)) cssSelectors=[cssSelectors];
 		var css=document.styleSheets.item(0);
 		for(var i=css.cssRules.length-1; i>=0; i--){
 			var rule = css.cssRules[i];
-			console.log(rule.cssText);
 			if(cssSelectors.indexOf(rule.selectorText)>=0){
 				css.deleteRule(i);
 			}
