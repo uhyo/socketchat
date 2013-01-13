@@ -45,8 +45,7 @@ function channelview(){
 	}else{
 		v_true.style.display = 'inline';
 	}
-}
-function channelclose(){
+}function channelclose(){
 	var v_true = document.getElementById("channelview"); 
 	v_true.style.display = 'none';
 }
@@ -59,10 +58,6 @@ function back(){
 	v_false.style.display = 'none';
 	var v_true = document.getElementById("main"); 
 	v_true.style.display = 'block';
-}
-function channelreset(){
-	var hashtagbox = document.getElementsByName("channel")[0];
-	hashtagbox.value = "";
 }
 
 function hideAddrBar(){
@@ -80,7 +75,7 @@ function hideAddrBar(){
 	    <form name="comment">
 	      <p><input type="text" name="comment" size="35" autocomplete="off" required><input type="submit" value="発言"></p>
 	      <div id="channelview">
-	      <p>#<input type="text" name="channel" size="20"><button onclick="channelreset()">解除</button><button onclick="channelclose();">隠す</button></p>
+	      <p>#<input type="text" name="channel" size="20"><button onclick="channelclose();">隠す</button></p>
 	      </div>
 	      <input type="hidden" name="response" value="">
 	    </form>
