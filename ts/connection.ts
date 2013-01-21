@@ -14,7 +14,7 @@ module Chat{
     function getEventEmitter():EventEmitter{
         return new io.EventEmitter;
     }
-	class ChatConnection{
+    class ChatConnection{
         //ソケット
         private connection: EventEmitter;
         
@@ -48,7 +48,7 @@ module Chat{
         removeAllListeners(event?:string){
             this.connection.removeAllListeners(event);
         }
-	}	
+    }
     //Socket.ioを用いたコネクション
     class SocketConnection extends ChatConnection{
         private connection:EventEmitter;
