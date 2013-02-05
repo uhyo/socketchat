@@ -43,10 +43,6 @@ ChatClient.prototype={
 			document.styleSheets[0].insertRule(localStorage.socketchat_displaynone+"{display:none}", 0)
 		}
 
-		this.windowb = document.createElement("button");
-		this.windowb.addEventListener("click",function(){this.setWindowMode(!this.windowMode);}.bind(this));
-		this.setWindowMode(localStorage.soc_highchat_window=="true");
-		document.getElementById(this.infobarid).appendChild(this.windowb);
 		
 		this.responding_to=null;	//dd
 		
@@ -102,14 +98,23 @@ ChatClient.prototype={
 				}
 			}
 		}.bind(this));
-		document.forms["comment"].elements["channel"].addEventListener("change", function(e){
-			this.setFocusChannel(e.target.value);
-		}.bind(this));
+
+		//どこに書くべきかわからない by na2hiro
+		if(document.forms["comment"]){
+			document.forms["comment"].elements["channel"].addEventListener("change", function(e){
+				this.setFocusChannel(e.target.value);
+			}.bind(this));
+		}
 		
 		//フォームを用意
 		this.prepareForm();
 		this.prepareHottoMottoButton();
 		this.line=new HighChatMaker(this,document.getElementById(this.infobarid));
+
+		this.windowb = document.createElement("button");
+		this.windowb.addEventListener("click",function(){this.setWindowMode(!this.windowMode);}.bind(this));
+		this.setWindowMode(localStorage.soc_highchat_window=="true");
+		this.line.infobar.appendChild(this.windowb);
 		
 		this.loadBot();
 	},
