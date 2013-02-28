@@ -10,6 +10,7 @@
     <script src="/line.js"></script>
     <script src="/client.js"></script>
     <script src="/connection.js"></script>
+    <script src="/firefoxapp.js"></script>
 
     <script>
 chat=new SocketChat("log","info","infobar");
@@ -28,7 +29,7 @@ window.addEventListener('load',function(){
       <a href="/log" target="_blank">log</a>
       <a href="/apiclient">API</a>
       <a href="/com">com</a>
-      
+      <button id="installButton" hidden>インストール</button>
     </div>
     <form name="inout">
       <p><input name="uname" size="20" maxlength="25" required><input type="submit" value="入室"></p>
