@@ -1,0 +1,13 @@
+{
+  "name": "Socket Chat",
+  "description": "リアルタイムに動作するチャットです",
+  "launch_path": "/",
+  "icons": {
+    "128": "http://81.la/favicon.ico"
+  },
+  "developer": {
+    "name": "81.la",
+    "url": "http://81.la/"
+  },
+  "default_locale": "ja"
+}
