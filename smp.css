@@ -144,9 +144,6 @@ div#environment{
 	overflow: hidden;
 	background-color: white;
 }
-a#installButton{
-	display: none;
-}
 div#info span.usernumber{
 	font-size: 25px;
 	width: 100%;
@@ -200,4 +197,7 @@ div#environment ul li{
 	border-bottom:solid 1px #d9d9d9;
 	line-height:44px;
 	width: 100%
+}
+div#link ul li#installButtonLi{
+	display: none;
 }

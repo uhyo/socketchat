@@ -1,6 +1,7 @@
 // Webページの読み込みが終わってから処理開始
 document.addEventListener('DOMContentLoaded', function() {
     var installButton = document.getElementById('installButton');
+    var installButtonLi = document.getElementById('installButtonLi');
     // mozApps APIがあるかどうかのチェック
     if (!navigator.mozApps) {
         return;
@@ -12,6 +13,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!request.result) {
             // インストールボタンを表示
             installButton.style.display = 'inline-block';
+            installButton.hidden = false;
+            installButtonLi.style.display = 'block';
+            installButtonLi.hidden = false;
             // インストールボタンをクリックされた際の処理
             installButton.addEventListener('click', function() {
                 var thisUrl = location.href;
