@@ -144,7 +144,7 @@ div#environment{
 	overflow: hidden;
 	background-color: white;
 }
-button#installButton{
+a#installButton{
 	display: none;
 }
 div#info span.usernumber{
