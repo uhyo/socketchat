@@ -136,7 +136,7 @@ div#channelview{
 div#link{
 	display: none;
 }
-.gyozainfo{
+#infobar > button{
 	width: 100%;
 	height: 43px;
 	border-bottom: solid 1px #D9D9D9;
