@@ -60,7 +60,6 @@ div.logs{
 	margin-left: 1px;
 	margin-right: 0;
 }
-
 ul.users{
 	margin:0;
 }
@@ -81,7 +80,6 @@ span.code{
 	font-family:monospace;
 	white-space: pre;
 }
-
 div.forms form{
 	display:block;
 }
@@ -108,7 +106,6 @@ input[type=text]{
 #log img{
 	vertical-align:middle;
 }
-
 .responding_tip{
 	color:rgb(255,127,39);
 	cursor:pointer;
@@ -134,6 +131,9 @@ div#channelview{
 	display: none;
 }
 div#link{
+	display: none;
+}
+div#environment{
 	display: none;
 }
 #infobar > button{
@@ -187,4 +187,17 @@ div#link ul li a{
 	overflow:hidden;
 	white-space:nowrap;
 	text-overflow:ellipsis;
+}
+div#environment ul{
+	padding: 0;
+}
+div#environment ul li{
+	display: block;
+	height:40px;
+	border-bottom:solid 1px #d9d9d9;
+	line-height:44px;
+	width: 100%
+}
+div#link ul li#installButtonLi{
+	display: none;
 }
