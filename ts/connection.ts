@@ -1,6 +1,6 @@
 declare var io:any;
 module Chat{
-    interface EventEmitter{
+    export interface EventEmitter{
         addListener:(event:string,listener:(...args:any[])=>any)=>void;
         on:(event:string,listener:(...args:any[])=>any)=>void;
         once:(event:string,listener:(...args:any[])=>any)=>void;
@@ -11,7 +11,7 @@ module Chat{
     }
     
     //EventEmitter constructor
-    function getEventEmitter():EventEmitter{
+    export function getEventEmitter():EventEmitter{
         return new io.EventEmitter;
     }
     export class ChatConnection{
