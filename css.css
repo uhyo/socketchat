@@ -58,7 +58,7 @@ div.logs{
 	margin:0 0 0 3em;
 }
 
-div#info{
+div.userinfo{
 	position:fixed;
 	right:10px;
 	bottom:0px;
@@ -104,7 +104,7 @@ div.forms p{
 .responding_tip.checked{
 	color:rgb(127,39,255);
 }
-#info li.rom{
+.userinfo li.rom{
 	display: none;
 }
 

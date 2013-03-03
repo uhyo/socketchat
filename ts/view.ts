@@ -13,6 +13,7 @@ module Chat{
     export class ChatView{
         private container:HTMLElement;
         private logView:ChatLogView;
+        private userView:ChatUserView;
 
         init(connection:ChatConnection,receiver:ChatReceiver):void{
             this.container=document.createElement("div");
@@ -23,8 +24,12 @@ module Chat{
             //ログ表示部分を初期化
             this.logView=new ChatLogView;
             this.logView.init(receiver);
+            //ユーザー一覧部分を初期化
+            this.userView=new ChatUserView;
+            this.userView.init(receiver);
             //UIを組もう!
             this.container.appendChild(this.logView.getContainer());
+            this.container.appendChild(this.userView.getContainer());
         }
         getContainer():HTMLElement{
             return this.container;
@@ -205,5 +210,118 @@ module Chat{
         createChannelDatasetString(channel:string):string{
             return channel.replace(/\//g,"-");
         }
+    }
+    //チャットのユーザー一覧を表示するやつ
+    export class ChatUserView{
+        private container:HTMLElement;
+        private userNumber:HTMLElement;
+        private userList:HTMLElement;
+        private receiver:ChatReceiver;
+        init(receiver:ChatReceiver):void{
+            this.receiver=receiver;
+            this.container=document.createElement("div");
+            this.container.classList.add("userinfo");
+            //ユーザー数表示部分
+            this.userNumber=document.createElement("div");
+            this.userNumber.classList.add("usernumber");
+            this.userNumber.dataset.roms="0";
+            this.userNumber.dataset.actives="0";
+            this.container.appendChild(this.userNumber);
+            //リスト部分
+            this.userList=document.createElement("ul");
+            this.userList.classList.add("users");
+            this.container.appendChild(this.userList);
+            //ユーザー情報を監視
+            receiver.on("userinit",this.userinit.bind(this));
+            receiver.on("newuser",this.newuser.bind(this));
+            receiver.on("deluser",this.deluser.bind(this));
+            receiver.on("inout",this.inout.bind(this));
+        }
+        getContainer():HTMLElement{
+            return this.container;
+        }
+        //処理用
+        userinit(data:{users:UserObj[];roms:number;active:number;}):void{
+            //リストの中を初期化
+            var r=document.createRange();
+            r.selectNodeContents(this.userList);
+            r.deleteContents();
+            r.detach();
+            //数の情報を更新
+            this.userNumber.dataset.actives="0";
+            this.userNumber.dataset.roms="0";
+            data.users.forEach(this.newuser,this);
+        }
+        //人数をセットして反映
+        setusernumber(actives:number,roms:number):void{
+            var dataset=this.userNumber.dataset;
+            dataset.actives=String(parseInt(dataset.actives)+actives);
+            dataset.roms=String(parseInt(dataset.roms)+roms);
+            this.userNumber.textContent="入室"+dataset.actives+(dataset.roms!==0? " (ROM"+dataset.roms+")":"");
+        }
+        newuser(user:UserObj):void{
+            if(user.rom){
+                //romだ!(数だけ変更)
+                //rom+1
+                this.setusernumber(0, 1);
+                return;
+            }
+            //activeユーザー追加
+            this.setusernumber(1, 0);
+            this.newuserinfo(user);
+        }
+        newuserinfo(user:UserObj):void{
+            var li:HTMLElement=document.createElement("li");
+            var sp:HTMLElement=document.createElement("span");
+            sp.textContent=user.name;
+            sp.title=user.ip+" / "+user.ua;
+            li.dataset.id=user.id;
+            li.dataset.ip=user.ip;
+            li.appendChild(sp);
+            this.userList.appendChild(li);
+        }
+        //誰かがお亡くなりに
+        deluser(userid:number):void{
+            var elem=this.getUserElement(userid);
+            if(!elem){
+                //ROMユーザーだろう
+                this.setusernumber(0, -1);
+                return;
+            }
+            //アクティブユーザーだ
+            this.setusernumber(-1, 0);
+            this.userList.removeChild(elem);
+        }
+        //そのユーザーを表すやつを手に入れる
+        getUserElement(id:number):HTMLElement{
+            var lis=this.userList.childNodes;
+            for(var i=0,l=lis.length;i<l;i++){
+                var dataset=(<HTMLElement>lis[i]).dataset;
+                console.log(dataset);
+                if(dataset && dataset.id===String(id)){
+                    return <HTMLElement>lis[i];
+                }
+            }
+            return null;
+        }
+        //誰かが入退室した
+        inout(user:UserObj):void{
+            var elem=this.getUserElement(user.id);
+            console.log(user,elem);
+            if(elem){
+                //古いのはいらない
+                this.userList.removeChild(elem);
+            }
+            if(user.rom){
+                //activeからromになった
+                this.setusernumber(-1, 1);
+            }else{
+                //romからactiveになった
+                this.setusernumber(1, -1);
+                //用意してあげる
+                this.newuserinfo(user);
+            }
+        }
+
     }
 }

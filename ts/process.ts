@@ -14,7 +14,7 @@ module Chat{
     }
     //ユーザーオブジェクト
     export interface UserObj {
-        id:string;  //Id
+        id:number;  //Id
         name:string;
         ip:string;
         rom:bool;
