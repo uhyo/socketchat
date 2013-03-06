@@ -31,13 +31,7 @@ ChatClient.prototype={
 		
 		this.bots=[];
 		this.disip=[];	//IP list
-		if(localStorage.socketchat_disip){
-			JSON.parse(localStorage.socketchat_disip).forEach(this.addDisip.bind(this));
-		}
 		this.dischannel=[];	//channel list
-		if(localStorage.socketchat_dischannel){
-			JSON.parse(localStorage.socketchat_dischannel).forEach(function(ip){this.addDischannel(ip)}.bind(this));
-		}
 		
 		if(localStorage.socketchat_displaynone){
 			document.styleSheets[0].insertRule(localStorage.socketchat_displaynone+"{display:none}", 0)
@@ -117,6 +111,13 @@ ChatClient.prototype={
 		this.line.infobar.appendChild(this.windowb);
 		
 		this.loadBot();
+
+		if(localStorage.socketchat_disip){
+			JSON.parse(localStorage.socketchat_disip).forEach(this.addDisip.bind(this));
+		}
+		if(localStorage.socketchat_dischannel){
+			JSON.parse(localStorage.socketchat_dischannel).forEach(function(ip){this.addDischannel(ip)}.bind(this));
+		}
 	},
 	setFocusChannel: function(channel){
 		var lastChannel = this.focusChannel;
