@@ -1,4 +1,4 @@
-//TypeScriptが知らないので自分でサポート
+//HTML5 additions for TypeScript lib
 interface HTMLTimeElement extends HTMLElement{
     dateTime?:string;
 }
@@ -14,20 +14,22 @@ module Chat{
         private container:HTMLElement;
         private logView:ChatLogView;
         private userView:ChatUserView;
+        private ui:ChatUI;
 
-        init(connection:ChatConnection,receiver:ChatReceiver):void{
+        init(userData:ChatUserData,connection:ChatConnection,receiver:ChatReceiver,process:ChatProcess):void{
             this.container=document.createElement("div");
             //コンテナはbodyに入れる
             document.body.setAttribute('role','application');
             document.body.appendChild(this.container);
 
             //ログ表示部分を初期化
-            this.logView=new ChatLogView;
-            this.logView.init(receiver);
+            this.logView=new ChatLogView(receiver);
             //ユーザー一覧部分を初期化
-            this.userView=new ChatUserView;
-            this.userView.init(receiver);
+            this.userView=new ChatUserView(receiver);
+            //ユーザー操作部分を初期化
+            this.ui=new ChatUI(userData,receiver,process);
             //UIを組もう!
+            this.container.appendChild(this.ui.getContainer());
             this.container.appendChild(this.logView.getContainer());
             this.container.appendChild(this.userView.getContainer());
         }
@@ -38,11 +40,9 @@ module Chat{
     //ログ表示部分
     export class ChatLogView{
         private container:HTMLElement;
-        private receiver:ChatReceiver;
         private lineMaker:ChatLineMaker=new ChatLineMaker;
 
-        init(receiver:ChatReceiver):void{
-            this.receiver=receiver;
+        constructor(private receiver:ChatReceiver){
             this.container=document.createElement("div");
             this.container.setAttribute('role','log');
             this.container.classList.add("logbox");
@@ -216,9 +216,7 @@ module Chat{
         private container:HTMLElement;
         private userNumber:HTMLElement;
         private userList:HTMLElement;
-        private receiver:ChatReceiver;
-        init(receiver:ChatReceiver):void{
-            this.receiver=receiver;
+        constructor(private receiver:ChatReceiver){
             this.container=document.createElement("div");
             this.container.classList.add("userinfo");
             //ユーザー数表示部分
@@ -323,5 +321,154 @@ module Chat{
             }
         }
 
+    }
+    //発言などのUI部分
+    export class ChatUI{
+        private container:HTMLElement;
+        //パーツたち
+        private inoutForm:ChatUICollection.InoutForm;
+        private commentForm:ChatUICollection.CommentForm;
+
+        constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess){
+            this.container=document.createElement("div");
+            this.container.classList.add("ui");
+            //フォーム用意
+            //まず入退室フォーム
+            this.inoutForm=new ChatUICollection.InoutForm(this.userData,this.receiver,this.process);
+            this.container.appendChild(this.inoutForm.getContainer());
+            //次に発言フォーム
+            this.commentForm=new ChatUICollection.CommentForm(this.userData,this.receiver,this.process);
+            this.container.appendChild(this.commentForm.getContainer());
+        }
+        getContainer():HTMLElement{
+            return this.container;
+        }
+    }
+    //UIパーツ
+    export module ChatUICollection{
+        export class UIObject{
+            private event:EventEmitter;
+            private container:HTMLElement;
+            constructor(){
+                this.event=getEventEmitter();
+            }
+            getContainer():HTMLElement{
+                return this.container;
+            }
+            //inputを作る
+            makeinput(callback:(input:HTMLInputElement)=>void):HTMLInputElement{
+                var result=<HTMLInputElement>document.createElement("input");
+                callback(result);
+                return result;
+            }
+        }
+        //入退室フォーム
+        export class InoutForm extends UIObject{
+            private event:EventEmitter;
+            private container:HTMLFormElement;
+            constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess){
+                super();
+                this.container=<HTMLFormElement>document.createElement("form");
+                var p:HTMLParagraphElement;
+
+                p=<HTMLParagraphElement>document.createElement("p");
+                this.container.appendChild(p);
+
+                //まず名前フォーム
+                p.appendChild(this.makeinput(input=>{
+                    input.name="uname";
+                    input.size=20;
+                    input.maxLength=25;
+                    input.required=true;
+                    input.placeholder="名前";
+                    //最初
+                    input.value = this.userData.name || "";
+                }));
+                //入退室ボタン
+                p.appendChild(this.makeinput(input=>{
+                    input.name="inoutbutton";
+                    input.type="submit";
+                    input.value="入室";
+                }));
+                //入退室時にフォームがかわる
+                this.receiver.on("userinfo",(data:{name:string;rom:bool;})=>{
+                    (<HTMLInputElement>this.container.elements["uname"]).disabled = !data.rom;
+                    (<HTMLInputElement>this.container.elements["inoutbutton"]).value = data.rom ? "入室" : "退室";
+                });
+                this.container.addEventListener("submit",(e:Event)=>{
+                    e.preventDefault();
+                    this.emitInout(e);
+                },false);
+            }
+            //入退室ボタンが押されたときの処理
+            emitInout(e:Event):void{
+                var data:InoutNotify={
+                    name:(<HTMLInputElement>this.container.elements["uname"]).value,
+                };
+                this.event.emit("inout",data);
+            }
+            onInout(func:(data:InoutNotify)=>void):void{
+                this.event.on("inout",func);
+            }
+        }
+        //入退室フォーム
+        export class CommentForm extends UIObject{
+            private event:EventEmitter;
+            private container:HTMLFormElement;
+            constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess){
+                super();
+                this.container=<HTMLFormElement>document.createElement("form");
+                var p:HTMLParagraphElement;
+
+                p=<HTMLParagraphElement>document.createElement("p");
+                this.container.appendChild(p);
+
+                //発言欄
+                p.appendChild(this.makeinput(input=>{
+                    input.name="comment";
+                    input.type="text";
+                    input.size=60;
+                    input.autocomplete="off";
+                    input.required=true;
+                }));
+                p.appendChild(document.createTextNode("#"));
+                //チャネル欄
+                p.appendChild(this.makeinput(input=>{
+                    input.name="channel";
+                    input.type="text";
+                    input.size=10;
+                }));
+                //発言ボタン
+                p.appendChild(this.makeinput(input=>{
+                    input.name="commentbutton";
+                    input.type="submit";
+                    input.value="発言";
+                }));
+                this.container.addEventListener("submit",(e:Event)=>{
+                    e.preventDefault();
+                    this.emitComment(e);
+                },false);
+
+            }
+            //入退室ボタンが押されたときの処理
+            emitComment(e:Event):void{
+                var form=this.container;
+                //チャネル
+                var channel:string[]=null;
+                var channelvalue:string=(<HTMLInputElement>form.elements["channel"]).value;
+                if(channelvalue){
+                    channel=[channelvalue];
+                }
+                var data:CommentNotify={
+                    comment:(<HTMLInputElement>form.elements["comment"]).value,
+                    response:null,
+                    channel:channel,
+                };
+                this.event.emit("comment",data);
+            }
+            onComment(func:(data:CommentNotify)=>void):void{
+                this.event.on("comment",func);
+            }
+        }
     }
 }

@@ -33,7 +33,7 @@ module Chat{
             //What setting?
             c.initConnection({});
             //channel?
-            c.register(userData.getLastid(),null);
+            c.register(userData.lastid,null);
             return c;
         }
         //ログレシーバを作る
@@ -49,7 +49,7 @@ module Chat{
         //ビューを作る
         makeView():ChatView{
             var v:ChatView=new ChatView;
-            v.init(this.connection,this.receiver);
+            v.init(this.userData,this.connection,this.receiver,this.process);
             return v;
         }
     }

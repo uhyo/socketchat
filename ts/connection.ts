@@ -197,7 +197,7 @@ module Chat{
         }
     }
     //子どもへ送る処理に感するサブモジュール
-    module ChatHub{
+    export module ChatHub{
         //ハブ（自分から派生した子ウィンドウに送ってあげる）
         export class Hub{
             private children:Child[];
@@ -225,7 +225,7 @@ module Chat{
             }
         }
         //ハブでつながった子ども
-        class Child{
+        export class Child{
             //内部利用のEmitter
             private event:EventEmitter;
             //ハンドラとリクエストIDを対応付けるマップ

@@ -20,24 +20,33 @@ module Chat{
         rom:bool;
         ua:string;
     }
+    //サーバーへ送る用だ!
+    //入退室通知オブジェクト
+    export interface InoutNotify{
+        name:string;
+    }
+    //発言通知オブジェクト
+    export interface CommentNotify{
+        comment:string;
+        response:string;    //log id
+        channel:string[];
+    }
+
+    //-----------------
     //ユーザーの情報を保存するぞ!
     export class ChatUserData{
         //lastid: 最後のsessionid
-        private lastid:string;
-        setLastid(id:string):void{
-            this.lastid=id;
-            this.save();
-        }
-        getLastid():string{
-            return this.lastid;
-        }
+        public lastid:string;
+        public name:string;    //ユーザー名
         //読み込み
         load():void{
             this.lastid = localStorage.getItem("lastid") || null;
+            this.name = localStorage.getItem("socketchat_name") || null;
         }
         //保存
         save():void{
-            localStorage.setItem("lastid",this.lastid);
+            if("string"===typeof this.lastid)localStorage.setItem("lastid",this.lastid);
+            if("string"===typeof this.name)localStorage.setItem("socketchat_name",this.name);
         }
 
     }
