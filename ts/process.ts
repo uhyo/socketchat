@@ -40,12 +40,18 @@ module Chat{
         public name:string;    //ユーザー名
         public gyoza:number;    //Gyazo設定(0～2)
         public volume:number;   //ボリューム(0～100)
+        public channelMode:number;  //チャネル開き方設定(0～1)
+        public dischannel:string[]; //dischannel対象一覧
         //読み込み
         load():void{
             this.lastid = localStorage.getItem("lastid") || null;
             this.name = localStorage.getItem("socketchat_name") || null;
             this.gyoza= Number(localStorage.getItem("gyoza")) || 0;
             this.volume=Number(localStorage.getItem("volume"))|| 50;
+            this.channelMode= Number(localStorage.getItem("channelMode")) || 0;
+            //dischannel
+            var disc=localStorage.getItem("dischannel");
+            this.dischannel = disc ? JSON.parse(disc) : [];
         }
         //保存
         save():void{
@@ -53,6 +59,8 @@ module Chat{
             if("string"===typeof this.name)localStorage.setItem("socketchat_name",this.name);
             localStorage.setItem("gyoza",String(this.gyoza));
             localStorage.setItem("volume",String(this.volume));
+            localStorage.setItem("channelMode",String(this.channelMode));
+            localStorage.setItem("dischannel",JSON.stringify(this.dischannel));
         }
 
     }

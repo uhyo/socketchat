@@ -27,7 +27,7 @@ module Chat{
             //設定・リンク部分を初期化
             this.settingView=new ChatSettingView(userData,this);
             //ログ表示部分を初期化
-            this.logView=new ChatLogView(userData,receiver);
+            this.logView=new ChatLogView(userData,receiver,this);
             //ユーザー一覧部分を初期化
             this.userView=new ChatUserView(receiver);
             //ユーザー操作部分を初期化
@@ -42,6 +42,10 @@ module Chat{
         changeGyoza():void{
             //logViewに丸投げ
             this.logView.changeGyoza();
+        }
+        //発言欄にフォーカスする
+        focusComment(channel?:string):void{
+            this.ui.focusComment(channel);
         }
         getContainer():HTMLElement{
             return this.container;
@@ -89,6 +93,8 @@ module Chat{
         ];
         //餃子セッティング一覧
         private gyozaSettings:string[]=["餃子無展開","餃子オンマウス","餃子常時"];
+        //チャネルセッティング一覧
+        private channelSettings:string[]=["欄#","窓#"];
         constructor(private userData:ChatUserData,private view:ChatView){
             this.container=document.createElement("div");
             this.container.classList.add("infobar");
@@ -98,6 +104,8 @@ module Chat{
             this.container.appendChild(this.makeGyozaButton());
             //ボリューム操作生成
             this.container.appendChild(this.makeVolumeRange());
+            //チャネル開き方
+            this.container.appendChild(this.makeChannelModeButton());
         }
         makeLinks():DocumentFragment{
             var df=document.createDocumentFragment();
@@ -152,6 +160,19 @@ module Chat{
             },false);
             return range;
         }
+        makeChannelModeButton():HTMLElement{
+            var button:HTMLInputElement=<HTMLInputElement>document.createElement("input");
+            var ud=this.userData;
+            button.type="button";
+            button.value=this.channelSettings[ud.channelMode];
+            button.addEventListener("click",(e:Event)=>{
+                //クリックされたら変更
+                ud.channelMode=(ud.channelMode+1)%this.channelSettings.length;
+                button.value=this.channelSettings[ud.channelMode];
+                ud.save();
+            },false);
+            return button;
+        }
 
         getContainer():HTMLElement{
             return this.container;
@@ -162,23 +183,29 @@ module Chat{
         private container:HTMLElement;
         private lineMaker:ChatLineMaker;
         private gyozaOnmouseListener:Function;
+        private audio:HTMLAudioElement;
+        //dis管理
+        private dis:ChatLogDisManager;
 
-        constructor(private userData:ChatUserData,private receiver:ChatReceiver){
-            this.lineMaker=new ChatLineMaker(userData);
+        constructor(private userData:ChatUserData,private receiver:ChatReceiver,private view:ChatView){
             this.container=document.createElement("div");
             this.container.setAttribute('role','log');
             this.container.classList.add("logbox");
+            setUniqueId(this.container,"log");
+            this.lineMaker=new ChatLineMaker(userData,this);
+            //disマネージャ
+            this.dis=new ChatLogDisManager(userData,this);
             //流れてきたログをキャッチ!!
             //ログたくさんきた
             receiver.on("loginit",(logs:LogObj[])=>{
                 //逆にしてアレする
                 logs.reverse().forEach((log:LogObj)=>{
-                    this.getLog(log);
+                    this.getLog(log,true);
                 });
             });
             //ログひとつきた
             receiver.on("log",(log:LogObj)=>{
-                this.getLog(log);
+                this.getLog(log,false);
             });
             //餃子オンマウス用の処理入れる
             this.gyozaOnmouseListener=((e:Event)=>{
@@ -193,14 +220,29 @@ module Chat{
                 this.lineMaker.checkGyoza(t);
             }).bind(this);
             this.changeGyoza(); //初期設定
+            //オーディオ準備
+            this.audio=this.getAudio("/sound");
+            //クリックに対応する
+            this.container.addEventListener("click",<(e:Event)=>void>this.clickHandler.bind(this),false);
         }
         getContainer():HTMLElement{
             return this.container;
         }
         //ログを一つ追加
-        getLog(obj:LogObj):void{
+        getLog(obj:LogObj,initmode:bool):void{
+            //initmode: それがログ初期化段階かどうか
             var line:HTMLElement=this.lineMaker.make(obj);
             this.container.insertBefore(line,this.container.firstChild);
+            //音を鳴らす
+            if(!initmode && this.userData.volume>0){
+                //音鳴らす判定を入れる
+                //この判定でいいの?
+                var style=(<any>document.defaultView).getComputedStyle(line,null);
+                if(style.display!=="none"){
+                    this.audio.volume=this.userData.volume/100;
+                    this.audio.play();
+                }
+            }
         }
         //餃子モード変更された
         changeGyoza():void{
@@ -211,6 +253,119 @@ module Chat{
                 //他なら消去
                 this.container.removeEventListener("mouseover",<(e:Event)=>void>this.gyozaOnmouseListener,false);
             }
+        }
+        //オーディオ初期化
+        getAudio(filename:string):HTMLAudioElement{
+            var audio:HTMLAudioElement;
+            try{
+                audio=new Audio();
+                audio.removeAttribute("src");
+                ["ogg","mp3","wav"].forEach((ext:string)=>{
+                    var source=<HTMLSourceElement>document.createElement("source");
+                    source.src=filename+"."+ext;
+                    source.type="audio/"+ext;
+                    audio.appendChild(source);
+                });
+            }catch(e){
+                //オーディオなんてなかった
+                audio=<HTMLAudioElement>{play:function(){}};
+            }
+            return audio;
+        }
+        //ログのクリックに対応
+        clickHandler(e:Event):void{
+            var t=<HTMLElement>e.target;
+            if(t.classList.contains("channel") && t.dataset.channel){
+                //チャンネルだ
+                if(this.userData.channelMode===0){
+                    //欄#
+                    var channel=this.dis.setFocusChannel(t.dataset.channel);
+                    this.view.focusComment(channel);
+                }
+            }
+        }
+        //?????
+        createChannelDatasetString(channel:string):string{
+            return channel.replace(/\//g,"-");
+        }
+    }
+    export class ChatLogDisManager{
+        //今フォーカスしているチャネル
+        private focusedChannel:string=null;
+
+        constructor(private userData:ChatUserData,private logView:ChatLogView){
+        }
+        //チャネルにフォーカスする（現在のチャネルを買えす）
+        setFocusChannel(channel:string):string{
+            var lastChannel:string=this.focusedChannel;
+            if(lastChannel===channel)channel=null;
+            this.focusedChannel=channel;
+            if(lastChannel!==null){
+                this.removeDischannel(lastChannel,true,true);
+            }
+            if(channel!==null){
+                this.addDischannel(channel,true,true);
+            }
+            return channel;
+                
+        }
+        //disChannel用のcssルールを作る
+        //attribute=要素セレクタにつける属性
+        createDisCSSSelector(attribute:string,temporal:bool,anti:bool):string{
+            if(anti){
+                //逆
+                attribute=":not("+attribute+")";
+            }
+            return "#"+this.logView.getContainer().id+" p"+attribute;
+        }
+        createDisCSSRule(attribute:string, temporal:bool,anti:bool):string{
+            var selector:string=this.createDisCSSSelector(attribute,temporal,anti);
+            var body= temporal ? "opacity:0.3;" : "display:none;";
+            return selector+"{"+body+"}";
+        }
+        //CSSルールを追加する
+        addCSSRules(cssTexts:string[]):void{
+            if(document.styleSheets.length===0){
+                //style!
+                var style=document.createElement("style");
+                document.head.appendChild(style);
+            }
+            cssTexts.forEach((cssText:string)=>{
+                (<CSSStyleSheet>document.styleSheets.item(0)).insertRule(cssText,0);
+            });
+        }
+        removeCSSRules(cssSelectors:string[]):void{
+            var css=<CSSStyleSheet>document.styleSheets.item(0);
+            for(var i=css.cssRules.length-1;i>=0;i--){
+                var rule=<CSSStyleRule>css.cssRules[i];
+                if(cssSelectors.indexOf(rule.selectorText)>=0){
+                    css.deleteRule(i);
+                }
+            }
+        }
+        //disChannelを追加する
+        //temporal: 一時的（保存しない） anti:逆（特定のやつ以外dis）
+        addDischannel(channel:string,temporal:bool,anti:bool):bool{
+            var ud=this.userData;
+            if(ud.dischannel.indexOf(channel)>=0)return false;
+            if(!temporal){
+                ud.dischannel.push(channel);
+                ud.save();
+            }
+            this.addCSSRules([
+                this.createDisCSSRule('[data-channel|="'+this.logView.createChannelDatasetString(channel)+'"]',temporal,anti),
+            ]);
+            return true;
+        }
+        removeDischannel(channel:string,temporal:bool,anti:bool):void{
+            var ud=this.userData;
+            if(!temporal){
+                ud.dischannel=ud.dischannel.filter((x:string)=>x!==channel);
+                ud.save();
+            }
+            this.removeCSSRules([
+                this.createDisCSSSelector('[data-channel|="'+this.logView.createChannelDatasetString(channel)+'"]',temporal,anti),
+            ]);
         }
     }
     export interface GyazoSettingObject{
@@ -270,7 +425,7 @@ module Chat{
                 }
             }
         ];
-        constructor(private userData:ChatUserData){
+        constructor(private userData:ChatUserData,private logView:ChatLogView){
         }
         make(obj:LogObj):HTMLParagraphElement{
             var p=<HTMLParagraphElement>document.createElement("p");
@@ -304,7 +459,7 @@ module Chat{
                     }
                 }
                 //コメントにも情報付加
-                p.dataset.channel=c.map((ch:string)=>this.createChannelDatasetString(ch)).join(" ");
+                p.dataset.channel=c.map((ch:string)=>this.logView.createChannelDatasetString(ch)).join(" ");
             }
             //時間などの情報
             var info=document.createElement("span");
@@ -409,10 +564,6 @@ module Chat{
                 })(i,channels[i]));
             }
             return span;
-        }
-        //?????
-        createChannelDatasetString(channel:string):string{
-            return channel.replace(/\//g,"-");
         }
         //ログを解析して追加する
         parse(rawnode:Node):void{
@@ -735,6 +886,10 @@ module Chat{
         getContainer():HTMLElement{
             return this.container;
         }
+        //発言欄にフォーカスする
+        focusComment(channel?:string):void{
+            this.commentForm.focus(channel);
+        }
     }
     //UIパーツ
     export module ChatUICollection{
@@ -863,6 +1018,22 @@ module Chat{
             onComment(func:(data:CommentNotify)=>void):void{
                 this.event.on("comment",func);
             }
+            //フォーカスする(チャネル指定可能）
+            focus(channel?:string):void{
+                (<HTMLInputElement>this.container.elements["comment"]).focus();
+                (<HTMLInputElement>this.container.elements["channel"]).value= channel ? channel : "";
+            }
         }
+    }
+    //その他util
+    function setUniqueId(element:HTMLElement,base:string):void{
+        if(!document.getElementById(base)){
+            element.id=base;
+            return;
+        }
+        var number=0;
+        while(document.getElementById(base+number))number++;
+        element.id=base+number;
+        return;
     }
 }
