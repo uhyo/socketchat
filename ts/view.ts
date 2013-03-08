@@ -4,6 +4,7 @@ interface HTMLTimeElement extends HTMLElement{
 }
 interface HTMLElement{
     dataset:any;
+    hidden:bool;
 }
 module Chat{
 /// <reference path="connection.ts"/>
@@ -12,6 +13,7 @@ module Chat{
     //チャット外観の全体
     export class ChatView{
         private container:HTMLElement;
+        private settingView:ChatSettingView;
         private logView:ChatLogView;
         private userView:ChatUserView;
         private ui:ChatUI;
@@ -22,17 +24,135 @@ module Chat{
             document.body.setAttribute('role','application');
             document.body.appendChild(this.container);
 
+            //設定・リンク部分を初期化
+            this.settingView=new ChatSettingView(userData,this);
             //ログ表示部分を初期化
-            this.logView=new ChatLogView(receiver);
+            this.logView=new ChatLogView(userData,receiver);
             //ユーザー一覧部分を初期化
             this.userView=new ChatUserView(receiver);
             //ユーザー操作部分を初期化
             this.ui=new ChatUI(userData,receiver,process);
             //UIを組もう!
+            this.container.appendChild(this.settingView.getContainer());
             this.container.appendChild(this.ui.getContainer());
             this.container.appendChild(this.logView.getContainer());
             this.container.appendChild(this.userView.getContainer());
         }
+        //餃子モードが変更された
+        changeGyoza():void{
+            //logViewに丸投げ
+            this.logView.changeGyoza();
+        }
+        getContainer():HTMLElement{
+            return this.container;
+        }
+    }
+    //設定・リンク部分
+    export class ChatSettingView{
+        private container:HTMLElement;
+        //リンク一覧
+        private links:{url:string;name:string;}[]=[
+            {
+                url:"http://shogitter.com/",
+                name:"将棋",
+            },
+            {
+                url:"http://81.la/shogiwiki/",
+                name:"wiki",
+            },
+            {
+                url:"http://81.la/cgi-bin/up/",
+                name:"up",
+            },
+            {
+                //セパレータ
+                url:null,
+                name:null,
+            },
+            {
+                url:"/list",
+                name:"list",
+            },
+            {
+                url:"/log",
+                name:"log",
+            },
+            {
+                url:"/apiclient",
+                name:"API",
+            },
+            {
+                url:"/com",
+                name:"com",
+            },
+
+        ];
+        //餃子セッティング一覧
+        private gyozaSettings:string[]=["餃子無展開","餃子オンマウス","餃子常時"];
+        constructor(private userData:ChatUserData,private view:ChatView){
+            this.container=document.createElement("div");
+            this.container.classList.add("infobar");
+            //まずリンク生成
+            this.container.appendChild(this.makeLinks());
+            //次に餃子ボタン生成
+            this.container.appendChild(this.makeGyozaButton());
+            //ボリューム操作生成
+            this.container.appendChild(this.makeVolumeRange());
+        }
+        makeLinks():DocumentFragment{
+            var df=document.createDocumentFragment();
+
+            for(var i=0,l=this.links.length;i<l;i++){
+                var o=this.links[i];
+                if(o.url){
+                    var a=<HTMLAnchorElement>document.createElement("a");
+                    a.href=o.url;
+                    a.target="_blank";
+                    a.textContent=o.name;
+                    df.appendChild(a);
+                    //スペース開ける
+                    df.appendChild(document.createTextNode(" "));
+                }else{
+                    //セパレータ
+                    df.appendChild(document.createTextNode("| "));
+                }
+            }
+            return df;
+        }
+        makeGyozaButton():HTMLElement{
+            var button:HTMLInputElement=<HTMLInputElement>document.createElement("input");
+            var ud=this.userData;
+            button.type="button";
+            button.value=this.gyozaSettings[ud.gyoza];
+            button.addEventListener("click",(e:Event)=>{
+                //クリックされたら変更
+                ud.gyoza=(ud.gyoza+1)%this.gyozaSettings.length;
+                button.value=this.gyozaSettings[ud.gyoza];
+                ud.save();
+                //ビューに変更を知らせる
+                this.view.changeGyoza();
+            },false);
+            return button;
+        }
+        makeVolumeRange():HTMLElement{
+            var range=<HTMLInputElement>document.createElement("input");
+            var ud=this.userData;
+            range.type="range";
+            range.min="0", range.max="100", range.step="10";
+            range.value=String(ud.volume);
+            //変更時
+            var timerid=null;
+            range.addEventListener("change",(e:Event)=>{
+                //毎回saveするのは気持ち悪い。操作終了を待つ
+                ud.volume=Number(range.value);
+                clearTimeout(timerid);
+                timerid=setTimeout(()=>{
+                    ud.save();
+                },1000);
+            },false);
+            return range;
+        }
+
         getContainer():HTMLElement{
             return this.container;
         }
@@ -40,9 +160,11 @@ module Chat{
     //ログ表示部分
     export class ChatLogView{
         private container:HTMLElement;
-        private lineMaker:ChatLineMaker=new ChatLineMaker;
+        private lineMaker:ChatLineMaker;
+        private gyozaOnmouseListener:Function;
 
-        constructor(private receiver:ChatReceiver){
+        constructor(private userData:ChatUserData,private receiver:ChatReceiver){
+            this.lineMaker=new ChatLineMaker(userData);
             this.container=document.createElement("div");
             this.container.setAttribute('role','log');
             this.container.classList.add("logbox");
@@ -58,6 +180,19 @@ module Chat{
             receiver.on("log",(log:LogObj)=>{
                 this.getLog(log);
             });
+            //餃子オンマウス用の処理入れる
+            this.gyozaOnmouseListener=((e:Event)=>{
+                var t=<HTMLAnchorElement>e.target;  //先取り
+                if(!t.classList.contains("gyoza")){
+                    return; //違う
+                }
+                //既に展開されている場合はとばす
+                if(t.classList.contains("gyozaloaded")){
+                    return;
+                }
+                this.lineMaker.checkGyoza(t);
+            }).bind(this);
+            this.changeGyoza(); //初期設定
         }
         getContainer():HTMLElement{
             return this.container;
@@ -67,9 +202,76 @@ module Chat{
             var line:HTMLElement=this.lineMaker.make(obj);
             this.container.insertBefore(line,this.container.firstChild);
         }
+        //餃子モード変更された
+        changeGyoza():void{
+            if(this.userData.gyoza===1){
+                //餃子オンマウス
+                this.container.addEventListener("mouseover",<(e:Event)=>void>this.gyozaOnmouseListener,false);
+            }else{
+                //他なら消去
+                this.container.removeEventListener("mouseover",<(e:Event)=>void>this.gyozaOnmouseListener,false);
+            }
+        }
+    }
+    export interface GyazoSettingObject{
+        thumb:bool;  //サムネイル機能ありかどうか
+        url:{
+            image:string;   //画像のURL（あとにid付加）
+            thumb:string;   //サムネイルURL
+            ext:bool;   //?
+        };
+        text:{
+            normal: string;
+            opening: string;
+            error:string;
+        };
     }
     //ログからDOMを生成するやつ
     export class ChatLineMaker{
+        //餃子設定
+        private gyazoSetting:GyazoSettingObject[] = [
+            {
+                thumb: true,
+                url: {
+                    image: "http://gyazo.com/",
+                    thumb: "http://gyazo.com/thumb/",
+                    ext: true,
+                },
+                text: {
+                    normal: "[Gyazo]",
+                    opening: "[Gyoza…]",
+                    error: "[Gyoza?]",
+                }
+            },
+            {
+                thumb: false,
+                url: {
+                    image: "http://myazo.net/",
+                    thumb: "http://myazo.net/s/",
+                    ext:true,
+                },
+                text: {
+                    normal: "[Myazo]",
+                    opening: "[Myoza…]",
+                    error:"[Myoza?]"
+                }
+            },
+            {
+                thumb: true,
+                url: {
+                    image: "http://g.81.la/",
+                    thumb: "http://g.81.la/thumbnail.php?id=",
+                    ext: false,
+                },
+                text: {
+                    normal: "[81g]",
+                    opening: "[81kg…]",
+                    error:"[81kg?]",
+                }
+            }
+        ];
+        constructor(private userData:ChatUserData){
+        }
         make(obj:LogObj):HTMLParagraphElement{
             var p=<HTMLParagraphElement>document.createElement("p");
             if(obj.syslog){
@@ -88,6 +290,8 @@ module Chat{
             //コメント部分の生成
             var comment=document.createElement("bdi");
             comment.appendChild(this.commentHTMLify(obj.commentObject || obj.comment));
+            this.parse(comment);   //解析（URLとか）
+            comment.normalize();
             main.appendChild(comment);
             //チャネル
             if(obj.channel){
@@ -210,6 +414,188 @@ module Chat{
         createChannelDatasetString(channel:string):string{
             return channel.replace(/\//g,"-");
         }
+        //ログを解析して追加する
+        parse(rawnode:Node):void{
+            var allowed_tag=["s","small","code"];
+            if(rawnode.nodeType===Node.TEXT_NODE){
+                var node:Text=<Text>rawnode;
+                //テキストノード
+                if(!node.parentNode)return;
+                //先頭から順番に処理
+                while(node.nodeValue){
+                    var res=node.nodeValue.match(/^\[(\w+?)\]/);
+                    //先頭が開始タグ
+                    if(res){
+                        if(allowed_tag.indexOf(res[1])<0){
+                            //そんなタグはないよ!
+                            node=node.splitText(res[0].length);
+                            continue;
+                        }
+                        //タグが適用される部分をspanで囲む
+                        var span=document.createElement("span");
+                        span.classList.add(res[1]);
+                        //後ろを一旦全部突っ込む
+                        span.textContent=node.nodeValue.slice(res[0].length);
+                        if(!span.textContent){
+                            //空だったのでキャンセル.タダのテキストとして分離して次へ
+                            node=node.splitText(res[0].length);
+                            continue;
+                        }
+                        //処理対象をspanに置き換え
+                        node.parentNode.replaceChild(span,node);
+                        node=<Text>span.firstChild;
+                        continue;
+                    }
+                    //終了タグ
+                    res=node.nodeValue.match(/^\[\/(\w+?)\]/);
+                    if(res){
+                        if(allowed_tag.indexOf(res[1])<0){
+                            node=node.splitText(res[0].length);
+                        }
+                        //閉じるべきタグを探す
+                        var p:Node=node;
+                        while(p=p.parentNode){
+                            //nodeはテキストノードなので親からスターと
+                            var cl=(<HTMLElement>p).classList;
+                            if(cl && cl.contains(res[1])){
+                                //問題のタグである
+                                break;
+                            }
+                        }
+                        //タグを閉じる
+                        if(p){
+                            //終了タグを取り除いて、nodeの中には終了タグより右側が残る
+                            node.nodeValue=node.nodeValue.slice(res[0].length);
+                            p.parentNode.insertBefore(node,p.nextSibling);
+                        }else{
+                            //そのタグはなかった。ただのテキストとして処理
+                            node=node.splitText(res[0].length);
+                        }
+                        continue;
+                    }
+                    //リンク
+                    res=node.nodeValue.match(/^https?:\/\/\S+/);
+                    if(res){
+                        var matched=false;
+                        //URLがgyazo系かどうか調べる
+                        for(var i=0,l=this.gyazoSetting.length;i<l;i++){
+                            var settingObj:GyazoSettingObject=this.gyazoSetting[i];
+                            var res2=res[0].match(new RegExp("^"+settingObj.url.image.replace(".","\\.")+"([0-9a-f]{32})(?:\\.png)?"));
+                            if(!res2) continue;
+
+                            //Gyazo
+                            var a=<HTMLAnchorElement>document.createElement("a");
+                            a.target="_blank";
+                            a.href=settingObj.url.image+res2[1]+(settingObj.url.ext?".png":"");
+                            a.classList.add("gyoza");
+                            if(settingObj.thumb && this.userData.gyoza===2){
+                                //餃子常時展開
+                                this.openGyoza(settingObj,a,res2[1]);
+                            }else{
+                                a.textContent=settingObj.text.normal;
+                            }
+                            //これは処理終了
+                            node=node.splitText(res2[0].length);
+                            //node.previousSiblingは、 splitTextで切断されたurl部分のテキストノード
+                            node.parentNode.replaceChild(a,node.previousSibling);
+                            matched=true;
+                            break;
+                        }
+                        if(matched)continue;
+                        //通常のリンクだった
+                        var a=<HTMLAnchorElement>document.createElement("a");
+                        a.href=res[0];
+                        a.target="_blank";
+                        try{
+                            a.textContent=decodeURIComponent(res[0]);
+                        }catch(e){
+                            a.textContent=res[0];
+                        }
+                        node=node.splitText(res[0].length);
+                        node.parentNode.replaceChild(a,node.previousSibling);
+                        continue;
+                    }
+                    //チャネルリンク
+                    res=node.nodeValue.match(/^(\s*)#(\S+)/);
+                    if(res){
+                        if(res[1]){
+                            //前の空白はいらないのでそのまま流す
+                            node=node.splitText(res[1].length);
+                        }
+                        //チャネルのスタイルを変える
+                        var span=this.makeChannelSpan(res[2]);
+                        //チャネル部分を分離（スペースの分を除く
+                        node=node.splitText(res[0].length-res[1].length);
+                        node.parentNode.replaceChild(span,node.previousSibling);
+                        continue;
+                    }
+                    //その他　上のマークアップが車で通常の文字列
+                    res=node.nodeValue.match(/^(.+?)(?=\[\/?\w+?\]|https?:\/\/|\s+#\S+)/);
+                    if(res){
+                        node=node.splitText(res[0].length);
+                        continue;
+                    }
+                    //名にもないただのテキスト nodeを空にする
+                    node=node.splitText(node.nodeValue.length);
+                }
+            }else if(rawnode.childNodes){
+                //elementノード
+                var nodes:Node[]=[];
+                //途中でchildNodesが変化するので、処理対象のノードをリストアップ
+                for(var i=0,l=rawnode.childNodes.length;i<l;i++){
+                    nodes.push(rawnode.childNodes[i]);
+                }
+                nodes.forEach((x:Node)=>{
+                    if(x.parentNode===rawnode)
+                        this.parse(x);
+                });
+
+            }
+        }
+        //餃子サムネイルを展開する
+        openGyoza(settingObj:GyazoSettingObject,a:HTMLAnchorElement,imageid:string):void{
+            //a: [Gyazo]リンク  imageid:32桁のやつ
+            //まず中を削る
+            while(a.hasChildNodes())a.removeChild(a.firstChild);
+            //Loading
+            //Textをとっておく（あとで取り除くので）
+            var text:Text=document.createTextNode(settingObj.text.opening);
+            a.appendChild(text);
+            //画像設置
+            var img=<HTMLImageElement>document.createElement("img");
+            img.classList.add("thumbnail");
+            img.hidden=true;
+            a.appendChild(img);
+            //読み込みをまつ
+            img.addEventListener("load",(e:Event)=>{
+                //文字列を消して画像を表示
+                a.removeChild(text);
+                img.hidden=false;
+            },false);
+            //失敗時
+            img.addEventListener("error",(e:Event)=>{
+                //文字列変更
+                text.data=settingObj.text.error;
+                //画像除去
+                a.removeChild(img);
+            },false);
+            img.src=settingObj.url.thumb+imageid+".png";
+            img.alt=settingObj.url.image+imageid+".png";
+            //開いた印
+            a.classList.add("gyozaloaded");
+        }
+        //餃子を判別した上で展開する
+        checkGyoza(a:HTMLAnchorElement):void{
+            for(var i=0,l=this.gyazoSetting.length;i<l;i++){
+                var settingObj=this.gyazoSetting[i];
+                if(!settingObj.thumb)continue;
+                var result=a.href.match(new RegExp("^"+settingObj.url.image.replace(".","\\.")+"([0-9a-f]{32})(?:\\.png)?$"));
+                if(result){
+                    //これだ!
+                    this.openGyoza(settingObj,a,result[1]);
+                }
+            }
+        }
     }
     //チャットのユーザー一覧を表示するやつ
     export class ChatUserView{
@@ -255,7 +641,7 @@ module Chat{
             var dataset=this.userNumber.dataset;
             dataset.actives=String(parseInt(dataset.actives)+actives);
             dataset.roms=String(parseInt(dataset.roms)+roms);
-            this.userNumber.textContent="入室"+dataset.actives+(dataset.roms!==0? " (ROM"+dataset.roms+")":"");
+            this.userNumber.textContent="入室"+dataset.actives+(dataset.roms!=="0"? " (ROM"+dataset.roms+")":"");
         }
         newuser(user:UserObj):void{
             if(user.rom){
@@ -295,7 +681,6 @@ module Chat{
             var lis=this.userList.childNodes;
             for(var i=0,l=lis.length;i<l;i++){
                 var dataset=(<HTMLElement>lis[i]).dataset;
-                console.log(dataset);
                 if(dataset && dataset.id===String(id)){
                     return <HTMLElement>lis[i];
                 }
@@ -305,7 +690,6 @@ module Chat{
         //誰かが入退室した
         inout(user:UserObj):void{
             var elem=this.getUserElement(user.id);
-            console.log(user,elem);
             if(elem){
                 //古いのはいらない
                 this.userList.removeChild(elem);
@@ -339,6 +723,14 @@ module Chat{
             //次に発言フォーム
             this.commentForm=new ChatUICollection.CommentForm(this.userData,this.receiver,this.process);
             this.container.appendChild(this.commentForm.getContainer());
+
+            //操作に対応する
+            this.inoutForm.onInout((data:InoutNotify)=>{
+                this.process.inout(data);
+            });
+            this.commentForm.onComment((data:CommentNotify)=>{
+                this.process.comment(data);
+            });
         }
         getContainer():HTMLElement{
             return this.container;
@@ -465,6 +857,8 @@ module Chat{
                     channel:channel,
                 };
                 this.event.emit("comment",data);
+                //フォームを消す
+                (<HTMLInputElement>form.elements["comment"]).value="";
             }
             onComment(func:(data:CommentNotify)=>void):void{
                 this.event.on("comment",func);

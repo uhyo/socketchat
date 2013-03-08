@@ -542,7 +542,7 @@ SocketUser.prototype=new User;
 SocketUser.prototype.type="socket";
 SocketUser.prototype.inoutSplash=function(){
 	var obj=this.getUserObj();
-	this.socket.emit("userinfo",obj), this.socket.broadcast.to("useruser").emit("inout",obj);
+	this.socket.emit("userinfo",obj), this.socket.emit("inout",obj), this.socket.broadcast.to("useruser").emit("inout",obj);
 	toapi(function(x){
 		x==this || x.userinfos.push({"name":"inout","user":obj});
 	}.bind(this));

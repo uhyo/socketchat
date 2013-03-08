@@ -284,7 +284,6 @@ ChatClient.prototype={
 			var bt=result.singleNodeValue;
 			bt.value=obj.rom?"入室":"退室";
 		}
-		if(!obj.refresh)this.inout(obj);
 	},
 	//mottoボタンを押したとき until:時間指定
 	HottoMotto:function(until){

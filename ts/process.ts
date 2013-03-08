@@ -38,15 +38,21 @@ module Chat{
         //lastid: 最後のsessionid
         public lastid:string;
         public name:string;    //ユーザー名
+        public gyoza:number;    //Gyazo設定(0～2)
+        public volume:number;   //ボリューム(0～100)
         //読み込み
         load():void{
             this.lastid = localStorage.getItem("lastid") || null;
             this.name = localStorage.getItem("socketchat_name") || null;
+            this.gyoza= Number(localStorage.getItem("gyoza")) || 0;
+            this.volume=Number(localStorage.getItem("volume"))|| 50;
         }
         //保存
         save():void{
             if("string"===typeof this.lastid)localStorage.setItem("lastid",this.lastid);
             if("string"===typeof this.name)localStorage.setItem("socketchat_name",this.name);
+            localStorage.setItem("gyoza",String(this.gyoza));
+            localStorage.setItem("volume",String(this.volume));
         }
 
     }
@@ -112,7 +118,7 @@ module Chat{
             this.event.emit("deluser",userid);
         }
         //入退室した
-        inout(data:{rom:bool;id:string;name:string;}):void{
+        inout(data:UserObj):void{
             this.event.emit("inout",data);
         }
     }
@@ -121,8 +127,15 @@ module Chat{
         //コネクション
         constructor(private connection:ChatConnection,private receiver:ChatReceiver,private userData:ChatUserData){
         }
-        //自分を初期化
-        init():void{
+        //入退室する
+        inout(data:InoutNotify){
+            //サーバーに送る
+            this.connection.send("inout",data);
+        }
+        //コメントする
+        comment(data:CommentNotify){
+            //チャネル処理とか入れたいけど・・・？
+            this.connection.send("say",data);
         }
     }
 }
