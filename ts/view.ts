@@ -27,7 +27,7 @@ module Chat{
             //設定・リンク部分を初期化
             this.settingView=new ChatSettingView(userData,this);
             //ログ表示部分を初期化
-            this.logView=new ChatLogView(userData,receiver,this);
+            this.logView=new ChatLogView(userData,receiver,process,this);
             //ユーザー一覧部分を初期化
             this.userView=new ChatUserView(receiver);
             //ユーザー操作部分を初期化
@@ -187,7 +187,7 @@ module Chat{
         //dis管理
         private dis:ChatLogDisManager;
 
-        constructor(private userData:ChatUserData,private receiver:ChatReceiver,private view:ChatView){
+        constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess,private view:ChatView){
             this.container=document.createElement("div");
             this.container.setAttribute('role','log');
             this.container.classList.add("logbox");
@@ -281,6 +281,11 @@ module Chat{
                     //欄#
                     var channel=this.dis.setFocusChannel(t.dataset.channel);
                     this.view.focusComment(channel);
+                }else{
+                    //窓#
+                    //もとのほうは薄くする
+                    this.dis.addDischannel(t.dataset.channel,true,false);
+                    this.process.openChannel(t.dataset.channel);
                 }
             }
         }
@@ -295,7 +300,7 @@ module Chat{
 
         constructor(private userData:ChatUserData,private logView:ChatLogView){
         }
-        //チャネルにフォーカスする（現在のチャネルを買えす）
+        //チャネルにフォーカスする（現在のチャネルを返す）
         setFocusChannel(channel:string):string{
             var lastChannel:string=this.focusedChannel;
             if(lastChannel===channel)channel=null;

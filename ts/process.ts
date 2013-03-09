@@ -1,37 +1,6 @@
 module Chat{
+    /// <reference path="definition.ts"/>
     /// <reference path="connection.ts"/>
-    //ログオブジェクト
-    export interface LogObj {
-        _id:string; //発言のid
-        name:string;    //発言者名
-        time:string;    //ISODate
-        ip:string;
-        channel:any;    //文字列か配列
-        comment:string; //コメント（文字列化された）
-        syslog?:bool;
-        commentObject?:any; //文字列表現でないコメントがある場合
-        ipff?:string;   //Forwarded forの場合のもとIP
-    }
-    //ユーザーオブジェクト
-    export interface UserObj {
-        id:number;  //Id
-        name:string;
-        ip:string;
-        rom:bool;
-        ua:string;
-    }
-    //サーバーへ送る用だ!
-    //入退室通知オブジェクト
-    export interface InoutNotify{
-        name:string;
-    }
-    //発言通知オブジェクト
-    export interface CommentNotify{
-        comment:string;
-        response:string;    //log id
-        channel:string[];
-    }
-
     //-----------------
     //ユーザーの情報を保存するぞ!
     export class ChatUserData{
@@ -144,6 +113,53 @@ module Chat{
         comment(data:CommentNotify){
             //チャネル処理とか入れたいけど・・・？
             this.connection.send("say",data);
+        }
+        //チャネルウィンドウを開く
+        openChannel(channelname:string){
+            sessionStorage.setItem("independent_flag","true");  //子ウィンドウに大して子であると伝える
+            var win=window.open(location.pathname+"#"+channelname);
+            //まず通信を確立する
+            var wait=100, count=0;
+            var timerid=null;
+            var listener:(e:MessageEvent)=>void;
+            window.addEventListener("message",listener=(e:MessageEvent)=>{
+                var d=e.data;
+                if(d.name==="pong"){
+                    //データが帰ってきた！通信準備
+                    clearTimeout(timerid);
+                    window.removeEventListener("message",listener);
+                    //情報を送る
+                    var channel=new MessageChannel();
+                    channel.port1.start();
+                    var ls:(e:MessageEvent)=>void;
+                    channel.port1.addEventListener("message",ls=(e:MessageEvent)=>{
+                        var d=e.data;
+                        if(d.name==="ready"){
+                            //通信準備ができた
+                            channel.port1.removeEventListener("message",ls);
+                            //子として登録
+                            var hub=this.connection.getHub();
+                            var child=hub.makeChild(channel.port1);
+                            hub.addChild(child);
+                            hub.initChild(child,channelname);
+                            delete sessionStorage.removeItem("independent_flag");
+                        }
+                    });
+                    //初期化してあげる
+                    win.postMessage({
+                        name:"init",
+                    },"*",[channel.port2]);
+                }
+            });
+            ping();
+            function ping():void{
+                //送る（反応あったら受付開始したとわかる）
+                win.postMessage({
+                    name:"ping",
+                },"*");
+                //次のpingを用意
+                timerid=setTimeout(ping,wait);
+            }
         }
     }
 }

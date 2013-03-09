@@ -14,7 +14,12 @@
     <script>
 chat=new Chat.SocketChatClient();
 window.addEventListener('load',function(){
-	chat.init();
+  //チャネル判定
+  var result=location.hash.match(/^#(.+)$/);
+  channel= result ? result[1] : null;
+  //子どもかどうか判定
+  var child=!!sessionStorage.independent_flag;
+	chat.init(channel,child);
 },false);
     </script>
   </head>

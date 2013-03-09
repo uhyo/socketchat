@@ -1,5 +1,6 @@
 declare var io:any;
 module Chat{
+    /// <reference path="definition.ts"/>
     export interface EventEmitter{
         addListener:(event:string,listener:(...args:any[])=>any)=>void;
         on:(event:string,listener:(...args:any[])=>any)=>void;
@@ -15,8 +16,15 @@ module Chat{
         return new io.EventEmitter;
     }
     export class ChatConnection{
+        //内部用
+        private event:EventEmitter;
         //ソケット
         private connection: EventEmitter;
+        private hub:ChatHub.Hub;
+        constructor(){
+            this.hub=new ChatHub.Hub(this);
+            this.event=getEventEmitter();
+        }
         
         //コネクション初期化メソッド
         initConnection(settings:any):void{
@@ -26,6 +34,36 @@ module Chat{
         //サーバーに登録
         register(lastid:string,channel:string):void{
             //lastid: 前回のセッションID（自動復帰可能）, channel:チャネル
+        }
+        getHub():ChatHub.Hub{
+            return this.hub;
+        }
+        //コネクション確立したら
+        onConnection(func:(...args:any[])=>any):void{
+            this.event.on("connect",func);
+        }
+        //サーバーからログ探す
+        findLog(query:{
+            channel?:string;
+            id?:string;
+            motto?:{
+                time?:Date;
+                until:Date;
+            };
+        },callback:(logs:LogObj[])=>void):void{
+            this.send("find",query,(arr:LogObj[])=>{
+                if(!Array.isArray(arr)){
+                    callback([]);
+                }else{
+                    callback(arr);
+                }
+            });
+        }
+        //ユーザー一覧をサーバーから取得する
+        getUsers(callback:(users:UserObj[])=>void):void{
+            this.send("users",(arr:UserObj[])=>{
+                callback(arr);
+            });
         }
         //サーバーへコマンド発行（socket.ioのemit）
         send(event:string,...args:any[]):void{
@@ -50,11 +88,15 @@ module Chat{
     }
     //Socket.ioを用いたコネクション
     export class SocketConnection extends ChatConnection{
+        private event:EventEmitter;
         private connection:EventEmitter;
         //コネクションを作る
         initConnection(settings:any):void{
             //connectionはSocket.ioのコネクション
             this.connection=io.connect(settings.SOCKET_HOST_NAME||(location.protocol+"//"+location.host));
+            this.connection.once("connect",()=>{
+                this.event.emit("connect");
+            });
 
         }
         register(lastid:string,channel:string):void{
@@ -67,6 +109,7 @@ module Chat{
     }
     //親ウィンドウに寄生しているコネクション（チャネルウィンドウ用）
     export class ChildConnection extends ChatConnection{
+        private event:EventEmitter;
         private connection:EventEmitter;
         private port:MessagePort;
         //リクエストに一意IDをつける
@@ -93,6 +136,7 @@ module Chat{
                     this.port.postMessage({
                         name:"ready",
                     });
+                    this.event.emit("connect");
                 }else if(d.name==="ping"){
                     //確認用（送り返す）
                     d.name="pong";
@@ -107,7 +151,7 @@ module Chat{
             },false);
         }
         // 親へ送る
-        push(event:string,...args:any[]):void{
+        push(event:string,args:any[]):void{
             //ack処理（not written）
             var func_number:number=0, func_array:{index:number;func:Function;}[]=[];
             var func_index_array:number[]=[];
@@ -150,7 +194,11 @@ module Chat{
         }
         //（親経由で）サーバーへ送る
         send(event:string,...args:any[]):void{
-            this.push("message",args);
+            var messageObj:any={
+                name:event,
+                args:args,
+            };
+            this.push("message",[messageObj]);
         }
         //ポートを初期化する
         initPort(port:MessagePort):void{
@@ -179,14 +227,14 @@ module Chat{
             this.requestId++;   //新しいID
             var id=this.requestId;  //現在のIDメモ
             //WeakMapが欲しいけど放置
-            this.push("request",event,this.requestId);
+            this.push("request",[event,this.requestId]);
             this.connection.on(event,listener);
         }
         once(event:string,listener:(...args:any[])=>any):void{
             this.requestId++;   //新しいID
             var id=this.requestId;  //現在のIDメモ
             //WeakMapが欲しいけど放置
-            this.push("request",event,this.requestId);
+            this.push("request",[event,this.requestId]);
             this.connection.once(event,listener);
         }
         removeListener(event:string,listener:(...args:any[])=>any){
@@ -196,7 +244,7 @@ module Chat{
             this.connection.removeAllListeners(event);
         }
     }
-    //子どもへ送る処理に感するサブモジュール
+    //子どもへ送る処理に関するサブモジュール
     export module ChatHub{
         //ハブ（自分から派生した子ウィンドウに送ってあげる）
         export class Hub{
@@ -215,6 +263,10 @@ module Chat{
             addChild(c:Child):void{
                 this.children.push(c);
             }
+            //子どもを初期化してあげる
+            initChild(c:Child,channel:string):void{
+                c.imServer(this.connection,channel);
+            }
             //子どもを捨てる
             removeChild(c:Child):void{
                 this.children=this.children.filter((x:Child)=>x!==c);
@@ -222,6 +274,10 @@ module Chat{
             //親コネクションから送る
             send(...args:any[]):void{
                 this.connection.send.apply(this.connection,args);
+            }
+            //コネクション得る
+            getConnection():ChatConnection{
+                return this.connection;
             }
         }
         //ハブでつながった子ども
@@ -244,6 +300,21 @@ module Chat{
                 port.addEventListener("message",(ev:MessageEvent)=>{
                     var d=ev.data;
                     this.handleMessage(d.name,d.args,d.ackId,d.func_array);
+                });
+            }
+            //サーバーのようにふるまう（初期化）
+            imServer(connection:ChatConnection,channel:string){
+                //まずログをとってくる
+                connection.findLog({
+                    channel:channel
+                },(logs:LogObj[])=>{
+                    this.sendEvent("init",null,[{
+                        logs:logs
+                    }]);
+                });
+                //ユーザー一覧をとってくる
+                connection.getUsers((users:UserObj[])=>{
+                    this.sendEvent("users",null,[users]);
                 });
             }
             //子どもから送られてきたメッセージを処理する
@@ -277,16 +348,14 @@ module Chat{
                     //event(string),requestid(number) そのイベントのID
                     var e=this.event, evname:string=args[0], requestid:number=args[1];
                     //ハンドラ登録
-                    var hundler=(...args:any[])=>{
-                        this.send("handle",{
-                            args:args,  //引数
-                            event:evname,   //発生したイベント
-                            requestid:requestid,    //対応付けられるID
-                        });
+                    var handler=(...args:any[])=>{
+                        console.log("handle!",evname,args);
+                        this.sendEvent(evname,requestid,args);
                     };
-                    this.port.addEventListener("message",hundler);
+                    var connection=this.hub.getConnection();
+                    connection.on(evname,handler);
                     //リクエストマップに登録（消去時用）
-                    this.requestMap[requestid]=hundler;
+                    this.requestMap[requestid]=handler;
                     return;
                 }
                 //ハンドルしたリクエストを取り消す
@@ -294,13 +363,15 @@ module Chat{
                     var evname:string=args[0], requestid:number=args[1];
                     var func=this.requestMap[requestid];   //そのリスナ
                     if(func){
-                        this.port.removeEventListener("message",func);
+                        var connection=this.hub.getConnection();
+                        connection.removeListener(evname,func);
                         delete this.requestMap[requestid];
                     }
                     return;
                 }
                 //サーバーへ送りたい
                 if(event==="message"){
+                    console.log(event,args);
                     this.hub.send.apply(this.hub,[args[0].name].concat(args[0].args));
                     return;
                 }
@@ -312,6 +383,15 @@ module Chat{
                     name:event,
                     args:args,
                 });
+            }
+            //イベント発生を通知する
+            sendEvent(event:string,requestid:number,args:any[]):void{
+                this.send("handle",{
+                    args:args,
+                    event:event,
+                    requestid:requestid,
+                });
+                    
             }
         }
     }

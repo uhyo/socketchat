@@ -10,13 +10,20 @@ module Chat{
         private receiver:ChatReceiver;
         private process:ChatProcess;
         private view:ChatView;
-        init():void{
+        //自分のチャネル
+        private channel:string;
+        //自分が子どもかどうか
+        private child:bool;
+        init(channel:string,child:bool):void{
+            this.channel=channel, this.child=child;
             //周辺機器を初期化
             this.userData=this.makeUserData();
             this.connection=this.makeConnection(this.userData);
-            this.receiver=this.makeReceiver(this.connection);
-            this.process=this.makeProcess(this.connection,this.receiver,this.userData);
-            this.view=this.makeView();
+            this.connection.onConnection(()=>{
+                this.receiver=this.makeReceiver(this.connection);
+                this.process=this.makeProcess(this.connection,this.receiver,this.userData);
+                this.view=this.makeView();
+            });
         }
         //ユーザーデータを・・・?
         makeUserData():ChatUserData{
@@ -29,11 +36,16 @@ module Chat{
             return new ChatConnection;
         }
         makeConnection(userData:ChatUserData):ChatConnection{
-            var c:ChatConnection = this.createConnection();
+            var c:ChatConnection;
+            if(this.child){
+                c=new ChildConnection;
+            }else{
+                c= this.createConnection();
+            }
             //What setting?
             c.initConnection({});
-            //channel?
-            c.register(userData.lastid,null);
+            c.register(userData.lastid,this.channel);
+            console.log(userData.lastid,this.channel);
             return c;
         }
         //ログレシーバを作る
