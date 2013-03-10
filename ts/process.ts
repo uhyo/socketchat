@@ -33,76 +33,10 @@ module Chat{
         }
 
     }
-    // サーバーから情報を受け取るぞ!
-    export class ChatReceiver{
-        private oldest_time:Date=null;    // 保有している最も古いログ
-        private event:EventEmitter; //内部使用
-        constructor(private connection:ChatConnection){
-            this.event=getEventEmitter();
-        }
-        //イベント操作用
-        on(event:string,listener:(...args:any[])=>any):void{
-            this.event.on(event,listener);
-        }
-        once(event:string,listener:(...args:any[])=>any):void{
-            this.event.once(event,listener);
-        }
-        removeListener(event:string,listener:(...args:any[])=>any){
-            this.event.removeListener(event,listener);
-        }
-        removeAllListeners(event?:string){
-            this.event.removeAllListeners(event);
-        }
-
-        //通信初期化
-        init():void{
-            // ログ初期化
-            var c:ChatConnection=this.connection;
-            c.on("init",this.loginit.bind(this));
-            c.on("log",this.log.bind(this));
-            c.on("users",this.userinit.bind(this));
-            c.on("userinfo",this.userinfo.bind(this));
-            c.on("newuser",this.newuser.bind(this));
-            c.on("deluser",this.deluser.bind(this));
-            c.on("inout",this.inout.bind(this));
-        }
-        //最初のログを送ってきた
-        loginit(data:{logs:LogObj[];}):void{
-            //一番古いログをとる
-            if(data.logs){
-                this.oldest_time=new Date(data.logs[data.logs.length-1].time);
-            }
-            this.event.emit("loginit",data.logs);
-        }
-        //ログを送ってきた
-        log(data:LogObj):void{
-            this.event.emit("log",data);
-        }
-        //ユーザー一覧だ
-        userinit(data:{users:UserObj[];roms:number;active:number;}):void{
-            this.event.emit("userinit",data);
-        }
-        //自分の情報を教えてもらう
-        userinfo(data:{name:string;rom:bool;}):void{
-            this.event.emit("userinfo",data);
-        }
-        //誰かきた
-        newuser(data:UserObj):void{
-            this.event.emit("newuser",data);
-        }
-        //いなくなった
-        deluser(userid:string):void{
-            this.event.emit("deluser",userid);
-        }
-        //入退室した
-        inout(data:UserObj):void{
-            this.event.emit("inout",data);
-        }
-    }
     //チャットの動作管理をするぞ！
     export class ChatProcess{
         //コネクション
-        constructor(private connection:ChatConnection,private receiver:ChatReceiver,private userData:ChatUserData){
+        constructor(private connection:ChatConnection,private receiver:ChatReceiver,private userData:ChatUserData,private channel:string){
         }
         //入退室する
         inout(data:InoutNotify){
@@ -112,6 +46,16 @@ module Chat{
         //コメントする
         comment(data:CommentNotify){
             //チャネル処理とか入れたいけど・・・？
+            //チャネル追加
+            console.log(this.channel,data);
+            if(this.channel){
+                var ch = data.channel ? data.channel : [];
+                if(ch.indexOf(this.channel)<0){
+                    //まだない
+                    ch.push(this.channel);
+                    data.channel=ch;
+                }
+            }
             this.connection.send("say",data);
         }
         //チャネルウィンドウを開く
@@ -138,7 +82,7 @@ module Chat{
                             //通信準備ができた
                             channel.port1.removeEventListener("message",ls);
                             //子として登録
-                            var hub=this.connection.getHub();
+                            var hub=this.receiver.getHub();
                             var child=hub.makeChild(channel.port1);
                             hub.addChild(child);
                             hub.initChild(child,channelname);

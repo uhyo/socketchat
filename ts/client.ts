@@ -1,4 +1,5 @@
 module Chat{
+    /// <rederence path="definition.ts"/>
     /// <reference path="connection.ts"/>
     /// <reference path="process.ts"/>
     /// <reference path="view.ts"/>
@@ -45,18 +46,17 @@ module Chat{
             //What setting?
             c.initConnection({});
             c.register(userData.lastid,this.channel);
-            console.log(userData.lastid,this.channel);
             return c;
         }
         //ログレシーバを作る
         makeReceiver(connection:ChatConnection):ChatReceiver{
-            var r:ChatReceiver=new ChatReceiver(connection);
+            var r:ChatReceiver=new ChatReceiver(connection,this.channel);
             r.init();
             return r;
         }
         //チャットプロセスを作る
         makeProcess(connection:ChatConnection,receiver:ChatReceiver,userData:ChatUserData):ChatProcess{
-            return new ChatProcess(connection,receiver,userData);
+            return new ChatProcess(connection,receiver,userData,this.channel);
         }
         //ビューを作る
         makeView():ChatView{
