@@ -39,15 +39,14 @@ module Chat{
         constructor(private connection:ChatConnection,private receiver:ChatReceiver,private userData:ChatUserData,private channel:string){
         }
         //入退室する
-        inout(data:InoutNotify){
+        inout(data:InoutNotify):void{
             //サーバーに送る
             this.connection.send("inout",data);
         }
         //コメントする
-        comment(data:CommentNotify){
+        comment(data:CommentNotify):void{
             //チャネル処理とか入れたいけど・・・？
             //チャネル追加
-            console.log(this.channel,data);
             if(this.channel){
                 var ch = data.channel ? data.channel : [];
                 if(ch.indexOf(this.channel)<0){
@@ -59,7 +58,7 @@ module Chat{
             this.connection.send("say",data);
         }
         //チャネルウィンドウを開く
-        openChannel(channelname:string){
+        openChannel(channelname:string,closecallback?:()=>void){
             sessionStorage.setItem("independent_flag","true");  //子ウィンドウに大して子であると伝える
             var win=window.open(location.pathname+"#"+channelname);
             //まず通信を確立する
@@ -83,9 +82,10 @@ module Chat{
                             channel.port1.removeEventListener("message",ls);
                             //子として登録
                             var hub=this.receiver.getHub();
-                            var child=hub.makeChild(channel.port1);
+                            var child=hub.makeChild(channel.port1,closecallback);
                             hub.addChild(child);
                             hub.initChild(child,channelname);
+                            //ここからかこう!
                             delete sessionStorage.removeItem("independent_flag");
                         }
                     });

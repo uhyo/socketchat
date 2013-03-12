@@ -17,6 +17,7 @@ module Chat{
         private logView:ChatLogView;
         private userView:ChatUserView;
         private ui:ChatUI;
+        private motto:ChatUICollection.MottoForm;
 
         init(userData:ChatUserData,connection:ChatConnection,receiver:ChatReceiver,process:ChatProcess):void{
             this.container=document.createElement("div");
@@ -32,11 +33,17 @@ module Chat{
             this.userView=new ChatUserView(receiver);
             //ユーザー操作部分を初期化
             this.ui=new ChatUI(userData,receiver,process);
+            //HottoMottoボタンを初期化
+            this.motto=new ChatUICollection.MottoForm(userData,receiver,process);
+            this.motto.onMotto((data:MottoNotify)=>{
+                receiver.motto(data);
+            });
             //UIを組もう!
             this.container.appendChild(this.settingView.getContainer());
             this.container.appendChild(this.ui.getContainer());
             this.container.appendChild(this.logView.getContainer());
             this.container.appendChild(this.userView.getContainer());
+            this.container.appendChild(this.motto.getContainer());
         }
         //餃子モードが変更された
         changeGyoza():void{
@@ -207,6 +214,13 @@ module Chat{
             receiver.on("log",(log:LogObj)=>{
                 this.getLog(log,false);
             });
+            //Mottoのログがきた
+            receiver.on("mottoLog",(logs:LogObj[])=>{
+                logs.forEach((log:LogObj)=>{
+                    var line:HTMLElement=this.lineMaker.make(log);
+                    this.container.appendChild(line);
+                });
+            });
             //餃子オンマウス用の処理入れる
             this.gyozaOnmouseListener=((e:Event)=>{
                 var t=<HTMLAnchorElement>e.target;  //先取り
@@ -285,7 +299,9 @@ module Chat{
                     //窓#
                     //もとのほうは薄くする
                     this.dis.addDischannel(t.dataset.channel,true,false);
-                    this.process.openChannel(t.dataset.channel);
+                    this.process.openChannel(t.dataset.channel,()=>{
+                        this.dis.removeDischannel(t.dataset.channel,true,false);
+                    });
                 }
             }
         }
@@ -1027,6 +1043,38 @@ module Chat{
             focus(channel?:string):void{
                 (<HTMLInputElement>this.container.elements["comment"]).focus();
                 (<HTMLInputElement>this.container.elements["channel"]).value= channel ? channel : "";
+            }
+        }
+        export class MottoForm extends UIObject{
+            private event:EventEmitter;
+            private container:HTMLFormElement;
+            constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess){
+                super();
+                this.container=<HTMLFormElement>document.createElement("form");
+                var p:HTMLParagraphElement;
+
+                p=<HTMLParagraphElement>document.createElement("p");
+                this.container.appendChild(p);
+                //HottoMottoButton
+                p.appendChild(this.makeinput((input)=>{
+                    input.type="submit";
+                    input.value="HottoMotto";
+                }));
+
+                this.container.addEventListener("submit",(e:Event)=>{
+                    e.preventDefault();
+                    this.emitMotto(e);
+                },false);
+            }
+            //入退室ボタンが押されたときの処理
+            emitMotto(e:Event):void{
+                var data:MottoNotify={
+                    time:this.receiver.getOldest(),
+                };
+                this.event.emit("motto",data);
+            }
+            onMotto(func:(data:MottoNotify)=>void):void{
+                this.event.on("motto",func);
             }
         }
     }

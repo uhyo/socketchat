@@ -38,14 +38,7 @@ module Chat{
             this.event.on("connect",func);
         }
         //サーバーからログ探す
-        findLog(query:{
-            channel?:string;
-            id?:string;
-            motto?:{
-                time?:Date;
-                until:Date;
-            };
-        },callback:(logs:LogObj[])=>void):void{
+        findLog(query:FindNotify,callback:(logs:LogObj[])=>void):void{
             this.send("find",query,(arr:LogObj[])=>{
                 if(!Array.isArray(arr)){
                     callback([]);
@@ -147,7 +140,8 @@ module Chat{
         }
         // 親へ送る
         push(event:string,args:any[]):void{
-            //ack処理（not written）
+            console.log("pushhhh",event,args);
+            debugger;
             var func_number:number=0, func_array:{index:number;func:Function;}[]=[];
             var func_index_array:number[]=[];
             for(var i=0,l=args.length;i<l;i++){
@@ -173,13 +167,13 @@ module Chat{
                     func_array:func_array,
                 };
                 //ここからかいてね!
-                this.ackId++;
                 this.port.postMessage({
                     name:event,
                     args:args,
                     ackId:this.ackId,
                     func_index_array:func_index_array,
                 });
+                this.ackId++;
             }else{
                 this.port.postMessage({
                     name:event,
@@ -189,11 +183,12 @@ module Chat{
         }
         //（親経由で）サーバーへ送る
         send(event:string,...args:any[]):void{
-            var messageObj:any={
+            /*var messageObj:any={
                 name:event,
                 args:args,
             };
-            this.push("message",[messageObj]);
+            this.push("message",[messageObj]);*/
+            this.push("message",[event].concat(args));
         }
         //ポートを初期化する
         initPort(port:MessagePort):void{
@@ -207,6 +202,7 @@ module Chat{
                 }else if(ev.data.name==="ackresponse"){
                     //コールバックが帰ってきた
                     var obj=this.savedAck[d.ackId];
+                    console.log("back!",d,obj,this.savedAck);
                     obj.func_array[d.funcindex].func.apply(this,d.args);
                     //用なし
                     delete this.savedAck[d.ackId];
@@ -248,8 +244,8 @@ module Chat{
                 this.children=[];
             }
             //子どもを作る!!!
-            makeChild(port:MessagePort):Child{
-                var c:Child=new Child(this,port);
+            makeChild(port:MessagePort,closecallback:()=>void):Child{
+                var c:Child=new Child(this,port,closecallback);
                 //初期化処理をする
                 c.init();
                 return c;
@@ -283,7 +279,7 @@ module Chat{
             private requestMap:{ [index:number]:(...args:any[])=>any; };
             //hub:親のハブ
             //port:この子どもに送るためのMessagePort
-            constructor(private hub:Hub,private port:MessagePort){
+            constructor(private hub:Hub,private port:MessagePort,private closecallback?:()=>void){
                 this.event=getEventEmitter();
                 this.requestMap=<{ [index:number]:(...args:any[])=>any; }>{};
             }
@@ -294,7 +290,7 @@ module Chat{
                 //メッセージを受け取る
                 port.addEventListener("message",(ev:MessageEvent)=>{
                     var d=ev.data;
-                    this.handleMessage(d.name,d.args,d.ackId,d.func_array);
+                    this.handleMessage(d.name,d.args,d.ackId,d.func_index_array);
                 });
             }
             //サーバーのようにふるまう（初期化）
@@ -326,6 +322,7 @@ module Chat{
                     //送り返すぞ!
                     function back_handle(ackId:number,funcindex:number,...args:any[]):void{
                         //funcindex:最初の関数が0(func_index_arrayの添字)
+                        console.log("back!",ackId,funcindex,args);
                         this.send("ackresponse",{
                             ackId:ackId,
                             funcindex:funcindex,
@@ -338,6 +335,7 @@ module Chat{
                     //実体が閉じられた（役目終了）
                     this.port.close();
                     this.hub.removeChild(this);
+                    this.closecallback.call(null);
                     return;
                 }
                 //子どもからハンドル要求
@@ -346,7 +344,6 @@ module Chat{
                     var e=this.event, evname:string=args[0], requestid:number=args[1];
                     //ハンドラ登録
                     var handler=(...args:any[])=>{
-                        console.log("handle!",evname,args);
                         this.sendEvent(evname,requestid,args);
                     };
                     var connection=this.hub.getConnection();
@@ -368,8 +365,7 @@ module Chat{
                 }
                 //サーバーへ送りたい
                 if(event==="message"){
-                    console.log(event,args);
-                    this.hub.send.apply(this.hub,[args[0].name].concat(args[0].args));
+                    this.hub.send.apply(this.hub,args);
                     return;
                 }
             }
@@ -409,6 +405,20 @@ module Chat{
         getHub():ChatHub.Hub{
             return this.hub;
         }
+        //サーバーにmottoを要求する
+        motto(data:MottoNotify):void{
+            var query:FindNotify={
+                motto:data,
+            }
+            if(this.channel){
+                //チャネルをaddする
+                query.channel=this.channel;
+            }
+            this.connection.send("find",query,(logs:LogObj[])=>{
+                this.oldest_time=new Date(logs[logs.length-1].time);
+                this.event.emit("mottoLog",logs);
+            });
+        }
         //イベント操作用
         on(event:string,listener:(...args:any[])=>any):void{
             this.event.on(event,listener);
@@ -435,6 +445,10 @@ module Chat{
             c.on("deluser",this.deluser.bind(this));
             c.on("inout",this.inout.bind(this));
         }
+        //最終発言を教えてもらう
+        getOldest():Date{
+            return this.oldest_time;
+        }
         //最初のログを送ってきた
         loginit(data:{logs:LogObj[];}):void{
             //一番古いログをとる
@@ -446,7 +460,7 @@ module Chat{
         //ログを送ってきた
         log(data:LogObj):void{
             //チャネルフィルター!!
-            console.log(this.channel,data.channel);
+            console.log(data);
             if(this.channel && (!Array.isArray(data.channel) || data.channel.indexOf(this.channel)<0)){
                 // チャネルが合わない
                 return;

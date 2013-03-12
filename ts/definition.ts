@@ -30,4 +30,15 @@ module Chat{
         response:string;    //log id
         channel:string[];
     }
+    //Mottoリクエストオブジェクト
+    export interface MottoNotify{
+        time:Date;
+        until?:Date;
+    }
+    //find用クエリ
+    export interface FindNotify{
+        channel?:string;
+        id?:string;
+        motto?:MottoNotify;
+    }
 }
