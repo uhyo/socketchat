@@ -10,6 +10,7 @@ module Chat{
         syslog?:bool;
         commentObject?:any; //文字列表現でないコメントがある場合
         ipff?:string;   //Forwarded forの場合のもとIP
+        response?:string;
     }
     //ユーザーオブジェクト
     export interface UserObj {

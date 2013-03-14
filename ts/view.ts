@@ -307,7 +307,8 @@ module Chat{
         //ログのクリックに対応
         clickHandler(e:Event):void{
             var t=<HTMLElement>e.target;
-            if(t.classList.contains("channel") && t.dataset.channel){
+            var cl=t.classList;
+            if(cl.contains("channel") && t.dataset.channel){
                 //チャンネルだ
                 var dis=this.view.getDis();
                 if(this.userData.channelMode===0){
@@ -322,6 +323,22 @@ module Chat{
                         dis.removeDischannel(t.dataset.channel,true,false);
                     });
                 }
+            }else if(cl.contains("resptip") && !cl.contains("opened")){
+                cl.add("opened");
+                //親のログを得る
+                var log=<HTMLElement>t.parentNode.parentNode;
+                this.receiver.find({
+                    id:log.dataset.respto,
+                },(logs:LogObj[])=>{
+                    if(logs.length>0){
+                        var l=logs[0];
+                        var line:HTMLElement=this.lineMaker.make(l);
+                        var bq=document.createElement("blockquote");
+                        bq.classList.add("resp");
+                        bq.appendChild(line);
+                        log.parentNode.insertBefore(bq,log.nextSibling);
+                    }
+                });
             }
         }
         //?????
@@ -522,6 +539,13 @@ module Chat{
             //名前以外の部分の生成
             var main=document.createElement("span");
             main.classList.add("main");
+            //返信チップ
+            if(obj.response){
+                var resptip=document.createElement("span");
+                resptip.className="icon resptip";
+                resptip.textContent="\ue000";
+                main.appendChild(resptip);
+            }
             //コメント部分の生成
             var comment=document.createElement("bdi");
             comment.appendChild(this.commentHTMLify(obj.commentObject || obj.comment));
@@ -540,6 +564,11 @@ module Chat{
                 }
                 //コメントにも情報付加
                 p.dataset.channel=c.map((ch:string)=>this.logView.createChannelDatasetString(ch)).join(" ");
+            }
+            //返信先あり
+            if(obj.response){
+                p.dataset.respto=obj.response;
+                p.classList.add("respto");
             }
             //時間などの情報
             var info=document.createElement("span");

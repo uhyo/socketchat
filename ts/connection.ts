@@ -427,6 +427,10 @@ module Chat{
                 }
             });
         }
+        //ログを探す
+        find(data:FindNotify,callback:(logs:LogObj[])=>void){
+            this.connection.send("find",data,callback);
+        }
         //イベント操作用
         on(event:string,listener:(...args:any[])=>any):void{
             this.event.on(event,listener);

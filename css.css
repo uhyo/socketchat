@@ -44,15 +44,20 @@ div.logbox{
 	content:'> ';
 	font-weight:normal;
 }
-.logbox p.respto > span.main:before{
-	color:rgb(255,127,39);
-	content: '⇓';
-}
 .logbox span.respto:not([data-open="open"]){
 	cursor:pointer;
 }
 .logbox blockquote.resp{
 	margin:0 0 0 3em;
+}
+/* icons? */
+span.icon.resptip{
+	color:#888888;
+	cursor:pointer;
+}
+span.icon.resptip.opened{
+	color:#bbbbbb;
+	cursor:auto;
 }
 
 div.userinfo{
