@@ -577,8 +577,16 @@ ChatClient.prototype={
 			this.dischannel.push(channel);
 			localStorage.socketchat_dischannel=JSON.stringify(this.dischannel);
 		}
+		if(anti){
+			//全てを一旦非表示にする
+			// #log p はcss.cssで使っているので>のおまじないを挟んでる
+			this.addCSSRules([
+				'#log > p'+this.createDisCSS('', temporal, false),
+			]);
+		}
 		this.addCSSRules([
-			'#log p'+this.createDisCSS('[data-channel|="'+this.line.createChannelDatasetString(channel)+'"]', temporal, anti),
+			'#log p'+this.createDisCSS('[data-channel*="#'+channel+'#"]', temporal, anti),
+			'#log p'+this.createDisCSS('[data-channel*="#'+channel+'/"]', temporal, anti),
 		]);
 		return true;
 	},
@@ -589,16 +597,22 @@ ChatClient.prototype={
 			});
 			localStorage.socketchat_dischannel=JSON.stringify(this.dischannel);
 		}
+		if(anti){
+			this.removeCSSRules([
+				'#log > p',
+			]);
+		}
 		this.removeCSSRules([
-			'#log p'+this.createDisSelector('[data-channel|="'+this.line.createChannelDatasetString(channel)+'"]', anti),
+			'#log p[data-channel*="#'+channel+'#"]',
+			'#log p[data-channel*="#'+channel+'/"]',
 		]);
 	},
-	createDisSelector: function(selector, anti){
-		if(anti) selector = ":not("+selector+")";
-		return selector;
-	},
 	createDisCSS: function(selector, temporal, anti){
-		return this.createDisSelector(selector, anti)+(temporal ? "{opacity:0.3}" : "{display:none}");
+		if(anti){
+			return selector+(temporal ? "{opacity:1}" : "{display:block}");
+		}else{
+			return selector+(temporal ? "{opacity:0.3}" : "{display:none}");
+		}
 	},
 	addCSSRules: function(cssTexts){
 		console.log("addCSS", cssTexts);
