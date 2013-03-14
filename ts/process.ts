@@ -11,16 +11,29 @@ module Chat{
         public volume:number;   //ボリューム(0～100)
         public channelMode:number;  //チャネル開き方設定(0～1)
         public dischannel:string[]; //dischannel対象一覧
+        public autoin:bool;     //自動入室有効かどうか
+        //コマンドライン系
+        public cmd:{
+            height:string;  //コマンドライン高さ
+            syschar:string;
+        };
         //読み込み
         load():void{
             this.lastid = localStorage.getItem("lastid") || null;
             this.name = localStorage.getItem("socketchat_name") || null;
             this.gyoza= Number(localStorage.getItem("gyoza")) || 0;
-            this.volume=Number(localStorage.getItem("volume"))|| 50;
+            this.volume=Number(localStorage.getItem("volume"));
+            if(isNaN(this.volume))this.volume=50;
             this.channelMode= Number(localStorage.getItem("channelMode")) || 0;
             //dischannel
             var disc=localStorage.getItem("dischannel");
             this.dischannel = disc ? JSON.parse(disc) : [];
+            var cmd=localStorage.getItem("cmd");
+            this.cmd= cmd ? JSON.parse(cmd) : {
+                height:"30em", syschar:"\\",
+            };
+            //autoin
+            this.autoin = !!localStorage.getItem("socketchat_autoin");
         }
         //保存
         save():void{
@@ -30,6 +43,12 @@ module Chat{
             localStorage.setItem("volume",String(this.volume));
             localStorage.setItem("channelMode",String(this.channelMode));
             localStorage.setItem("dischannel",JSON.stringify(this.dischannel));
+            localStorage.setItem("cmd",JSON.stringify(this.cmd));
+            if(this.autoin){
+                localStorage.setItem("socketchat_autoin","true");
+            }else{
+                localStorage.removeItem("socketchat_autoin");
+            }
         }
 
     }
@@ -37,11 +56,38 @@ module Chat{
     export class ChatProcess{
         //コネクション
         constructor(private connection:ChatConnection,private receiver:ChatReceiver,private userData:ChatUserData,private channel:string){
+            if(userData.autoin && userData.name){
+                receiver.ready(()=>{
+                    this.inout({
+                        name:userData.name,
+                    },"in");
+                });
+            }
         }
         //入退室する
-        inout(data:InoutNotify):void{
+        inout(data:InoutNotify,operation?:string):bool{
+            if(operation){
+                //operationがあるとき:一方通行
+                var userinfo=this.receiver.getUserinfo();
+                console.log(userinfo);
+                if(operation==="in"){
+                    if(userinfo.rom!==true){
+                        return false;
+                    }
+                }else if(operation==="out"){
+                    if(userinfo.rom===true){
+                        return false;
+                    }
+                }
+            }
             //サーバーに送る
             this.connection.send("inout",data);
+            //名前保存
+            if(data.name){
+                this.userData.name=data.name;
+                this.userData.save();
+            }
+            return true;
         }
         //コメントする
         comment(data:CommentNotify):void{
@@ -56,6 +102,10 @@ module Chat{
                 }
             }
             this.connection.send("say",data);
+        }
+        //motto!(丸投げ)
+        motto(data:MottoNotify):void{
+            this.receiver.motto(data);
         }
         //チャネルウィンドウを開く
         openChannel(channelname:string,closecallback?:()=>void){

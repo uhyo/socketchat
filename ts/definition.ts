@@ -32,7 +32,7 @@ module Chat{
     }
     //Mottoリクエストオブジェクト
     export interface MottoNotify{
-        time:Date;
+        time?:Date;
         until?:Date;
     }
     //find用クエリ

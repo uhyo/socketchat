@@ -32,9 +32,9 @@ module Chat{
             //ユーザー一覧部分を初期化
             this.userView=new ChatUserView(receiver);
             //ユーザー操作部分を初期化
-            this.ui=new ChatUI(userData,receiver,process);
+            this.ui=new ChatCmdUI(userData,receiver,process,this);
             //HottoMottoボタンを初期化
-            this.motto=new ChatUICollection.MottoForm(userData,receiver,process);
+            this.motto=new ChatUICollection.MottoForm(this.ui,userData,receiver,process);
             this.motto.onMotto((data:MottoNotify)=>{
                 receiver.motto(data);
             });
@@ -45,10 +45,11 @@ module Chat{
             this.container.appendChild(this.userView.getContainer());
             this.container.appendChild(this.motto.getContainer());
         }
-        //餃子モードが変更された
-        changeGyoza():void{
-            //logViewに丸投げ
-            this.logView.changeGyoza();
+        //設定がされたので反映させる
+        refreshSettings():void{
+            this.settingView.refreshSettings();
+            this.logView.refreshSettings();
+            this.ui.refreshSettings();
         }
         //発言欄にフォーカスする
         focusComment(channel?:string):void{
@@ -60,7 +61,7 @@ module Chat{
     }
     //設定・リンク部分
     export class ChatSettingView{
-        private container:HTMLElement;
+        private container:HTMLFormElement;
         //リンク一覧
         private links:{url:string;name:string;}[]=[
             {
@@ -103,7 +104,7 @@ module Chat{
         //チャネルセッティング一覧
         private channelSettings:string[]=["欄#","窓#"];
         constructor(private userData:ChatUserData,private view:ChatView){
-            this.container=document.createElement("div");
+            this.container=<HTMLFormElement>document.createElement("form");
             this.container.classList.add("infobar");
             //まずリンク生成
             this.container.appendChild(this.makeLinks());
@@ -137,21 +138,23 @@ module Chat{
         makeGyozaButton():HTMLElement{
             var button:HTMLInputElement=<HTMLInputElement>document.createElement("input");
             var ud=this.userData;
+            button.name="gyozabutton";
             button.type="button";
             button.value=this.gyozaSettings[ud.gyoza];
             button.addEventListener("click",(e:Event)=>{
                 //クリックされたら変更
                 ud.gyoza=(ud.gyoza+1)%this.gyozaSettings.length;
-                button.value=this.gyozaSettings[ud.gyoza];
+                //button.value=this.gyozaSettings[ud.gyoza];
                 ud.save();
                 //ビューに変更を知らせる
-                this.view.changeGyoza();
+                this.view.refreshSettings();
             },false);
             return button;
         }
         makeVolumeRange():HTMLElement{
             var range=<HTMLInputElement>document.createElement("input");
             var ud=this.userData;
+            range.name="volume";
             range.type="range";
             range.min="0", range.max="100", range.step="10";
             range.value=String(ud.volume);
@@ -170,6 +173,7 @@ module Chat{
         makeChannelModeButton():HTMLElement{
             var button:HTMLInputElement=<HTMLInputElement>document.createElement("input");
             var ud=this.userData;
+            button.name="channelmode";
             button.type="button";
             button.value=this.channelSettings[ud.channelMode];
             button.addEventListener("click",(e:Event)=>{
@@ -183,6 +187,18 @@ module Chat{
 
         getContainer():HTMLElement{
             return this.container;
+        }
+        refreshSettings():void{
+            //設定変更
+            var form=this.container, ud=this.userData;
+            //餃子
+            var gyozabutton=<HTMLInputElement>form.elements["gyozabutton"];
+            gyozabutton.value=this.gyozaSettings[ud.gyoza];
+            //ボリューム
+            var volumeRange=<HTMLInputElement>form.elements["volume"];
+            volumeRange.value=String(ud.volume);
+            var channelbutton=<HTMLInputElement>form.elements["channelmode"];
+            channelbutton.value=this.channelSettings[ud.channelMode];
         }
     }
     //ログ表示部分
@@ -233,7 +249,7 @@ module Chat{
                 }
                 this.lineMaker.checkGyoza(t);
             }).bind(this);
-            this.changeGyoza(); //初期設定
+            this.refreshSettings(); //初期設定
             //オーディオ準備
             this.audio=this.getAudio("/sound");
             //クリックに対応する
@@ -258,14 +274,14 @@ module Chat{
                 }
             }
         }
-        //餃子モード変更された
-        changeGyoza():void{
+        //設定変更された
+        refreshSettings():void{
+            //餃子まわりの設定
+            //リスナ消去
+            this.container.removeEventListener("mouseover",<(e:Event)=>void>this.gyozaOnmouseListener,false);
             if(this.userData.gyoza===1){
-                //餃子オンマウス
+                //餃子オンマウスなら再設定
                 this.container.addEventListener("mouseover",<(e:Event)=>void>this.gyozaOnmouseListener,false);
-            }else{
-                //他なら消去
-                this.container.removeEventListener("mouseover",<(e:Event)=>void>this.gyozaOnmouseListener,false);
             }
         }
         //オーディオ初期化
@@ -878,22 +894,39 @@ module Chat{
         }
 
     }
-    //発言などのUI部分
+    //UI
     export class ChatUI{
+        private container:Node;
+        constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess,private view:ChatView){
+        }
+        getContainer():Node{
+            return this.container;
+        }
+        getView():ChatView{
+            return this.view;
+        }
+        focusComment(channel?:string):void{
+        }
+        refreshSettings():void{
+        }
+    }
+    //発言などのUI部分
+    export class ChatNormalUI extends ChatUI{
         private container:HTMLElement;
         //パーツたち
         private inoutForm:ChatUICollection.InoutForm;
         private commentForm:ChatUICollection.CommentForm;
 
-        constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess){
+        constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess,private view:ChatView){
+            super(userData,receiver,process,view);
             this.container=document.createElement("div");
             this.container.classList.add("ui");
             //フォーム用意
             //まず入退室フォーム
-            this.inoutForm=new ChatUICollection.InoutForm(this.userData,this.receiver,this.process);
+            this.inoutForm=new ChatUICollection.InoutForm(this,this.userData,this.receiver,this.process);
             this.container.appendChild(this.inoutForm.getContainer());
             //次に発言フォーム
-            this.commentForm=new ChatUICollection.CommentForm(this.userData,this.receiver,this.process);
+            this.commentForm=new ChatUICollection.CommentForm(this,this.userData,this.receiver,this.process);
             this.container.appendChild(this.commentForm.getContainer());
 
             //操作に対応する
@@ -917,7 +950,8 @@ module Chat{
         export class UIObject{
             private event:EventEmitter;
             private container:HTMLElement;
-            constructor(){
+            //protected
+            constructor(public ui:ChatUI){
                 this.event=getEventEmitter();
             }
             getContainer():HTMLElement{
@@ -934,8 +968,8 @@ module Chat{
         export class InoutForm extends UIObject{
             private event:EventEmitter;
             private container:HTMLFormElement;
-            constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess){
-                super();
+            constructor(ui:ChatUI,private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess){
+                super(ui);
                 this.container=<HTMLFormElement>document.createElement("form");
                 var p:HTMLParagraphElement;
 
@@ -983,8 +1017,8 @@ module Chat{
         export class CommentForm extends UIObject{
             private event:EventEmitter;
             private container:HTMLFormElement;
-            constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess){
-                super();
+            constructor(ui:ChatUI,private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess){
+                super(ui);
                 this.container=<HTMLFormElement>document.createElement("form");
                 var p:HTMLParagraphElement;
 
@@ -1048,8 +1082,8 @@ module Chat{
         export class MottoForm extends UIObject{
             private event:EventEmitter;
             private container:HTMLFormElement;
-            constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess){
-                super();
+            constructor(ui:ChatUI,private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess){
+                super(ui);
                 this.container=<HTMLFormElement>document.createElement("form");
                 var p:HTMLParagraphElement;
 
@@ -1069,13 +1103,895 @@ module Chat{
             //入退室ボタンが押されたときの処理
             emitMotto(e:Event):void{
                 var data:MottoNotify={
-                    time:this.receiver.getOldest(),
                 };
                 this.event.emit("motto",data);
             }
             onMotto(func:(data:MottoNotify)=>void):void{
                 this.event.on("motto",func);
             }
+        }
+        //コマンドライン用コンソール
+        export class Console extends UIObject{
+            private event:EventEmitter;
+            private container:HTMLElement;
+            private consoleo:HTMLElement;
+            private command:HTMLInputElement;
+            private commandtopelement:HTMLElement;
+            private cmode:string;
+            private cmdprocess:ChatCmdProcessCollection.Process;
+            private commandlog:string[]=[];
+            private commandlogindex:number=null;
+            private indentSpace:string="";
+            private saves:DocumentFragment[]=[];
+            constructor(ui:ChatUI,private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess){
+                super(ui);
+                this.cmode="down";    //up:新しいログ上へ、down:下へ
+                this.makeConsole();
+                this.cmdprocess=null;
+            }
+            //コンソール初期化
+            makeConsole():void{
+                //コンテナ=コンソール画面
+                this.container=document.createElement("div");
+                this.container.classList.add("console");
+                setUniqueId(this.container,"console");
+                this.setHeight(this.userData.cmd.height);
+                this.consoleo=document.createElement("pre");
+                this.consoleo.classList.add("consoleoutput");
+                this.container.appendChild(this.consoleo);
+                //入力部分を作る
+                var p=document.createElement("p");
+                this.command=<HTMLInputElement>document.createElement("input");
+                this.commandtopelement=document.createElement("span");
+                this.commandtopelement.textContent="> ";
+                p.appendChild(this.commandtopelement);
+                p.appendChild(this.command);
+                if(this.cmode==="up"){
+                    this.container.insertBefore(p,this.consoleo);
+                }else{
+                    this.container.appendChild(p);
+                }
+                //クリックされると入力フォーカス
+                this.container.addEventListener("click",(e:Event)=>{
+                    this.focusConsole();
+                },false);
+                //キーを捕捉する
+                document.addEventListener("keydown",this.keydown.bind(this),false);
+            }
+            //キーを・・・
+            keydown(e:KeyboardEvent):void{
+                //プロセスに送る
+                if(this.cmdprocess){
+                    if(!this.cmdprocess.gotKey(e)){
+                        e.preventDefault();
+                        return;
+                    }
+                }
+                if(e.keyCode===13 || e.keyCode===27){
+                    //Enter,Esc
+                    if(!this.container.classList.contains("open")){
+                        //開く
+                        this.openConsole();
+                        e.preventDefault();
+                        return;
+                    }else if(this.command.value===""){
+                        //閉じる
+                        this.closeConsole();
+                        e.preventDefault();
+                        return;
+                    }
+                }
+                if(e.keyCode===13 && !this.cmdprocess){
+                    //コマンド実行
+                    this.execCommand(this.command.value);
+                    this.command.value="";
+                    this.focusConsole();
+                    e.preventDefault();
+                    return;
+                }
+                //コマンド履歴をスクロールする
+                if((e.keyCode===38 || e.keyCode===40)&& this.command===document.activeElement && this.container.classList.contains("open")){
+                    //上下
+                    if(this.commandlogindex==null){
+                        this.commandlogindex=this.commandlog.length-1;
+                    }else if(e.keyCode===38){
+                        this.commandlogindex--;
+                        if(this.commandlogindex<0)this.commandlogindex=0;
+                    }else{
+                        this.commandlogindex++;
+                        if(this.commandlogindex>=this.commandlog.length)this.commandlogindex=this.commandlog.length-1;
+                    }
+                    if(this.commandlog[this.commandlogindex]){
+                        this.command.value=this.commandlog[this.commandlogindex];
+                    }
+                }
+            }
+            openConsole():void{
+                this.container.classList.add("open");
+                this.focusConsole();
+            }
+            closeConsole():void{
+                this.container.classList.remove("open");
+                this.command.blur();
+            }
+            focusConsole():void{
+                //コンソールにフォーカスする
+                //コマンドにフォーカスするとスクロールしてしまうので一時的にスクロール位置保存
+                var sc=document.documentElement.scrollTop || document.body.scrollTop;
+                this.command.focus();
+                //戻す
+                document.documentElement.scrollTop && (document.documentElement.scrollTop=sc);
+                document.body.scrollTop && (document.body.scrollTop=sc);
+            }
+            setHeight(height:string):void{
+                if(!height)height="30em";
+                var st=<CSSStyleSheet>document.styleSheets.item(0);
+                st.insertRule("#"+this.container.id+" { height: "+height+"; bottom:-"+height+"}",st.cssRules.length);
+            }
+            openInput(topstr?:string):void{
+                if(topstr!=null){
+                    this.commandtopelement.textContent = topstr ? topstr+" " : "";
+                }
+                this.command.disabled=false;
+                (<HTMLElement>this.command.parentNode).hidden=false;
+            }
+            hideInput():void{
+                this.command.disabled=true;
+                (<HTMLElement>this.command.parentNode).hidden=true;
+            }
+            setInput(str:string):void{
+                this.command.value=str;
+            }
+            getInput():string{
+                return this.command.value;
+            }
+            //一番下を見せる
+            scrollDown():void{
+                this.container.scrollTop= this.container.scrollHeight - this.container.clientHeight;
+            }
+            execCommand(line:string):void{
+                var syschar:string=this.userData.cmd.syschar;
+                var result=line.match(new RegExp("^\\"+syschar+"(\\S+)\\s*"));
+                if(!result && line){
+                    //通常の発言
+                    var data:CommentNotify={
+                        comment:line,
+                        response:null,
+                        channel:null,
+                    };
+                    this.process.comment(data);
+                    return;
+                }
+                //履歴にコマンドを追加する
+                this.addCommandLog(line);
+                this.print("> "+line);
+                //命令・スペースを除去する
+                line=line.slice(result[0].length);
+                var errorMessage=this.runCommand(result[1],line);
+                if(errorMessage){
+                    this.print(errorMessage,{color:"red"});
+                }
+            }
+            //返り値: error message
+            runCommand(name:string,args:string):string{
+                var c:new(ui:ChatUI,console:ChatUICollection.Console,process:ChatProcess,userData:ChatUserData,arg:string)=>ChatCmdProcessCollection.Process=null;
+                //選択
+                if(name==="in"){
+                    c=ChatCmdProcessCollection.In;
+                }else if(name==="out"){
+                    c=ChatCmdProcessCollection.Out;
+                }else if(name==="motto"){
+                    c=ChatCmdProcessCollection.Motto;
+                }else if(name==="volume"){
+                    c=ChatCmdProcessCollection.Volume;
+                }else if(name==="gyoza" || name==="gyazo"){
+                    c=ChatCmdProcessCollection.Gyoza;
+                }else if(name==="set"){
+                    c=ChatCmdProcessCollection.Set;
+                }else if(name==="clear" || name==="clean"){
+                    c=ChatCmdProcessCollection.Clean;
+                }else if(name==="help"){
+                    c=ChatCmdProcessCollection.Help;
+                }else if(name==="go"){
+                    c=ChatCmdProcessCollection.Go;
+                }
+
+                if(c){
+                    var p:ChatCmdProcessCollection.Process=new c(this.ui,this,this.process,this.userData,args);
+                    p.run();
+                    return null;
+                }else{
+                    return "Unknown command: "+name;
+                }
+            }
+            //コマンド終了
+            endProcess():void{
+                this.cmdprocess=null;
+                this.openInput(">");
+            }
+            addCommandLog(line:string):void{
+                this.commandlog.push(line);
+                //古いほうを消す
+                if(this.commandlog.length>50){
+                    this.commandlog.shift();
+                }
+                this.commandlogindex=null;
+            }
+            //コンソールに文字出力
+            print(str:string,option?:any):void{
+                //改行付き
+                this.put(str+"\n",option);
+            }
+            //生
+            put(str:string,option?:any):void{
+                //まずインデント設定
+                if(this.indentSpace.length>0){
+                    str=str.split("\n").map((x:string,i:number)=>{
+                        return i>0 && x ? this.indentSpace+x : x;
+                    }).join("\n");
+                    //行頭インデント
+
+                    if(this.cmode==="up"){
+                        var con=this.consoleo.textContent;
+                        if(con.length===0 || con.charAt(0)==="\n"){
+                            //最初にもインデント必要
+                            str=this.indentSpace+str;
+                        }
+                    }else{
+                        if(con.length===0 || con.charAt(con.length-1)==="\n"){
+                            str=this.indentSpace+str;
+                        }
+                    }
+                }
+                if(this.cmode==="up"){
+                    //改行で分ける
+                    var lines:string[]=str.split("\n");
+                    var df=document.createDocumentFragment();   //2行め以降をまとめておく
+                    var first=lines.shift();
+                    //逆順か
+                    lines.reverse();
+                    var remains=lines.join("\n");
+                    if(remains){
+                        df.appendChild(makeNode(remains,option));
+                    }
+                    //いい位置を探す
+                    var tw=document.createTreeWalker(this.consoleo,NodeFilter.SHOW_TEXT,(node:Text)=>{
+                        return NodeFilter.FILTER_ACCEPT;
+                    },false);
+                    var node:Text;
+                    while(node=<Text>tw.nextNode()){
+                        var idx=node.data.lastIndexOf("\n");
+                        if(idx<0){
+                            //改行がない
+                            continue;
+                        }
+                        //改行があった!改行の後ろに追加する
+                        var range=document.createRange();
+                        range.setStart(this.consoleo,0);    //出力の一番最初
+                        range.setEnd(node,idx); //改行の直前まで
+                        //改行の前までを抜き出す
+                        var c=range.extractContents();
+                        //間にはさんで追加する
+                        this.consoleo.insertBefore(makeNode(first,option),this.consoleo.firstChild);
+                        //戻す
+                        this.consoleo.insertBefore(c,this.consoleo.firstChild);
+                        range.detach();
+                        break;
+                    }
+                    if(!node){
+                        //入れられなかった
+                        this.consoleo.appendChild(node);
+                    }
+                    //残り
+                    this.consoleo.insertBefore(df,this.consoleo.firstChild);
+                    this.consoleo.normalize();
+                }else{
+                    //下に追加するだけじゃん!
+                    this.consoleo.appendChild(makeNode(str,option));
+                    this.consoleo.normalize();
+                    this.scrollDown();
+                }
+                //テキストをラップする
+                function makeNode(text:string,option?:any):Node{
+                    var ins:Node;
+                    if(!option){
+                        ins=document.createTextNode(text);
+                    }else{
+                        ins=document.createElement("span");
+                        ins.textContent=text;
+                        //cssプロパティ
+                        for(var key in option){
+                            if(option[key]!=null){
+                                (<HTMLElement>ins).style.setProperty(key,option[key],null);
+                            }
+                        }
+                    }
+                    return ins;
+                }
+            }
+            indent(num:number,callback:()=>void):void{
+                //内部を印伝として表示
+                var t=this;
+                setindent(num);
+                callback();
+                setindent(-num);
+
+                function setindent(n:number):void{
+                    if(n>0){
+                        for(var i=0;i<n;i++){
+                            t.indentSpace+=" ";
+                        }
+                    }else if(n<0){
+                        t.indentSpace=t.indentSpace.slice(-n);
+                    }
+                }
+            }
+            //行削除(num: 後ろから何行消すか）
+            deletelines(num?:number):void{
+                if(num==null){
+                    this.consoleo.textContent="";
+                    return;
+                }
+                if(num<=0)return;
+                var tw=document.createTreeWalker(this.consoleo,NodeFilter.SHOW_TEXT,(node:Text)=>{
+                    return NodeFilter.FILTER_ACCEPT;
+                },false);
+                var node:Text, count:number=num;
+                var range=document.createRange();
+                range.selectNodeContents(this.consoleo);
+                    var args=this.parseArg({
+                        option:false,
+                    },{
+                        option:true,
+
+                if(this.cmode==="up"){
+                    //前から
+                    if(this.consoleo.textContent.charAt(0)==="\n"){
+                        count++;
+                    }
+
+                    big:while(node=<Text>tw.nextNode()){
+                        var idx:number=0;
+                        while((idx=node.data.indexOf("\n",idx))>=0){
+                            //改行 みつけた
+                            count--;
+                            if(count<=0){
+                                range.setEnd(node,idx); //改行の手前まで
+                                break big;
+                            }
+                        }
+                    }
+                    //breakしなかったら最後まで消すのだ
+                }else{
+                    //後ろから
+                    var cono=this.consoleo.textContent;
+                    if(cono.charAt(cono.length-1)==="\n"){
+                        count++;
+                    }
+                    big:while(node=<Text>tw.previousNode()){
+                        var idx:number=0;
+                        while((idx=node.data.lastIndexOf("\n",idx))>=0){
+                            //改行
+                            count--;
+                            if(count<=0){
+                                range.setStart(node,idx+1); //改行の直後まで
+                                break big;
+                            }
+                        }
+                    }
+                }
+                //中身を抜く
+                range.deleteContents();
+                range.detach();
+            }
+            newContext():void{
+                //前のをとっておいて出力を空に
+                var range=document.createRange();
+                range.selectNodeContents(this.consoleo);
+                this.saves.push(range.extractContents());
+                range.detach();
+            }
+            restoreContext():void{
+                var range=document.createRange();
+                range.selectNodeContents(this.consoleo);
+                range.deleteContents();
+                range.insertNode(this.saves.pop());
+                range.detach();
+            }
+        }
+    }
+    //コマンドライン用プロセス
+    export module ChatCmdProcessCollection{
+        export interface Arg{
+            active:bool;    //false: 省略された
+            option:bool;    //false: ただの引数 true: オプション
+            value:string;
+            params?:string[];   //オプションの引数たち
+        }
+        export interface ArgRequest{
+            //argひとつの形式を定める
+            option:bool;
+            name?:string[];   //optionのときにオプション名
+            num?:number;    //optionのときに可能な数
+        }
+        export class Process{
+            private key:(e:KeyboardEvent)=>bool=null;
+            //protectedが欲しい事例
+            constructor(public ui:ChatUI,public console:ChatUICollection.Console,public process:ChatProcess,public userData:ChatUserData,public arg:string){
+            }
+            //引数を配列に分けて返す
+            parseArg(...reqs:ArgRequest[]):Arg[]{
+                var a=this.arg;
+                var result:Arg[]=[];
+                //まず単語に分解
+                var words:string[]=[];
+                while(a=a.replace(/^\s+/,"")){
+                    var r;
+                    if(a.charAt(0)==='"'){
+                        // "囲み
+                        r=a.match(/^\"(?:[^\"]|\\")*\"(?=\s+|$)/);
+                        if(r){
+                            //囲まれた
+                            words.push(r[0]);   //""ごと
+                            a=a.slice(r[0].length);
+                            continue;
+                        }
+                    }else if(a.charAt(0)==="'"){
+                        r=a.match(/^\'(?:[^\"]|\\')*\'(?=\s+|$)/);
+                        if(r){
+                            //囲まれた
+                            words.push(r[0]);   //""ごと
+                            a=a.slice(r[0].length);
+                            continue;
+                        }
+                    }
+                    //ダメだったら空白まで
+                    r=a.match(/^\S+/);
+                    if(r){
+                        words.push(r[0]);
+                        a=a.slice(r[0].length);
+                    }
+                }
+                //wordsと引数をてらしあわす
+                var addto:Arg=null,addremain:number=null;
+                for(var i=0,l=words.length;i<l;i++){
+                    var word=words[i];
+                    //対応する引数探す
+                    //まずoptionの
+                    for(var j=0,m=reqs.length;j<m;j++){
+                        var req:ArgRequest=reqs[j];
+                        if(!result[j] && req.option){
+                            if(req.name.indexOf(word)>=0){
+                                addremain=req.num || 0;
+                                result[j]={
+                                    active:true,
+                                    option:true,
+                                    value:word,
+                                    params:[]
+                                };
+                                if(addremain){
+                                    //追加モード
+                                    addto=result[j];
+                                }else{
+                                    //通常通り
+                                    addto=null;
+                                }
+                                words.splice(i,1);
+                                i--,l--;
+                                break;
+                            }
+                        }
+                    }
+                    if(j===m){
+                        //見つからなかった（ただの引数）
+                        if(addremain && addto){
+                            word=normalize(word);
+                            addto.params.push(word);
+                            addremain--;
+                            words.splice(i,1);
+                            i--,l--;
+                        }
+                    }
+                }
+                //一周目終了。残りを埋める
+                for(var j=0,m=reqs.length;j<m;j++){
+                    if(result[j])continue;  //処理終了した
+                    var req=reqs[j];
+                    if(!req.option){
+                        for(i=0;i<l;i++){
+                            var word=words[i];
+                            result[j]={
+                                active:true,
+                                option:false,
+                                value:normalize(word),
+                            };
+                            words.splice(i,1);
+                            i--,l--;
+                            break;
+                        }
+                    }else{
+                        result[j]={
+                            active:false,
+                            option:true,
+                            value:req.name[0],
+                            params:[],
+                        };
+                    }
+                }
+                //最後に省略引数の処理
+                for(var j=0,m=reqs.length;j<m;j++){
+                    if(!result[j]){
+                        var req=reqs[j];
+                        result[j]={
+                            active:false,
+                            option:req.option,
+                            value: req.option ? req.name[0] : null,
+                        };
+                    }
+                }
+                return result;
+                function normalize(word:string):string{
+                    //""などを取り除く
+                    var r;
+                    if(r=word.match(/^\"(.*)\"$/)){
+                        return r[1];
+                    }
+                    if(r=word.match(/^\'(.*)\'$/)){
+                        return r[1];
+                    }
+                    return word;
+                }
+            }
+            gotKey(e:KeyboardEvent):bool{
+                if(!this.key)return true;   //妨げない
+                return this.key(e);
+            }
+            //コンソール操作系
+            print(str:string,option?:any):void{
+                this.console.print(str,option);
+            }
+            put(str:string,option?:any):void{
+                this.console.put(str,option);
+            }
+            //エラー表示
+            error(str:string,option?:any={}):void{
+                option.color="#ff6666";
+                this.print(str,option);
+            }
+            indent(num:number,callback:()=>void):void{
+                this.console.indent(num,callback);
+            }
+            //行単位入力
+            input(multiline:bool,callback:(str:string)=>void):void{
+                //multiline:複数行対応
+                this.console.openInput("");
+                var result="";
+                this.key=(e:KeyboardEvent)=>{
+                    if(e.keyCode===13){
+                        //Enter=行
+                        var inp=this.console.getInput();
+                        this.print(inp);
+                        result+=inp+"\n";
+                        this.console.setInput("");
+                        this.console.focusConsole();
+                        if(!multiline || !e.shiftKey){
+                            //終了
+                            this.console.hideInput();
+                            this.key=null;
+                            callback(result);
+                        }
+                        return false;
+                    }
+                    return true;
+                };
+            }
+            //キー単位入力
+            inputKey(callback:(e:KeyboardEvent)=>bool):void{
+                this.console.openInput("");
+                this.key=(e:KeyboardEvent)=>{
+                    e.preventDefault();
+                    if(!callback(e)){
+                        this.key=null;
+                    }
+                    return false;
+                };
+            }
+            //走る
+            run():void{
+            }
+            //終了
+            die():void{
+                this.console.endProcess();
+            }
+            //末尾の改行をけす
+            chomp(str:string):string{
+                return str.replace(/\n+$/,"");
+            }
+        }
+        //コマンドの実装
+        export class In extends Process{
+            run():void{
+                var args=this.parseArg({
+                    option:false,
+                },{
+                    option:true,
+                    name:["--auto"],
+                    num:0,
+                },{
+                    option:true,
+                    name:["--noauto"],
+                    num:0,
+                });
+                if(args[1].active){
+                    //autoin
+                    this.userData.autoin=true;
+                    this.userData.save();
+                    this.print("autoin set.");
+                }else if(args[2].active){
+                    this.userData.autoin=false;
+                    this.userData.save();
+                    this.print("autoin unset.");
+                }
+                //入室
+                var data:InoutNotify={
+                    name:null,
+                };
+                if(args[0].active){
+                    //名前がある
+                    data.name=args[0].value;
+                }else if(this.userData.name){
+                    data.name=this.userData.name;
+                }else{
+                    //名前がない
+                    this.error("Name required.");
+                    this.die();
+                    return;
+                }
+                var result:bool=this.process.inout(data,"in");
+                if(!result){
+                    //失敗
+                    this.error("You are already in the room.");
+                }
+                this.die();
+            }
+        }
+        export class Out extends Process{
+            run():void{
+                //入室
+                var data:InoutNotify={
+                    name:null,
+                };
+                var result:bool=this.process.inout(data,"out");
+                if(!result){
+                    //失敗
+                    this.error("You are not in the room.");
+                }
+                this.die();
+            }
+        }
+        export class Motto extends Process{
+            run():void{
+                //日時
+                var args=this.parseArg({
+                    option:false,
+                },{
+                    option:true,
+                    name:["--gmt","--utc"],
+                    num:0,
+                });
+                //リクエストを作る
+                var untiltime:number=null;
+                if(args[0].active){
+                    //日時指定あり
+                    untiltime=(new Date(args[0].value)).getTime();
+                    if(!isNaN(untiltime)){
+                        if(!args[1].active){
+                            //ローカル時間なのでずらす
+                            untiltime+=(new Date).getTimezoneOffset()*60000;
+                        }
+                    }
+                }
+                var data:MottoNotify={
+                };
+                if(untiltime){
+                    data.until=new Date(untiltime);
+                }
+                this.process.motto(data);
+                this.die();
+            }
+        }
+        export class Volume extends Process{
+            run():void{
+                var args=this.parseArg({
+                    option:false,
+                });
+                //ボリューム変更
+                if(!args[0].active){
+                    //教えるだけ
+                    this.print(String(this.userData.volume));
+                    this.die();
+                    return;
+                }
+                var vo=parseInt(args[0].value);
+                if(isNaN(vo) || vo<0 || 100<vo){
+                    this.error("Invalid volume "+args[0].value);
+                }else{
+                    this.userData.volume=vo;
+                    this.userData.save();
+                    this.ui.getView().refreshSettings();
+                }
+                this.die();
+            }
+        }
+        export class Gyoza extends Process{
+            run():void{
+                var args=this.parseArg({
+                    option:false,
+                });
+                //餃子モード変更
+                if(args[0].active){
+                    var mo=parseInt(args[0].value);
+                    if(isNaN(mo) || mo<0 || 2<mo){
+                        this.error("Invalid gyoza: "+args[0].value);
+                    }else{
+                        this.userData.gyoza=mo;
+                        this.userData.save();
+                        this.ui.getView().refreshSettings();
+                    }
+                }
+                //餃子状態を表示してあげる
+                ["餃子無展開","餃子オンマウス","餃子常時"].forEach((x:string,i:number)=>{
+                    if(this.userData.gyoza===i){
+                        this.put("*"+i,{color:"#00ffff"});
+                    }else{
+                        this.put(" "+i);
+                    }
+                    this.print(": "+x);
+                });
+                this.die();
+            }
+        }
+        export class Set extends Process{
+            run():void{
+                var args=this.parseArg({
+                    option:false,
+                },{
+                    option:false,
+                });
+                if(!args[1].active){
+                    //keyがない
+                    this.error("Value is required.");
+                    this.die();
+                    return;
+                }
+                var key=args[0].active ? args[0].value : void 0;
+                var value=args[1].value;
+                //複数の設定を変更できる
+                switch(key){
+                    case "syschar":case "systemchar":
+                        //命令文字
+                        if(value.length!==1){
+                            this.error("set "+key+": invalid char "+value);
+                            break;
+                        }
+                        this.userData.cmd.syschar=value;
+                        this.userData.save();
+                        break;
+                    case "height":
+                        //コンソール高さ
+                        var vn=parseFloat(value);
+                        if(isNaN(vn) || vn<0){
+                            this.error("set "+key+": invalid value "+value);
+                            break;
+                        }
+                        this.userData.cmd.height=value+"em";
+                        this.userData.save();
+                        this.console.setHeight(value+"em");
+                        break;
+                    default:
+                        this.error("Unknown setting: "+key);
+                        break;
+                }
+                this.die();
+            }
+        }
+        export class Clean extends Process{
+            run():void{
+                //コンソール掃除
+                this.console.deletelines();
+                this.die();
+            }
+        }
+        export class Help extends Process{
+            run():void{
+                //ヘルプメッセージ
+                this.print([
+"command usage: "+this.userData.cmd.syschar+"command",
+"in [name] [--auto] [--noauto]",
+"    enter the chatroom",
+"    --auto: auto-enter at the next time",
+"    --noauto: don't auto-enter",
+"out",
+"    quit the chatroom",
+"motto [until] [--gmt] [--utc]",
+"    HottoMotto",
+"      until(if exists): ex) 2012-01-01, 2013-01-01T00:00",
+"volume [number]",
+"    show/set volume",
+"set (param) (value)",
+"    set syschar/systemchar",
+"        height",
+"gyazo [num], gyoza [num]",
+"    show/set gyoza mode",
+"clear, clean",
+"    clean the console",
+"disip [-d] [ip] ",
+"    set/remove ip into/from disip list",
+"go [URL|alias|#channelname]",
+"    alias: 'wiki'",
+		].join("\n"));
+                this.die();
+            }
+        }
+        export class Go extends Process{
+            run():void{
+                var args=this.parseArg({
+                    option:false
+                });
+                if(!args[0].active){
+                    this.die();
+                    return;
+                }
+                var dest=args[0].value;
+                //alias
+                if(dest==="wiki"){
+                    dest="http://showigiki.81.la/shogiwiki/";
+                }else{
+                    //チャネル
+                    var result=dest.match(/^#(\S+)$/);
+                    if(result){
+                        this.process.openChannel(result[1]);
+                        this.die();
+                        return;
+                    }
+                }
+                //URLへ
+                var a=<HTMLAnchorElement>document.createElement("a");
+                a.href=dest;
+                a.target="_blank";
+                a.click();
+                this.die();
+            }
+        }
+        export Disip extends Process{
+            run():void{
+                var args=this.parseArg({
+                    option:false,
+                },{
+                    option:true,
+                    name:["-d"],
+                    num:0,
+                });
+                if(args[0].active){
+                    //disipに追加
+                }
+            }
+        }
+    }
+    //コマンドラインみたいなUI
+    export class ChatCmdUI extends ChatUI{
+        private console:ChatUICollection.Console;
+        constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess,private view:ChatView){
+            super(userData,receiver,process,view);
+            this.console=new ChatUICollection.Console(this,userData,receiver,process);
+            receiver.on("userinfo",(data:any)=>{
+                if(!data.rom && data.name){
+                    this.console.print("Hello, "+data.name,{color:"#ffff00"});
+                }
+            });
+        }
+        getContainer():HTMLElement{
+            return this.console.getContainer();
         }
     }
     //その他util

@@ -335,7 +335,9 @@ module Chat{
                     //実体が閉じられた（役目終了）
                     this.port.close();
                     this.hub.removeChild(this);
-                    this.closecallback.call(null);
+                    if(this.closecallback){
+                        this.closecallback.call(null);
+                    }
                     return;
                 }
                 //子どもからハンドル要求
@@ -398,6 +400,7 @@ module Chat{
             name:string;
             rom:bool;
         };
+        private active:bool=false;  //こっちから送っても大丈夫か
         constructor(private connection:ChatConnection,private channel:string){
             this.hub=new ChatHub.Hub(this,connection);
             this.event=getEventEmitter();
@@ -407,6 +410,9 @@ module Chat{
         }
         //サーバーにmottoを要求する
         motto(data:MottoNotify):void{
+            if(!data.time){
+                data.time=this.oldest_time;
+            }
             var query:FindNotify={
                 motto:data,
             }
@@ -415,8 +421,10 @@ module Chat{
                 query.channel=this.channel;
             }
             this.connection.send("find",query,(logs:LogObj[])=>{
-                this.oldest_time=new Date(logs[logs.length-1].time);
-                this.event.emit("mottoLog",logs);
+                if(logs.length>0){
+                    this.oldest_time=new Date(logs[logs.length-1].time);
+                    this.event.emit("mottoLog",logs);
+                }
             });
         }
         //イベント操作用
@@ -432,7 +440,14 @@ module Chat{
         removeAllListeners(event?:string){
             this.event.removeAllListeners(event);
         }
-
+        //準備できたら読んで・・・
+        ready(callback:()=>void){
+            if(this.active){
+                callback();
+            }else{
+                this.once("loginit",callback);
+            }
+        }
         //通信初期化
         init():void{
             // ログ初期化
@@ -455,6 +470,7 @@ module Chat{
             if(data.logs){
                 this.oldest_time=new Date(data.logs[data.logs.length-1].time);
             }
+            this.active=true;
             this.event.emit("loginit",data.logs);
         }
         //ログを送ってきた

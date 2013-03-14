@@ -5,10 +5,7 @@ body.discon{
 	background-color:#f4f4f4;
 }
 
-div.forms{
-	white-space:nowrap;
-}
-div.logs{
+div.logbox{
 	margin-top:0.4em;
 }
 
@@ -86,10 +83,13 @@ span.code{
 	white-space: pre;
 }
 
-div.forms form{
+div.ui{
+    white-space:nowrap;
+}
+div.ui form{
 	display:inline-block;
 }
-div.forms p{
+div.ui form p{
 	margin:0;
 }
 .logbox img{
@@ -109,7 +109,7 @@ div.forms p{
 }
 
 /* コンソール風 */
-#console{
+.console{
 	font-family:monospace;
 	background-color:rgba(48,48,48,0.7);
 	color:#ffffff;
@@ -130,14 +130,14 @@ pre.consoleoutput{
 	margin:0;
 	padding:0;
 }
-#console.open{
-	bottom:0;
+.console.open{
+	bottom:0 !important;
 }
-#console p{
+.console p{
 	margin:0;
 	white-space:pre;
 }
-#console input{
+.console input{
 	width:90%;
 	border:none;
 	outline:none;
