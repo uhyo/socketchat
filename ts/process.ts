@@ -10,6 +10,7 @@ module Chat{
         public gyoza:number;    //Gyazo設定(0～2)
         public volume:number;   //ボリューム(0～100)
         public channelMode:number;  //チャネル開き方設定(0～1)
+        public disip:string[];
         public dischannel:string[]; //dischannel対象一覧
         public autoin:bool;     //自動入室有効かどうか
         //コマンドライン系
@@ -26,6 +27,8 @@ module Chat{
             if(isNaN(this.volume))this.volume=50;
             this.channelMode= Number(localStorage.getItem("channelMode")) || 0;
             //dischannel
+            var disi=localStorage.getItem("disip");
+            this.disip = disi ? JSON.parse(disi) : [];
             var disc=localStorage.getItem("dischannel");
             this.dischannel = disc ? JSON.parse(disc) : [];
             var cmd=localStorage.getItem("cmd");
@@ -42,6 +45,7 @@ module Chat{
             localStorage.setItem("gyoza",String(this.gyoza));
             localStorage.setItem("volume",String(this.volume));
             localStorage.setItem("channelMode",String(this.channelMode));
+            localStorage.setItem("disip",JSON.stringify(this.disip));
             localStorage.setItem("dischannel",JSON.stringify(this.dischannel));
             localStorage.setItem("cmd",JSON.stringify(this.cmd));
             if(this.autoin){
