@@ -1354,11 +1354,14 @@ module Chat{
                     c=ChatCmdProcessCollection.Disip;
                 }else if(name==="dischannel"){
                     c=ChatCmdProcessCollection.Dischannel;
+                }else if(name==="sl"){
+                    c=ChatCmdProcessCollection.Sl;
                 }
 
 
                 if(c){
                     var p:ChatCmdProcessCollection.Process=new c(this.ui,this,this.process,this.userData,args);
+                    this.cmdprocess=p;
                     p.run();
                     return null;
                 }else{
@@ -1571,7 +1574,8 @@ module Chat{
             num?:number;    //optionのときに可能な数
         }
         export class Process{
-            private key:(e:KeyboardEvent)=>bool=null;
+            //want protected
+            public key:(e:KeyboardEvent)=>bool=null;
             //protectedが欲しい事例
             constructor(public ui:ChatUI,public console:ChatUICollection.Console,public process:ChatProcess,public userData:ChatUserData,public arg:string){
             }
@@ -1983,6 +1987,8 @@ module Chat{
 "    clean the console",
 "disip [-d] [ip] ",
 "    set/remove ip into/from disip list",
+"dischannel [-d] [channel]",
+"    set/remove channel into/from dischannel list",
 "go [URL|alias|#channelname]",
 "    alias: 'wiki'",
 		].join("\n"));
@@ -2103,6 +2109,98 @@ module Chat{
                     this.print(channel);
                 });
                 this.die();
+            }
+        }
+        export class Sl extends Process{
+            run():void{
+                var sl_steam=[
+        ["                      (@@) (  ) (@)  ( )  @@    ()    @     O     @     O      @",
+        "                 (   )",
+        "             (@@@@)",
+        "          (    )",
+        "",
+        "        (@@@)",
+        ],
+        [
+        "                      (  ) (@@) ( )  (@)  ()    @@    O     @     O     @      O",
+        "                 (@@@)",
+        "             (    )",
+        "          (@@@@)",
+        "",
+        "        (   )",
+        ]
+                ],sl_body=[
+        "      ====        ________                ___________ ",
+        "  _D _|  |_______/        \\__I_I_____===__|_________| ",
+        "   |(_)---  |   H\\________/ |   |        =|___ ___|      _________________         ",
+        "   /     |  |   H  |  |     |   |         ||_| |_||     _|                \\_____A  ",
+        "  |      |  |   H  |__--------------------| [___] |   =|                        |  ",
+        "  | ________|___H__/__|_____/[][]~\\_______|       |   -|                        |  ",
+        "  |/ |   |-----------I_____I [][] []  D   |=======|____|________________________|_ ",
+                ],sl_wheels=[
+        [
+        "__/ =| o |=-O=====O=====O=====O \\ ____Y___________|__|__________________________|_ ",
+        " |/-=|___|=    ||    ||    ||    |_____/~\\___/          |_D__D__D_|  |_D__D__D_|   ",
+        "  \\_/      \\__/  \\__/  \\__/  \\__/      \\_/               \\_/   \\_/    \\_/   \\_/    ",
+        ],[
+        "__/ =| o |=-~~\\  /~~\\  /~~\\  /~~\\ ____Y___________|__|__________________________|_ ",
+        " |/-=|___|=O=====O=====O=====O   |_____/~\\___/          |_D__D__D_|  |_D__D__D_|   ",
+        "  \\_/      \\__/  \\__/  \\__/  \\__/      \\_/               \\_/   \\_/    \\_/   \\_/    ",
+        ],[
+        "__/ =| o |=-~~\\  /~~\\  /~~\\  /~~\\ ____Y___________|__|__________________________|_ ",
+        " |/-=|___|=    ||    ||    ||    |_____/~\\___/          |_D__D__D_|  |_D__D__D_|   ",
+        "  \\_/      \\O=====O=====O=====O_/      \\_/               \\_/   \\_/    \\_/   \\_/    ",
+        ],[
+        "__/ =| o |=-~~\\  /~~\\  /~~\\  /~~\\ ____Y___________|__|__________________________|_ ",
+        " |/-=|___|=    ||    ||    ||    |_____/~\\___/          |_D__D__D_|  |_D__D__D_|   ",
+        "  \\_/      \\_O=====O=====O=====O/      \\_/               \\_/   \\_/    \\_/   \\_/    ",
+        ],[
+        "__/ =| o |=-~~\\  /~~\\  /~~\\  /~~\\ ____Y___________|__|__________________________|_ ",
+        " |/-=|___|=   O=====O=====O=====O|_____/~\\___/          |_D__D__D_|  |_D__D__D_|   ",
+        "  \\_/      \\__/  \\__/  \\__/  \\__/      \\_/               \\_/   \\_/    \\_/   \\_/    ",
+        ],[
+        "__/ =| o |=-~O=====O=====O=====O\\ ____Y___________|__|__________________________|_ ",
+        " |/-=|___|=    ||    ||    ||    |_____/~\\___/          |_D__D__D_|  |_D__D__D_|   ",
+        "  \\_/      \\__/  \\__/  \\__/  \\__/      \\_/               \\_/   \\_/    \\_/   \\_/    ",
+        ],
+                ];
+
+                var counter=0,position=0,sl_length=90,sp_length=30;
+                var sl_speed=90;	//wait長さ
+                var spaces="";
+                for(var i=0;i<sp_length;i++){
+                    spaces+=" ";	//スペースを作る
+                }
+                var le=0;	//減った
+                var console=this.console, t=this;
+                console.newContext();
+                console.hideInput();
+                this.key=(e:KeyboardEvent)=>false;
+                sl_move();
+                function sl_move(){
+                    if(counter){
+                        //2かいめ以降
+                        console.deletelines(16);	//16行
+                    }
+                    var wheel=counter%6;	//6 patterns
+                    var steam=Math.floor(counter/3)%2;
+                    var cut=function(x:string):string{return spaces+x.slice(le)};
+                    console.print(sl_steam[steam].concat(sl_body,sl_wheels[wheel]).map(cut).join("\n"));
+                    counter++;
+                    if(spaces.length>0){
+                        spaces=spaces.slice(1);
+                    }else{
+                        le++;
+                    }
+                    if(le<sl_length){
+                        setTimeout(sl_move,sl_speed);
+                    }else{
+                        //process.deletelines(16);
+                        console.restoreContext();
+                        t.key=null;
+                        t.die();
+                    }
+                }
             }
         }
     }
