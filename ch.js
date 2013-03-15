@@ -1,3 +1,4 @@
+var fs=require('fs');
 var socketio=require('socket.io'),mongodb=require('mongodb');
 
 var settings=require('./settings');
@@ -41,14 +42,16 @@ var db = new mongodb.Db(settings.DB_NAME,mongoserver,{});
 
 
 //var app = require('express').createServer();
-var app=require('express')();
+var express=require('express');
+var app=express();
 
 app.get(/^\/(index\.html)?$/, function(req, res){
-	res.sendfile(__dirname + '/index.html');
+	res.sendfile(__dirname + '/clients/index.html');
 });
-app.get(/^\/(log|list|apiclient|com|smp|ts|smpjump)(\.js)?$/, function(req, res){
+/*app.get(/^\/(log|list|apiclient|com|smp|ts|smpjump)(\.js)?$/, function(req, res){
 	res.sendfile(__dirname + "/"+req.params[0]+'.'+(req.params[1]?'js':'html'));
-});
+});*/
+
 app.get(/^\/((?:line|connection|client)\.js|css\.css|(sound|jihou)\.(mp3|wav|ogg)|smp.css)$/, function(req, res){
 	res.sendfile(__dirname + "/"+req.params[0]);
 });
@@ -78,6 +81,17 @@ app.get('/show', function(req, res){
 		users_next: users_next,
 		users_s: users_s
 	},{"Content-Type":"text/javascript; charset=UTF-8"});
+});
+//クライアントを探す
+app.get(/^\/([^\/]+)$/,function(req,res){
+	var filename=__dirname+'/clients/'+req.params[0]+'.html';
+	fs.exists(filename,function(result){
+		if(result){
+			res.sendfile(__dirname + '/clients/'+req.params[0]+'.html');
+		}else{
+			res.send(404);
+		}
+	});
 });
 
 //httpでラップ
