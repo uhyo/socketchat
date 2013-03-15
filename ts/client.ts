@@ -22,7 +22,12 @@ module Chat{
             var userData:ChatUserData=this.makeUserData();
             //connection作る
             var connection:ChatConnection=this.makeConnection(userData);
-            connection.onConnection(()=>{
+            connection.onConnection((sessionid:string)=>{
+                //reg
+                if(sessionid){
+                    userData.lastid=sessionid;
+                    userData.save();
+                }
                 //receiver
                 var receiver:ChatReceiver=this.makeReceiver(connection);
                 //process作る

@@ -83,7 +83,7 @@ module Chat{
             //connectionはSocket.ioのコネクション
             this.connection=io.connect(settings.SOCKET_HOST_NAME||(location.protocol+"//"+location.host));
             this.connection.once("connect",()=>{
-                this.event.emit("connect");
+                this.event.emit("connect",(<any>this.connection).socket.sessionid);
             });
 
         }
@@ -125,7 +125,7 @@ module Chat{
                     this.port.postMessage({
                         name:"ready",
                     });
-                    this.event.emit("connect");
+                    this.event.emit("connect",null);
                 }else if(d.name==="ping"){
                     //確認用（送り返す）
                     d.name="pong";
