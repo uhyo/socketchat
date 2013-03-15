@@ -30,7 +30,7 @@ module Chat{
             this.connection=getEventEmitter();
         }
         //サーバーに登録
-        register(lastid:string,channel:string):void{
+        register(lastid:string,channel:string,mode?:string):void{
             //lastid: 前回のセッションID（自動復帰可能）, channel:チャネル
         }
         //コネクション確立したら
@@ -87,8 +87,9 @@ module Chat{
             });
 
         }
-        register(lastid:string,channel:string):void{
-            this.send("register",{"mode":"client","lastid":lastid,channel:channel});
+        register(lastid:string,channel:string,mode?:string="client"):void{
+            //client・・・チャットユーザー
+            this.send("register",{"mode":mode,"lastid":lastid,channel:channel});
         }
         send(event:string,...args:any[]):void{
             //サーバーへ送る

@@ -19,9 +19,29 @@ module Chat{
         }
         getChat(callback:(c:ChatClient)=>void):void{
             //userData取得
-            var userData:ChatUserData=new ChatUserData;
-            userData.load();
+            var userData:ChatUserData=this.makeUserData();
             //connection作る
+            var connection:ChatConnection=this.makeConnection(userData);
+            connection.onConnection(()=>{
+                //receiver
+                var receiver:ChatReceiver=this.makeReceiver(connection);
+                //process作る
+                var process:ChatProcess=this.makeProcess(connection,receiver,userData);
+                //view
+                var view:ChatView=this.makeView(connection,receiver,userData,process);
+                //作る
+                var chat=new ChatClient(userData,connection,receiver,process,view,this.channel);
+                if(callback){
+                    callback(chat);
+                }
+            });
+        }
+        makeUserData():ChatUserData{
+            var ud=new ChatUserData;
+            ud.load();
+            return ud;
+        }
+        makeConnection(userData:ChatUserData):ChatConnection{
             var connection:ChatConnection;
             if(this.child){
                 connection=new ChildConnection;
@@ -32,19 +52,16 @@ module Chat{
             }
             connection.initConnection(settings);
             connection.register(userData.lastid,this.channel);
-            connection.onConnection(()=>{
-                //receiver
-                var receiver:ChatReceiver=new ChatReceiver(connection,this.channel);
-                //process作る
-                var process:ChatProcess=new ChatProcess(connection,receiver,userData,this.channel);
-                //view
-                var view:ChatView=new ChatView(userData,connection,receiver,process,this.com);
-                //作る
-                var chat=new ChatClient(userData,connection,receiver,process,view,this.channel);
-                if(callback){
-                    callback(chat);
-                }
-            });
+            return connection;
+        }
+        makeReceiver(connection:ChatConnection):ChatReceiver{
+            return new ChatReceiver(connection,this.channel);
+        }
+        makeProcess(connection:ChatConnection,receiver:ChatReceiver,userData:ChatUserData):ChatProcess{
+            return new ChatProcess(connection,receiver,userData,this.channel);
+        }
+        makeView(connection:ChatConnection,receiver:ChatReceiver,userData:ChatUserData,process:ChatProcess):ChatView{
+            return new ChatView(userData,connection,receiver,process,this.com);
         }
     }
 }

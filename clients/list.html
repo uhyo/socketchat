@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <title>socket chat</title>
+    <link href="/css.css" rel="stylesheet">
+    <script src="/settings.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/ts/connection.js"></script>
+    <script src="/ts/process.js"></script>
+    <script src="/ts/view.js"></script>
+    <script src="/ts/client.js"></script>
+    <script src="/ts/userlist.js"></script>
+
+    <script>
+var chat;
+window.addEventListener('load',function(){
+  var factory=new Chat.UserListFactory();
+  factory.getUserList(function(c){
+  });
+
+},false);
+    </script>
+  </head>
+  <body role="application">
+  </body>
+</html>
