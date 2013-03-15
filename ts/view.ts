@@ -2,6 +2,11 @@
 interface HTMLTimeElement extends HTMLElement{
     dateTime?:string;
 }
+interface HTMLOutputElement extends HTMLElement{
+    name:string;
+    value:string;
+    type:string;
+}
 interface HTMLElement{
     dataset:any;
     hidden:bool;
@@ -41,13 +46,16 @@ module Chat{
         private userView:ChatUserView;
         private ui:ChatUI;
         private motto:ChatUICollection.MottoForm;
-        private dis:ChatLogDisManager;
+        //why public
+        public dis:ChatLogDisManager;
 
         constructor(userData:ChatUserData,connection:ChatConnection,receiver:ChatReceiver,process:ChatProcess,com:bool){
             this.container=document.createElement("div");
             //コンテナはbodyに入れる
             document.body.setAttribute('role','application');
             document.body.appendChild(this.container);
+            //disマネージャ
+            this.dis=new ChatLogDisManager(userData);
 
             //設定・リンク部分を初期化
             if(com){
@@ -56,9 +64,9 @@ module Chat{
                 this.settingView=new ChatSettingNormalView(userData,this);
             }
             //ログ表示部分を初期化
-            this.logView=new ChatLogView(userData,receiver,process,this);
+            this.logView=new ChatLogView(userData,receiver,process,this,this.dis);
             //ユーザー一覧部分を初期化
-            this.userView=new ChatUserView(receiver,this);
+            this.userView=new ChatUserView(receiver,this,this.dis);
             //ユーザー操作部分を初期化
             //UIを選ぶ
             if(com){
@@ -72,7 +80,6 @@ module Chat{
                 receiver.motto(data);
             });
             //disマネージャ初期化
-            this.dis=new ChatLogDisManager(userData,this.logView);
             //UIを組もう!
             this.container.appendChild(this.settingView.getContainer());
             this.container.appendChild(this.ui.getContainer());
@@ -92,9 +99,6 @@ module Chat{
         }
         getContainer():HTMLElement{
             return this.container;
-        }
-        getDis():ChatLogDisManager{
-            return this.dis;
         }
     }
     //設定・リンク部分(親)
@@ -253,21 +257,116 @@ module Chat{
     //ログ表示部分
     export class ChatLogView{
         private container:HTMLElement;
+        private flow:ChatLogFlow;
+        private audio:HTMLAudioElement;
+
+        constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess,private view:ChatView,private dis:ChatLogDisManager){
+            this.container=document.createElement("div");
+            this.flow=new ChatLogFlow(userData,receiver);
+            dis.registerLogContainer(this.flow.getContainer());
+            this.container.appendChild(this.flow.getContainer());
+            this.refreshSettings(); //初期設定
+            //オーディオ準備
+            this.audio=this.getAudio("/sound");
+            //フローにイベント登録する
+            var fe=this.flow.event;
+            fe.on("logaudio",()=>{
+                //オーディオを鳴らす指令
+                this.audio.volume=this.userData.volume/100;
+                this.audio.play();
+            });
+            fe.on("focusChannel",(channel:string)=>{
+                //チャネルに注目した
+                if(userData.channelMode===0){
+                    //欄#
+                    var focusedChannel=this.dis.setFocusChannel(channel);
+                    this.view.focusComment(focusedChannel);
+                }else{
+                    //窓#
+                    //もとのほうは薄くする
+                    this.dis.addDischannel(channel,true,false);
+                    this.process.openChannel(channel,()=>{
+                        this.dis.removeDischannel(channel,true,false);
+                    });
+                }
+            });
+            fe.on("openReplyForm",(log:HTMLElement)=>{
+                //このログに対して返信フォームを開くべきだ
+                var comForm=new ChatUICollection.CommentForm(true);
+                var cont=comForm.getContainer();
+                //最初にマークつける
+                var p=cont.getElementsByTagName("p")[0];
+                if(p){
+                    p.insertBefore(makeEl("span",(el)=>{
+                        el.className="icon respin opened";
+                        el.textContent="\ue000";
+                    }),p.firstChild);
+                }
+                log.parentNode.insertBefore(cont,log.nextSibling);
+                comForm.onComment((data:CommentNotify)=>{
+                    //返信情報
+                    data.response=log.dataset.id;
+                    this.process.comment(data);
+                    appearAnimation(cont,true,false,true);
+                });
+                comForm.onCancel(()=>{
+                    appearAnimation(cont,true,false,true);
+                });
+                appearAnimation(cont,true,true,true);
+                var ch=log.dataset.channel;
+                comForm.focus(ch ? ch.split(/\s+/)[0] : null);
+            });
+
+        }
+        getContainer():HTMLElement{
+            return this.container;
+        }
+        //設定変更された
+        refreshSettings():void{
+            this.flow.refreshSettings();
+        }
+        //オーディオ初期化
+        getAudio(filename:string):HTMLAudioElement{
+            var audio:HTMLAudioElement;
+            try{
+                audio=new Audio();
+                audio.removeAttribute("src");
+                ["ogg","mp3","wav"].forEach((ext:string)=>{
+                    var source=<HTMLSourceElement>document.createElement("source");
+                    source.src=filename+"."+ext;
+                    source.type="audio/"+ext;
+                    audio.appendChild(source);
+                });
+            }catch(e){
+                //オーディオなんてなかった
+                audio=<HTMLAudioElement>{play:function(){}};
+            }
+            return audio;
+        }
+    }
+    //ログ表示本体
+    export class ChatLogFlow{
+        public event:EventEmitter;
+        private container:HTMLElement;
         private lineMaker:ChatLineMaker;
         private gyozaOnmouseListener:Function;
-        private audio:HTMLAudioElement;
         private toolbox:HTMLElement;
         private selectedLog:HTMLElement;    //現在toolboxが表示しているログ
-
-        constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess,private view:ChatView){
+        constructor(private userData:ChatUserData,private receiver:ChatReceiver){
+            this.event=getEventEmitter();
             this.container=document.createElement("div");
             this.container.setAttribute('role','log');
             this.container.classList.add("logbox");
             setUniqueId(this.container,"log");
-            this.lineMaker=new ChatLineMaker(userData,this);
+            this.lineMaker=new ChatLineMaker(userData);
             //流れてきたログをキャッチ!!
             //ログたくさんきた
             receiver.on("loginit",(logs:LogObj[])=>{
+                //まず全部消す
+                var range=document.createRange();
+                range.selectNodeContents(this.container);
+                range.deleteContents();
+                range.detach();
                 //逆にしてアレする
                 logs.reverse().forEach((log:LogObj)=>{
                     this.getLog(log,true);
@@ -296,14 +395,10 @@ module Chat{
                 }
                 this.lineMaker.checkGyoza(t);
             }).bind(this);
-            this.refreshSettings(); //初期設定
-            //オーディオ準備
-            this.audio=this.getAudio("/sound");
             //クリックに対応する
             this.container.addEventListener("click",<(e:Event)=>void>this.clickHandler.bind(this),false);
             //ツールボックスの準備をする
             this.toolbox=this.makeToolbox();
-
         }
         getContainer():HTMLElement{
             return this.container;
@@ -319,12 +414,10 @@ module Chat{
                 //この判定でいいの?
                 var style=(<any>document.defaultView).getComputedStyle(line,null);
                 if(style.display!=="none"){
-                    this.audio.volume=this.userData.volume/100;
-                    this.audio.play();
+                    this.event.emit("logaudio");
                 }
             }
         }
-        //設定変更された
         refreshSettings():void{
             //餃子まわりの設定
             //リスナ消去
@@ -334,43 +427,12 @@ module Chat{
                 this.container.addEventListener("mouseover",<(e:Event)=>void>this.gyozaOnmouseListener,false);
             }
         }
-        //オーディオ初期化
-        getAudio(filename:string):HTMLAudioElement{
-            var audio:HTMLAudioElement;
-            try{
-                audio=new Audio();
-                audio.removeAttribute("src");
-                ["ogg","mp3","wav"].forEach((ext:string)=>{
-                    var source=<HTMLSourceElement>document.createElement("source");
-                    source.src=filename+"."+ext;
-                    source.type="audio/"+ext;
-                    audio.appendChild(source);
-                });
-            }catch(e){
-                //オーディオなんてなかった
-                audio=<HTMLAudioElement>{play:function(){}};
-            }
-            return audio;
-        }
-        //ログのクリックに対応
         clickHandler(e:Event):void{
             var t=<HTMLElement>e.target;
             var cl=t.classList;
             if(cl.contains("channel") && t.dataset.channel){
                 //チャンネルだ
-                var dis=this.view.getDis();
-                if(this.userData.channelMode===0){
-                    //欄#
-                    var channel=dis.setFocusChannel(t.dataset.channel);
-                    this.view.focusComment(channel);
-                }else{
-                    //窓#
-                    //もとのほうは薄くする
-                    dis.addDischannel(t.dataset.channel,true,false);
-                    this.process.openChannel(t.dataset.channel,()=>{
-                        dis.removeDischannel(t.dataset.channel,true,false);
-                    });
-                }
+                this.event.emit("focusChannel",t.dataset.channel);
             }else if(cl.contains("respin") && !cl.contains("opened")){
                 cl.add("opened");
                 //親のログを得る
@@ -408,10 +470,6 @@ module Chat{
                 }
             }
         }
-        //?????
-        createChannelDatasetString(channel:string):string{
-            return channel.replace(/\//g,"-");
-        }
         //ツールボックス
         private makeToolbox():HTMLElement{
             var toolbox=document.createElement("span");
@@ -424,29 +482,7 @@ module Chat{
                     var log=this.selectedLog;
                     if(log){
                         //返信フォーム展開
-                        var comForm=new ChatUICollection.CommentForm(true);
-                        var cont=comForm.getContainer();
-                        //最初にマークつける
-                        var p=cont.getElementsByTagName("p")[0];
-                        if(p){
-                            p.insertBefore(makeEl("span",(el)=>{
-                                el.className="icon respin opened";
-                                el.textContent="\ue000";
-                            }),p.firstChild);
-                        }
-                        log.parentNode.insertBefore(cont,log.nextSibling);
-                        comForm.onComment((data:CommentNotify)=>{
-                            //返信情報
-                            data.response=log.dataset.id;
-                            this.process.comment(data);
-                            appearAnimation(cont,true,false,true);
-                        });
-                        comForm.onCancel(()=>{
-                            appearAnimation(cont,true,false,true);
-                        });
-                        appearAnimation(cont,true,true,true);
-                        var ch=log.dataset.channel;
-                        comForm.focus(ch ? ch.split(/\s+/)[0] : null);
+                        this.event.emit("openReplyForm",log);
                     }
 
                 },false);
@@ -467,8 +503,9 @@ module Chat{
         //今フォーカスしているチャネル
         private focusedChannel:string=null;
         private disip:string[]=[];  //disipリスト
+        private logContainer:HTMLElement=null;   //logノード
 
-        constructor(private userData:ChatUserData,private logView:ChatLogView){
+        constructor(private userData:ChatUserData){
             //disの初期化をする
             userData.disip.forEach((ip:string)=>{
                 this.setDisipStyle(ip);
@@ -476,6 +513,9 @@ module Chat{
             userData.dischannel.forEach((channel:string)=>{
                 this.setDischannelStyle(channel,false,false);
             });
+        }
+        registerLogContainer(c:HTMLElement):void{
+            this.logContainer=c;
         }
         addDisip(ip:string,temporal?:bool=false):bool{
             var ud=this.userData;
@@ -487,7 +527,7 @@ module Chat{
             this.setDisipStyle(ip);
             return true;
         }
-        setDisipStyle(ip:string):void{
+        private setDisipStyle(ip:string):void{
             this.addCSSRules([
                 '.logbox p[data-ip="'+ip+'"]{display:none}',
                 '.users li[data-ip="'+ip+'"]{text-decoration:line-through}',
@@ -521,20 +561,20 @@ module Chat{
         }
         //disChannel用のcssルールを作る
         //attribute=要素セレクタにつける属性
-        createDisCSSSelector(attribute:string,temporal:bool,anti:bool):string{
+        private createDisCSSSelector(attribute:string,temporal:bool,anti:bool):string{
             if(anti){
                 //逆
                 attribute=":not("+attribute+")";
             }
-            return "#"+this.logView.getContainer().id+" p"+attribute;
+            return "#"+this.logContainer.id+" p"+attribute;
         }
-        createDisCSSRule(attribute:string, temporal:bool,anti:bool):string{
+        private createDisCSSRule(attribute:string, temporal:bool,anti:bool):string{
             var selector:string=this.createDisCSSSelector(attribute,temporal,anti);
             var body= temporal ? "opacity:0.3;" : "display:none;";
             return selector+"{"+body+"}";
         }
         //CSSルールを追加する
-        addCSSRules(cssTexts:string[]):void{
+        private addCSSRules(cssTexts:string[]):void{
             if(document.styleSheets.length===0){
                 //style!
                 var style=document.createElement("style");
@@ -544,7 +584,7 @@ module Chat{
                 (<CSSStyleSheet>document.styleSheets.item(0)).insertRule(cssText,0);
             });
         }
-        removeCSSRules(cssSelectors:string[]):void{
+        private removeCSSRules(cssSelectors:string[]):void{
             var css=<CSSStyleSheet>document.styleSheets.item(0);
             for(var i=css.cssRules.length-1;i>=0;i--){
                 var rule=<CSSStyleRule>css.cssRules[i];
@@ -566,9 +606,9 @@ module Chat{
             this.setDischannelStyle(channel,temporal,anti);
             return true;
         }
-        setDischannelStyle(channel:string,temporal:bool,anti:bool):void{
+        private setDischannelStyle(channel:string,temporal:bool,anti:bool):void{
             this.addCSSRules([
-                this.createDisCSSRule('[data-channel|="'+this.logView.createChannelDatasetString(channel)+'"]',temporal,anti),
+                this.createDisCSSRule('[data-channel|="'+createChannelDatasetString(channel)+'"]',temporal,anti),
             ]);
         }
         removeDischannel(channel:string,temporal:bool,anti:bool):void{
@@ -578,7 +618,7 @@ module Chat{
                 ud.save();
             }
             this.removeCSSRules([
-                this.createDisCSSSelector('[data-channel|="'+this.logView.createChannelDatasetString(channel)+'"]',temporal,anti),
+                this.createDisCSSSelector('[data-channel|="'+createChannelDatasetString(channel)+'"]',temporal,anti),
             ]);
         }
     }
@@ -639,7 +679,7 @@ module Chat{
                 }
             }
         ];
-        constructor(private userData:ChatUserData,private logView:ChatLogView){
+        constructor(private userData:ChatUserData){
         }
         make(obj:LogObj):HTMLParagraphElement{
             var p=<HTMLParagraphElement>document.createElement("p");
@@ -680,7 +720,7 @@ module Chat{
                     }
                 }
                 //コメントにも情報付加
-                p.dataset.channel=c.map((ch:string)=>this.logView.createChannelDatasetString(ch)).join(" ");
+                p.dataset.channel=c.map((ch:string)=>createChannelDatasetString(ch)).join(" ");
             }
             //返信先あり
             if(obj.response){
@@ -736,10 +776,14 @@ module Chat{
         }
         // IPアドレスから色を決める
         getColorByIP(ip:string):string{
-            var arr:string[]=ip.split(/\./);
-            return "rgb("+Math.floor(parseInt(arr[0])*0.75)+","+
-            Math.floor(parseInt(arr[1])*0.75)+","+
-            Math.floor(parseInt(arr[2])*0.75)+")";
+            if("string"===typeof ip){
+                var arr:string[]=ip.split(/\./);
+                return "rgb("+Math.floor(parseInt(arr[0])*0.75)+","+
+                Math.floor(parseInt(arr[1])*0.75)+","+
+                Math.floor(parseInt(arr[2])*0.75)+")";
+            }else{
+                return "black";
+            }
         }
         //コメントがオブジェクトのときはHTMLにする
         commentHTMLify(comment:any):Node{
@@ -979,7 +1023,7 @@ module Chat{
         private container:HTMLElement;
         private userNumber:HTMLElement;
         private userList:HTMLElement;
-        constructor(private receiver:ChatReceiver,private view:ChatView){
+        constructor(private receiver:ChatReceiver,private view:ChatView,private dis:ChatLogDisManager){
             this.container=document.createElement("div");
             this.container.classList.add("userinfo");
             //ユーザー数表示部分
@@ -1007,10 +1051,9 @@ module Chat{
             //ユーザー一覧をクリック
             var t=<HTMLElement>(<HTMLElement>e.target).parentNode;
             if(/li/i.test(t.tagName) && t.dataset.ip){
-                var dis=this.view.getDis();
-                if(!dis.addDisip(t.dataset.ip)){
+                if(!this.dis.addDisip(t.dataset.ip)){
                     //既にあった=消す
-                    dis.removeDisip(t.dataset.ip);
+                    this.dis.removeDisip(t.dataset.ip);
                 }
             }
         }
@@ -2204,7 +2247,7 @@ module Chat{
                     name:["--clean"],
                     num:0,
                 });
-                var dis=this.ui.getView().getDis();
+                var dis=this.ui.getView().dis;
                 if(args[0].active){
                     //disipに追加
                     var ip=args[0].value;
@@ -2245,7 +2288,7 @@ module Chat{
                     name:["--clean"],
                     num:0,
                 });
-                var dis=this.ui.getView().getDis();
+                var dis=this.ui.getView().dis;
                 if(args[0].active){
                     //dischannelに追加
                     var channel=args[0].value;
@@ -2480,9 +2523,12 @@ module Chat{
         },0);
     }
     //要素作る
-    function makeEl(name:string,callback:(el:HTMLElement)=>void){
+    export function makeEl(name:string,callback:(el:HTMLElement)=>void){
         var el=document.createElement(name);
         callback(el);
         return el;
+    }
+    export function createChannelDatasetString(channel:string):string{
+        return channel.replace(/\//g,"-");
     }
 }

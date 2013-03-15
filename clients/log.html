@@ -10,16 +10,13 @@
     <script src="/ts/process.js"></script>
     <script src="/ts/view.js"></script>
     <script src="/ts/client.js"></script>
+    <script src="/ts/logviewer.js"></script>
 
     <script>
 var chat;
 window.addEventListener('load',function(){
-  //チャネル判定
-  var result=location.hash.match(/^#(.+)$/);
-  channel= result ? result[1] : null;
-  var factory=new Chat.ChatClientFactory(channel,true,"socket");
-  factory.getChat(function(c){
-    chat=c;
+  var factory=new Chat.LogViewerFactory();
+  factory.getLogViewer(function(c){
   });
 
 },false);
