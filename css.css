@@ -50,14 +50,40 @@ div.logbox{
 .logbox blockquote.resp{
 	margin:0 0 0 3em;
 }
+/*anim用*/
+.verticalanime{
+	transition: height 0.35s ease-out 0s;
+	overflow-y:hidden;
+}
+.horizontalanime{
+	transition: width 35s ease-out 0s;
+	overflow-x:hidden;
+}
+/* toolbox */
+span.toolbox{
+	display:inline-block;
+	white-space:nowrap;
+}
 /* icons? */
-span.icon.resptip{
+span.icon.respin{
+	/*返信であることを示すやつ*/
 	color:#888888;
 	cursor:pointer;
+	transition:color 0.35s ease 0s;
 }
-span.icon.resptip.opened{
+span.icon.respin.opened{
 	color:#bbbbbb;
 	cursor:auto;
+}
+span.icon.resptip{
+	/*返信ボタン*/
+	color:#00cc00;
+	cursor:pointer;
+}
+span.icon.hidetoolbox{
+	/*ツールボックスをかくすボタン*/
+	color:#999999;
+	cursor:pointer;
 }
 
 div.userinfo{

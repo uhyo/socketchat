@@ -6,6 +6,29 @@ interface HTMLElement{
     dataset:any;
     hidden:bool;
 }
+//DOM3 XPath
+interface XPathNSResolver{
+    lookupNamespaceURI(prefix:string):string;
+}
+declare var XPathResult:{
+    ANY_TYPE:number;
+    NUMBER_TYPE:number;
+    STRING_TYPE:number;
+    BOOLEAN_TYPE:number;
+    UNORDERED_NODE_ITERATOR_TYPE:number;
+    ORDERED_NODE_ITERATOR_TYPE:number;
+    UNORDERED_NODE_SNAPSHOT_TYPE:number;
+    ORDERED_NODE_SNAPSHOT_TYPE:number;
+    ANY_UNORDERED_NODE_TYPE:number;
+    FIRST_ORDERED_NODE_TYPE:number;
+}
+
+interface XPathEvaluator{
+    evaluate(expression:string,contextNode:Node,resolver:XPathNSResolver,type:number,result:any):any;
+}
+//ちょっと違うけど・・・
+interface Document extends XPathEvaluator{}
+
 module Chat{
 /// <reference path="connection.ts"/>
 /// <reference path="process.ts"/>
@@ -20,22 +43,31 @@ module Chat{
         private motto:ChatUICollection.MottoForm;
         private dis:ChatLogDisManager;
 
-        init(userData:ChatUserData,connection:ChatConnection,receiver:ChatReceiver,process:ChatProcess):void{
+        constructor(userData:ChatUserData,connection:ChatConnection,receiver:ChatReceiver,process:ChatProcess,com:bool){
             this.container=document.createElement("div");
             //コンテナはbodyに入れる
             document.body.setAttribute('role','application');
             document.body.appendChild(this.container);
 
             //設定・リンク部分を初期化
-            this.settingView=new ChatSettingView(userData,this);
+            if(com){
+                this.settingView=new ChatSettingView(userData,this);
+            }else{
+                this.settingView=new ChatSettingNormalView(userData,this);
+            }
             //ログ表示部分を初期化
             this.logView=new ChatLogView(userData,receiver,process,this);
             //ユーザー一覧部分を初期化
             this.userView=new ChatUserView(receiver,this);
             //ユーザー操作部分を初期化
-            this.ui=new ChatCmdUI(userData,receiver,process,this);
+            //UIを選ぶ
+            if(com){
+                this.ui=new ChatCmdUI(userData,receiver,process,this);
+            }else{
+                this.ui=new ChatNormalUI(userData,receiver,process,this);
+            }
             //HottoMottoボタンを初期化
-            this.motto=new ChatUICollection.MottoForm(this.ui,userData,receiver,process);
+            this.motto=new ChatUICollection.MottoForm();
             this.motto.onMotto((data:MottoNotify)=>{
                 receiver.motto(data);
             });
@@ -65,8 +97,18 @@ module Chat{
             return this.dis;
         }
     }
-    //設定・リンク部分
+    //設定・リンク部分(親)
     export class ChatSettingView{
+        private container:HTMLFormElement;
+        constructor(private userData:ChatUserData,private view:ChatView){
+        }
+        getContainer():Node{
+            return document.createDocumentFragment();
+        }
+        refreshSettings():void{
+        }
+    }
+    export class ChatSettingNormalView extends ChatSettingView{
         private container:HTMLFormElement;
         //リンク一覧
         private links:{url:string;name:string;}[]=[
@@ -110,6 +152,7 @@ module Chat{
         //チャネルセッティング一覧
         private channelSettings:string[]=["欄#","窓#"];
         constructor(private userData:ChatUserData,private view:ChatView){
+            super(userData,view);
             this.container=<HTMLFormElement>document.createElement("form");
             this.container.classList.add("infobar");
             //まずリンク生成
@@ -213,6 +256,8 @@ module Chat{
         private lineMaker:ChatLineMaker;
         private gyozaOnmouseListener:Function;
         private audio:HTMLAudioElement;
+        private toolbox:HTMLElement;
+        private selectedLog:HTMLElement;    //現在toolboxが表示しているログ
 
         constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess,private view:ChatView){
             this.container=document.createElement("div");
@@ -256,6 +301,9 @@ module Chat{
             this.audio=this.getAudio("/sound");
             //クリックに対応する
             this.container.addEventListener("click",<(e:Event)=>void>this.clickHandler.bind(this),false);
+            //ツールボックスの準備をする
+            this.toolbox=this.makeToolbox();
+
         }
         getContainer():HTMLElement{
             return this.container;
@@ -323,7 +371,7 @@ module Chat{
                         dis.removeDischannel(t.dataset.channel,true,false);
                     });
                 }
-            }else if(cl.contains("resptip") && !cl.contains("opened")){
+            }else if(cl.contains("respin") && !cl.contains("opened")){
                 cl.add("opened");
                 //親のログを得る
                 var log=<HTMLElement>t.parentNode.parentNode;
@@ -337,13 +385,82 @@ module Chat{
                         bq.classList.add("resp");
                         bq.appendChild(line);
                         log.parentNode.insertBefore(bq,log.nextSibling);
+                        appearAnimation(bq,true,true,true);
                     }
                 });
+                return;
+            }
+            //ログクリックを検出
+            var logp=(<XPathEvaluator>document).evaluate('ancestor-or-self::p',t,null,XPathResult.ANY_UNORDERED_NODE_TYPE,null).singleNodeValue;
+            if(!logp){
+                //ログをクリックしていない
+                //ツールボックス消去
+                if(this.toolbox.parentNode){
+                    appearAnimation(this.toolbox,false,false,true);
+                }
+                this.selectedLog=null;
+            }else{
+                //ログの位置にツールボックス
+                if(this.selectedLog!==logp){
+                    this.selectedLog=logp;
+                    logp.appendChild(this.toolbox);
+                    appearAnimation(this.toolbox,false,true,true);
+                }
             }
         }
         //?????
         createChannelDatasetString(channel:string):string{
             return channel.replace(/\//g,"-");
+        }
+        //ツールボックス
+        private makeToolbox():HTMLElement{
+            var toolbox=document.createElement("span");
+            toolbox.classList.add("toolbox");
+            toolbox.appendChild(makeEl("span",(el)=>{
+                el.textContent="\ue001";    //返信
+                el.className="icon resptip";
+                el.setAttribute("role","button");
+                el.addEventListener("click",(e:Event)=>{
+                    var log=this.selectedLog;
+                    if(log){
+                        //返信フォーム展開
+                        var comForm=new ChatUICollection.CommentForm(true);
+                        var cont=comForm.getContainer();
+                        //最初にマークつける
+                        var p=cont.getElementsByTagName("p")[0];
+                        if(p){
+                            p.insertBefore(makeEl("span",(el)=>{
+                                el.className="icon respin opened";
+                                el.textContent="\ue000";
+                            }),p.firstChild);
+                        }
+                        log.parentNode.insertBefore(cont,log.nextSibling);
+                        comForm.onComment((data:CommentNotify)=>{
+                            //返信情報
+                            data.response=log.dataset.id;
+                            this.process.comment(data);
+                            appearAnimation(cont,true,false,true);
+                        });
+                        comForm.onCancel(()=>{
+                            appearAnimation(cont,true,false,true);
+                        });
+                        appearAnimation(cont,true,true,true);
+                        var ch=log.dataset.channel;
+                        comForm.focus(ch ? ch.split(/\s+/)[0] : null);
+                    }
+
+                },false);
+            }));
+            toolbox.appendChild(makeEl("span",(el)=>{
+                el.textContent="\ue004";    //しまう
+                el.className="icon hidetoolbox";
+                el.setAttribute("role","button");
+                el.addEventListener("click",(e:Event)=>{
+                    //クリックするとしまう
+                    appearAnimation(toolbox,false,false,true);
+                },false);
+            }));
+            return toolbox;
         }
     }
     export class ChatLogDisManager{
@@ -542,7 +659,7 @@ module Chat{
             //返信チップ
             if(obj.response){
                 var resptip=document.createElement("span");
-                resptip.className="icon resptip";
+                resptip.className="icon respin";
                 resptip.textContent="\ue000";
                 main.appendChild(resptip);
             }
@@ -1008,10 +1125,10 @@ module Chat{
             this.container.classList.add("ui");
             //フォーム用意
             //まず入退室フォーム
-            this.inoutForm=new ChatUICollection.InoutForm(this,this.userData,this.receiver,this.process);
+            this.inoutForm=new ChatUICollection.InoutForm(this.userData,this.receiver);
             this.container.appendChild(this.inoutForm.getContainer());
             //次に発言フォーム
-            this.commentForm=new ChatUICollection.CommentForm(this,this.userData,this.receiver,this.process);
+            this.commentForm=new ChatUICollection.CommentForm(false);
             this.container.appendChild(this.commentForm.getContainer());
 
             //操作に対応する
@@ -1035,8 +1152,7 @@ module Chat{
         export class UIObject{
             private event:EventEmitter;
             private container:HTMLElement;
-            //protected
-            constructor(public ui:ChatUI){
+            constructor(){
                 this.event=getEventEmitter();
             }
             getContainer():HTMLElement{
@@ -1053,8 +1169,8 @@ module Chat{
         export class InoutForm extends UIObject{
             private event:EventEmitter;
             private container:HTMLFormElement;
-            constructor(ui:ChatUI,private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess){
-                super(ui);
+            constructor(private userData:ChatUserData,private receiver:ChatReceiver){
+                super();
                 this.container=<HTMLFormElement>document.createElement("form");
                 var p:HTMLParagraphElement;
 
@@ -1102,9 +1218,11 @@ module Chat{
         export class CommentForm extends UIObject{
             private event:EventEmitter;
             private container:HTMLFormElement;
-            constructor(ui:ChatUI,private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess){
-                super(ui);
+            constructor(private canselable){
+                //canselable: キャンセルボタンがつく
+                super();
                 this.container=<HTMLFormElement>document.createElement("form");
+                this.container.classList.add("commentform");
                 var p:HTMLParagraphElement;
 
                 p=<HTMLParagraphElement>document.createElement("p");
@@ -1135,6 +1253,17 @@ module Chat{
                     e.preventDefault();
                     this.emitComment(e);
                 },false);
+                if(canselable){
+                    //キャンセルボタン
+                    p.appendChild(this.makeinput(input=>{
+                        input.name="canselbutton";
+                        input.type="button";
+                        input.value="キャンセル";
+                        input.addEventListener("click",(e:Event)=>{
+                            this.event.emit("cancel");
+                        },false);
+                    }));
+                }
 
             }
             //入退室ボタンが押されたときの処理
@@ -1158,6 +1287,9 @@ module Chat{
             onComment(func:(data:CommentNotify)=>void):void{
                 this.event.on("comment",func);
             }
+            onCancel(func:()=>void):void{
+                this.event.on("cancel",func);
+            }
             //フォーカスする(チャネル指定可能）
             focus(channel?:string):void{
                 (<HTMLInputElement>this.container.elements["comment"]).focus();
@@ -1167,8 +1299,8 @@ module Chat{
         export class MottoForm extends UIObject{
             private event:EventEmitter;
             private container:HTMLFormElement;
-            constructor(ui:ChatUI,private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess){
-                super(ui);
+            constructor(){
+                super();
                 this.container=<HTMLFormElement>document.createElement("form");
                 var p:HTMLParagraphElement;
 
@@ -1208,8 +1340,8 @@ module Chat{
             private commandlogindex:number=null;
             private indentSpace:string="";
             private saves:DocumentFragment[]=[];
-            constructor(ui:ChatUI,private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess){
-                super(ui);
+            constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess,private ui:ChatUI){
+                super();
                 this.cmode="down";    //up:新しいログ上へ、down:下へ
                 this.makeConsole();
                 this.cmdprocess=null;
@@ -1251,6 +1383,11 @@ module Chat{
                         e.preventDefault();
                         return;
                     }
+                }
+                var act=document.activeElement;
+                if(/^input|button$/i.test(act.tagName) && act!==this.command){
+                    //邪魔しない
+                    return;
                 }
                 if(e.keyCode===13 || e.keyCode===27){
                     //Enter,Esc
@@ -2238,7 +2375,7 @@ module Chat{
         private console:ChatUICollection.Console;
         constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess,private view:ChatView){
             super(userData,receiver,process,view);
-            this.console=new ChatUICollection.Console(this,userData,receiver,process);
+            this.console=new ChatUICollection.Console(userData,receiver,process,this);
             receiver.on("userinfo",(data:any)=>{
                 if(!data.rom && data.name){
                     this.console.print("Hello, "+data.name,{color:"#ffff00"});
@@ -2259,5 +2396,93 @@ module Chat{
         while(document.getElementById(base+number))number++;
         element.id=base+number;
         return;
+    }
+    function appearAnimation(el:HTMLElement,vertical:bool,appear:bool,finish:bool,callback?:()=>void=function(){}):void{
+        //transition heightが設定してあることが前提
+        //vertical: true->縦 false->横
+        //appear: true->出現 false->消滅
+        //finish: 終了時に後処理をするかどうか(appear:true->スタイルを消す, appear:false->スタイルを消して親から消す)
+        //DOMツリーに追加してから呼ぶ(スタイル反映）
+        //とっておく
+        //computedStyle取得
+        var cmp=(<any>el.ownerDocument.defaultView).getComputedStyle(el,null);
+        if(!cmp.transition){
+            if(!appear && finish){
+                if(el.parentNode){
+                    el.parentNode.removeChild(el);
+                }
+            }
+            callback();
+            return;  //未対応
+        }
+        //クラス付加
+        var inb:bool;
+        var h:number;
+        if(vertical){
+            h=el.clientHeight;
+            inb=el.classList.contains("verticalanime");
+            el.classList.add("verticalanime");
+            if(appear){
+                el.style.height="0";
+            }else{
+                el.style.height=h+"px";
+            }
+        }else{
+            h=el.clientWidth;
+            inb=el.classList.contains("horizontalanime");
+            el.classList.add("horizontalanime");
+            if(appear){
+                el.style.width="0";
+            }else{
+                el.style.width=h+"px";
+            }
+        }
+        //setImmediateがほしい
+        setTimeout(()=>{
+            //戻す（アニメーション）
+            if(vertical){
+                if(appear){
+                    el.style.height=h+"px";
+                }else{
+                    el.style.height="0";
+                }
+            }else{
+                if(appear){
+                    el.style.width=h+"px";
+                }else{
+                    el.style.width="0";
+                }
+            }
+            var listener;
+            el.addEventListener("transitionend",listener=(e:TransitionEvent)=>{
+                if(!inb){
+                    if(vertical){
+                        el.classList.remove("verticalanime");
+                    }else{
+                        el.classList.remove("horizontalanime");
+                    }
+                }
+                if(finish){
+                    if(vertical){
+                        el.style.removeProperty("height");
+                    }else{
+                        el.style.removeProperty("width");
+                    }
+                    if(!appear){
+                        if(el.parentNode){
+                            el.parentNode.removeChild(el);
+                        }
+                    }
+                }
+                callback();
+                el.removeEventListener("transitionend",listener,false);
+            },false);
+        },0);
+    }
+    //要素作る
+    function makeEl(name:string,callback:(el:HTMLElement)=>void){
+        var el=document.createElement(name);
+        callback(el);
+        return el;
     }
 }

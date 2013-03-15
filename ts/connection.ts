@@ -404,6 +404,14 @@ module Chat{
         constructor(private connection:ChatConnection,private channel:string){
             this.hub=new ChatHub.Hub(this,connection);
             this.event=getEventEmitter();
+            //通信初期化
+            connection.on("init",this.loginit.bind(this));
+            connection.on("log",this.log.bind(this));
+            connection.on("users",this.userinit.bind(this));
+            connection.on("userinfo",this.userinfo.bind(this));
+            connection.on("newuser",this.newuser.bind(this));
+            connection.on("deluser",this.deluser.bind(this));
+            connection.on("inout",this.inout.bind(this));
         }
         getHub():ChatHub.Hub{
             return this.hub;
@@ -451,18 +459,6 @@ module Chat{
             }else{
                 this.once("loginit",callback);
             }
-        }
-        //通信初期化
-        init():void{
-            // ログ初期化
-            var c:ChatConnection=this.connection;
-            c.on("init",this.loginit.bind(this));
-            c.on("log",this.log.bind(this));
-            c.on("users",this.userinit.bind(this));
-            c.on("userinfo",this.userinfo.bind(this));
-            c.on("newuser",this.newuser.bind(this));
-            c.on("deluser",this.deluser.bind(this));
-            c.on("inout",this.inout.bind(this));
         }
         //最終発言を教えてもらう
         getOldest():Date{
