@@ -77,13 +77,7 @@ LineMaker.prototype={
 		//コメントの_idを保存（返信など用）
 		df.dataset.id=obj._id;
 		df.dataset.ip=obj.ip;
-		if(obj.channel){
-			if(Array.isArray(obj.channel)){
-				df.dataset.channel = obj.channel.map(function(ch){return this.createChannelDatasetString(ch)}.bind(this)).join(" ");
-			}else{
-				df.dataset.channel = this.createChannelDatasetString(obj.channel);
-			}
-		}
+		if(obj.channel) df.dataset.channel="#"+(Array.isArray(obj.channel) ? obj.channel.join("#") : obj.channel)+"#";//# is magic
 		if(obj.response){
 			//そのコメントが返信の場合はdatasetに追加、クラス追加
 			df.dataset.respto=obj.response;
@@ -173,9 +167,6 @@ LineMaker.prototype={
 			}
 			return span;
 		})();
-	},
-	createChannelDatasetString: function(channel){
-		return channel.replace(/\//g, "-");
 	},
 }
 

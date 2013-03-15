@@ -31,22 +31,12 @@ ChatClient.prototype={
 		
 		this.bots=[];
 		this.disip=[];	//IP list
-		if(localStorage.socketchat_disip){
-			JSON.parse(localStorage.socketchat_disip).forEach(this.addDisip.bind(this));
-		}
 		this.dischannel=[];	//channel list
-		if(localStorage.socketchat_dischannel){
-			JSON.parse(localStorage.socketchat_dischannel).forEach(function(ip){this.addDischannel(ip)}.bind(this));
-		}
 		
 		if(localStorage.socketchat_displaynone){
 			document.styleSheets[0].insertRule(localStorage.socketchat_displaynone+"{display:none}", 0)
 		}
 
-		this.windowb = document.createElement("button");
-		this.windowb.addEventListener("click",function(){this.setWindowMode(!this.windowMode);}.bind(this));
-		this.setWindowMode(localStorage.soc_highchat_window=="true");
-		document.getElementById(this.infobarid).appendChild(this.windowb);
 		
 		this.responding_to=null;	//dd
 		
@@ -102,16 +92,32 @@ ChatClient.prototype={
 				}
 			}
 		}.bind(this));
-		document.forms["comment"].elements["channel"].addEventListener("change", function(e){
-			this.setFocusChannel(e.target.value);
-		}.bind(this));
+
+		//どこに書くべきかわからない by na2hiro
+		if(document.forms["comment"]){
+			document.forms["comment"].elements["channel"].addEventListener("change", function(e){
+				this.setFocusChannel(e.target.value);
+			}.bind(this));
+		}
 		
 		//フォームを用意
 		this.prepareForm();
 		this.prepareHottoMottoButton();
 		this.line=new HighChatMaker(this,document.getElementById(this.infobarid));
+
+		this.windowb = document.createElement("button");
+		this.windowb.addEventListener("click",function(){this.setWindowMode(!this.windowMode);}.bind(this));
+		this.setWindowMode(localStorage.soc_highchat_window=="true");
+		this.line.infobar.appendChild(this.windowb);
 		
 		this.loadBot();
+
+		if(localStorage.socketchat_disip){
+			JSON.parse(localStorage.socketchat_disip).forEach(this.addDisip.bind(this));
+		}
+		if(localStorage.socketchat_dischannel){
+			JSON.parse(localStorage.socketchat_dischannel).forEach(function(ip){this.addDischannel(ip)}.bind(this));
+		}
 	},
 	setFocusChannel: function(channel){
 		var lastChannel = this.focusChannel;
@@ -570,8 +576,16 @@ ChatClient.prototype={
 			this.dischannel.push(channel);
 			localStorage.socketchat_dischannel=JSON.stringify(this.dischannel);
 		}
+		if(anti){
+			//全てを一旦非表示にする
+			// #log p はcss.cssで使っているので>のおまじないを挟んでる
+			this.addCSSRules([
+				'#log > p'+this.createDisCSS('', temporal, false),
+			]);
+		}
 		this.addCSSRules([
-			'#log p'+this.createDisCSS('[data-channel|="'+this.line.createChannelDatasetString(channel)+'"]', temporal, anti),
+			'#log p'+this.createDisCSS('[data-channel*="#'+channel+'#"]', temporal, anti),
+			'#log p'+this.createDisCSS('[data-channel*="#'+channel+'/"]', temporal, anti),
 		]);
 		return true;
 	},
@@ -582,16 +596,22 @@ ChatClient.prototype={
 			});
 			localStorage.socketchat_dischannel=JSON.stringify(this.dischannel);
 		}
+		if(anti){
+			this.removeCSSRules([
+				'#log > p',
+			]);
+		}
 		this.removeCSSRules([
-			'#log p'+this.createDisSelector('[data-channel|="'+this.line.createChannelDatasetString(channel)+'"]', anti),
+			'#log p[data-channel*="#'+channel+'#"]',
+			'#log p[data-channel*="#'+channel+'/"]',
 		]);
 	},
-	createDisSelector: function(selector, anti){
-		if(anti) selector = ":not("+selector+")";
-		return selector;
-	},
 	createDisCSS: function(selector, temporal, anti){
-		return this.createDisSelector(selector, anti)+(temporal ? "{opacity:0.3}" : "{display:none}");
+		if(anti){
+			return selector+(temporal ? "{opacity:1}" : "{display:block}");
+		}else{
+			return selector+(temporal ? "{opacity:0.3}" : "{display:none}");
+		}
 	},
 	addCSSRules: function(cssTexts){
 		console.log("addCSS", cssTexts);

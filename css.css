@@ -176,3 +176,6 @@ pre.consoleoutput{
 	background-color:transparent;
 	font-family:monospace;
 }
+button#installButton{
+	display: none;
+}
