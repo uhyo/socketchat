@@ -74,7 +74,7 @@ span.toolbox{
 /* icons? */
 span.icon::before{
 	font-family:icons;
-	vertical-align:bottom;
+	vertical-align:text-bottom;
 }
 span.icon{
 	cursor:default;

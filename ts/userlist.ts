@@ -71,7 +71,7 @@ module Chat{
         }
         newuser(user:UserObj):void{
             //行追加
-            var tr=<HTMLTableRowElement>this.table.insertRow();
+            var tr=<HTMLTableRowElement>this.table.insertRow(-1);
             tr.style.color=this.getColorByIP(user.ip);
             tr.dataset.id=String(user.id);
             ["(ROM)",user.ip,user.ua].forEach((x:string)=>{

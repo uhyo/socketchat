@@ -77,7 +77,7 @@ var Chat;
             data.users.forEach(this.newuser, this);
         };
         UserListView.prototype.newuser = function (user) {
-            var tr = this.table.insertRow();
+            var tr = this.table.insertRow(-1);
             tr.style.color = this.getColorByIP(user.ip);
             tr.dataset.id = String(user.id);
             [
