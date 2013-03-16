@@ -86,6 +86,13 @@ module Chat{
             this.container.appendChild(this.logView.getContainer());
             this.container.appendChild(this.userView.getContainer());
             this.container.appendChild(this.motto.getContainer());
+            //接続関係
+            receiver.on("disconnect",()=>{
+                document.body.classList.add("discon");
+            });
+            receiver.on("reconnect",()=>{
+                document.body.classList.remove("discon");
+            });
         }
         //設定がされたので反映させる
         refreshSettings():void{
@@ -1203,7 +1210,7 @@ module Chat{
         //発言欄にフォーカスする
         focusComment(focus:bool,channel?:string):void{
             if(focus)this.commentForm.focus();
-            if(channel)this.commentForm.setChannel(channel);
+            this.commentForm.setChannel(channel);
         }
     }
     //UIパーツ

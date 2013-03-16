@@ -90,6 +90,10 @@ module Chat{
         register(lastid:string,channel:string,mode?:string="client"):void{
             //client・・・チャットユーザー
             this.send("register",{"mode":mode,"lastid":lastid,channel:channel});
+            this.connection.on("reconnect",()=>{
+                //再接続時には登録しなおす
+                this.send("register",{"mode":mode,"lastid":lastid,channel:channel});
+            });
         }
         send(event:string,...args:any[]):void{
             //サーバーへ送る
@@ -413,6 +417,9 @@ module Chat{
             connection.on("newuser",this.newuser.bind(this));
             connection.on("deluser",this.deluser.bind(this));
             connection.on("inout",this.inout.bind(this));
+            //コネクション
+            connection.on("disconnect",this.disconnect.bind(this));
+            connection.on("reconnect",this.reconnect.bind(this));
         }
         getHub():ChatHub.Hub{
             return this.hub;
@@ -507,6 +514,13 @@ module Chat{
         //入退室した
         inout(data:UserObj):void{
             this.event.emit("inout",data);
+        }
+        //コネクション
+        disconnect():void{
+            this.event.emit("disconnect");
+        }
+        reconnect():void{
+            this.event.emit("reconnect");
         }
     }
 }

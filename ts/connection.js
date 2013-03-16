@@ -80,10 +80,18 @@ var Chat;
         };
         SocketConnection.prototype.register = function (lastid, channel, mode) {
             if (typeof mode === "undefined") { mode = "client"; }
+            var _this = this;
             this.send("register", {
                 "mode": mode,
                 "lastid": lastid,
                 channel: channel
+            });
+            this.connection.on("reconnect", function () {
+                _this.send("register", {
+                    "mode": mode,
+                    "lastid": lastid,
+                    channel: channel
+                });
             });
         };
         SocketConnection.prototype.send = function (event) {
@@ -401,6 +409,8 @@ var Chat;
             connection.on("newuser", this.newuser.bind(this));
             connection.on("deluser", this.deluser.bind(this));
             connection.on("inout", this.inout.bind(this));
+            connection.on("disconnect", this.disconnect.bind(this));
+            connection.on("reconnect", this.reconnect.bind(this));
         }
         ChatReceiver.prototype.getHub = function () {
             return this.hub;
@@ -480,6 +490,12 @@ var Chat;
         };
         ChatReceiver.prototype.inout = function (data) {
             this.event.emit("inout", data);
+        };
+        ChatReceiver.prototype.disconnect = function () {
+            this.event.emit("disconnect");
+        };
+        ChatReceiver.prototype.reconnect = function () {
+            this.event.emit("reconnect");
         };
         return ChatReceiver;
     })();

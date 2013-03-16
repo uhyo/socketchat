@@ -32,6 +32,12 @@ var Chat;
             this.container.appendChild(this.logView.getContainer());
             this.container.appendChild(this.userView.getContainer());
             this.container.appendChild(this.motto.getContainer());
+            receiver.on("disconnect", function () {
+                document.body.classList.add("discon");
+            });
+            receiver.on("reconnect", function () {
+                document.body.classList.remove("discon");
+            });
         }
         ChatView.prototype.refreshSettings = function () {
             this.settingView.refreshSettings();
@@ -1016,9 +1022,7 @@ var Chat;
             if(focus) {
                 this.commentForm.focus();
             }
-            if(channel) {
-                this.commentForm.setChannel(channel);
-            }
+            this.commentForm.setChannel(channel);
         };
         return ChatNormalUI;
     })(ChatUI);
