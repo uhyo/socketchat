@@ -307,12 +307,12 @@ module Chat{
                     //返信情報
                     data.response=log.dataset.id;
                     this.process.comment(data);
-                    appearAnimation(cont,true,false,true);
+                    appearAnimation(cont,"vertical",false,true);
                 });
                 comForm.onCancel(()=>{
-                    appearAnimation(cont,true,false,true);
+                    appearAnimation(cont,"vertical",false,true);
                 });
-                appearAnimation(cont,true,true,true);
+                appearAnimation(cont,"vertical",true,true);
                 var ch=log.dataset.channel;
                 comForm.focus(ch ? ch.split(/\s+/)[0] : null);
             });
@@ -447,27 +447,27 @@ module Chat{
                         bq.classList.add("resp");
                         bq.appendChild(line);
                         log.parentNode.insertBefore(bq,log.nextSibling);
-                        appearAnimation(bq,true,true,true);
+                        appearAnimation(bq,"vertical",true,true);
                     }
                 });
                 return;
             }
             //ログクリックを検出
-            var logp=(<XPathEvaluator>document).evaluate('ancestor-or-self::p',t,null,XPathResult.ANY_UNORDERED_NODE_TYPE,null).singleNodeValue;
-            if(!logp){
-                //ログをクリックしていない
-                //ツールボックス消去
-                if(this.toolbox.parentNode){
-                    appearAnimation(this.toolbox,false,false,true);
-                }
-                this.selectedLog=null;
-            }else{
+            var logp=<HTMLElement>(<XPathEvaluator>document).evaluate('ancestor-or-self::p',t,null,XPathResult.ANY_UNORDERED_NODE_TYPE,null).singleNodeValue;
+            if(logp && logp.classList.contains("log")){
                 //ログの位置にツールボックス
                 if(this.selectedLog!==logp){
                     this.selectedLog=logp;
                     logp.appendChild(this.toolbox);
-                    appearAnimation(this.toolbox,false,true,true);
+                    appearAnimation(this.toolbox,"fade",true,true);
                 }
+            }else{
+                //ログをクリックしていない
+                //ツールボックス消去
+                if(this.toolbox.parentNode){
+                    appearAnimation(this.toolbox,"fade",false,true);
+                }
+                this.selectedLog=null;
             }
         }
         //ツールボックス
@@ -493,7 +493,7 @@ module Chat{
                 el.setAttribute("role","button");
                 el.addEventListener("click",(e:Event)=>{
                     //クリックするとしまう
-                    appearAnimation(toolbox,false,false,true);
+                    appearAnimation(toolbox,"fade",false,true);
                 },false);
             }));
             return toolbox;
@@ -683,6 +683,7 @@ module Chat{
         }
         make(obj:LogObj):HTMLParagraphElement{
             var p=<HTMLParagraphElement>document.createElement("p");
+            p.classList.add("log");
             if(obj.syslog){
                 //システムログ
                 p.classList.add("syslog");
@@ -2440,9 +2441,9 @@ module Chat{
         element.id=base+number;
         return;
     }
-    function appearAnimation(el:HTMLElement,vertical:bool,appear:bool,finish:bool,callback?:()=>void=function(){}):void{
+    function appearAnimation(el:HTMLElement,mode:string,appear:bool,finish:bool,callback?:()=>void=function(){}):void{
         //transition heightが設定してあることが前提
-        //vertical: true->縦 false->横
+        //mode:"vertical","horizontal","fade"
         //appear: true->出現 false->消滅
         //finish: 終了時に後処理をするかどうか(appear:true->スタイルを消す, appear:false->スタイルを消して親から消す)
         //DOMツリーに追加してから呼ぶ(スタイル反映）
@@ -2461,65 +2462,89 @@ module Chat{
         //クラス付加
         var inb:bool;
         var h:number;
-        if(vertical){
+        if(mode==="vertical"){
             h=el.clientHeight;
-            inb=el.classList.contains("verticalanime");
-            el.classList.add("verticalanime");
             if(appear){
                 el.style.height="0";
             }else{
                 el.style.height=h+"px";
             }
-        }else{
+        }else if(mode==="horizontal"){
             h=el.clientWidth;
-            inb=el.classList.contains("horizontalanime");
-            el.classList.add("horizontalanime");
             if(appear){
                 el.style.width="0";
             }else{
                 el.style.width=h+"px";
             }
+        }else if(mode==="fade"){
+            if(appear){
+                el.style.opacity="0";
+            }else{
+                el.style.opacity="1";
+            }
         }
         //setImmediateがほしい
         setTimeout(()=>{
-            //戻す（アニメーション）
-            if(vertical){
-                if(appear){
-                    el.style.height=h+"px";
-                }else{
-                    el.style.height="0";
-                }
-            }else{
-                if(appear){
-                    el.style.width=h+"px";
-                }else{
-                    el.style.width="0";
-                }
+            if(mode==="vertical"){
+                inb=el.classList.contains("verticalanime");
+                el.classList.add("verticalanime");
+            }else if(mode==="horizontal"){
+                inb=el.classList.contains("horizontalanime");
+                el.classList.add("horizontalanime");
+            }else if(mode==="fade"){
+                inb=el.classList.contains("fadeanime");
+                el.classList.add("fadeanime");
             }
-            var listener;
-            el.addEventListener("transitionend",listener=(e:TransitionEvent)=>{
-                if(!inb){
-                    if(vertical){
-                        el.classList.remove("verticalanime");
+            setTimeout(()=>{
+                //戻す（アニメーション）
+                if(mode==="vertical"){
+                    if(appear){
+                        el.style.height=h+"px";
                     }else{
-                        el.classList.remove("horizontalanime");
+                        el.style.height="0";
+                    }
+                }else if(mode==="horizontal"){
+                    if(appear){
+                        el.style.width=h+"px";
+                    }else{
+                        el.style.width="0";
+                    }
+                }else if(mode==="fade"){
+                    if(appear){
+                        el.style.opacity="1";
+                    }else{
+                        el.style.opacity="0";
                     }
                 }
-                if(finish){
-                    if(vertical){
-                        el.style.removeProperty("height");
-                    }else{
-                        el.style.removeProperty("width");
-                    }
-                    if(!appear){
-                        if(el.parentNode){
-                            el.parentNode.removeChild(el);
+                var listener;
+                el.addEventListener("transitionend",listener=(e:TransitionEvent)=>{
+                    if(!inb){
+                        if(mode==="vertical"){
+                            el.classList.remove("verticalanime");
+                        }else if(mode==="horizontal"){
+                            el.classList.remove("horizontalanime");
+                        }else if(mode==="fade"){
+                            el.classList.remove("fadeanime");
                         }
                     }
-                }
-                callback();
-                el.removeEventListener("transitionend",listener,false);
-            },false);
+                    if(finish){
+                        if(mode==="vertical"){
+                            el.style.removeProperty("height");
+                        }else if(mode==="horizontal"){
+                            el.style.removeProperty("width");
+                        }else if(mode==="fade"){
+                            el.style.removeProperty("opacity");
+                        }
+                        if(!appear){
+                            if(el.parentNode){
+                                el.parentNode.removeChild(el);
+                            }
+                        }
+                    }
+                    callback();
+                    el.removeEventListener("transitionend",listener,false);
+                },false);
+            },0);
         },0);
     }
     //要素作る

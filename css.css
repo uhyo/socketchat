@@ -1,3 +1,7 @@
+@font-face{
+	font-family: icons;
+	src: url("/fonts/font.woff") format("woff");
+}
 body{
 	font-family:'Arial','MS Sans Serif', sans-serif;
 }
@@ -56,8 +60,11 @@ div.logbox{
 	overflow-y:hidden;
 }
 .horizontalanime{
-	transition: width 35s ease-out 0s;
+	transition: width 0.35s ease-out 0s;
 	overflow-x:hidden;
+}
+.fadeanime{
+	transition: opacity 0.35s ease-out 0s;
 }
 /* toolbox */
 span.toolbox{
@@ -65,6 +72,10 @@ span.toolbox{
 	white-space:nowrap;
 }
 /* icons? */
+span.icon{
+	font-family:icons;
+	vertical-align:bottom;
+}
 span.icon.respin{
 	/*返信であることを示すやつ*/
 	color:#888888;

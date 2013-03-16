@@ -45,6 +45,9 @@ var db = new mongodb.Db(settings.DB_NAME,mongoserver,{});
 var express=require('express');
 var app=express();
 
+//fonts
+app.use('/fonts',express.static(__dirname+"/fonts"));
+
 app.get(/^\/(index\.html)?$/, function(req, res){
 	res.sendfile(__dirname + '/clients/index.html');
 });
@@ -54,7 +57,7 @@ app.get(/^\/(index\.html)?$/, function(req, res){
 app.get(/^\/((?:line|connection|client|firefoxapp)\.js|css\.css|(sound|jihou)\.(mp3|wav|ogg)|smp\.css|manifest\.webapp)$/, function(req, res){
 	res.sendfile(__dirname + "/"+req.params[0]);
 });
-//for ts test
+//for client ts
 app.get(/^\/ts\/(.+\.js)$/, function(req,res){
 	res.sendfile(__dirname + "/ts/"+req.params[0]);
 });
