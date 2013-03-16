@@ -70,9 +70,9 @@ module Chat{
             //ユーザー操作部分を初期化
             //UIを選ぶ
             if(com){
-                this.ui=new ChatCmdUI(userData,receiver,process,this);
+                this.ui=new ChatCmdUI(userData,receiver,process,this,this.dis);
             }else{
-                this.ui=new ChatNormalUI(userData,receiver,process,this);
+                this.ui=new ChatNormalUI(userData,receiver,process,this,this.dis);
             }
             //HottoMottoボタンを初期化
             this.motto=new ChatUICollection.MottoForm();
@@ -94,8 +94,8 @@ module Chat{
             this.ui.refreshSettings();
         }
         //発言欄にフォーカスする
-        focusComment(channel?:string):void{
-            this.ui.focusComment(channel);
+        focusComment(focus:bool,channel?:string):void{
+            this.ui.focusComment(focus,channel);
         }
         getContainer():HTMLElement{
             return this.container;
@@ -286,7 +286,7 @@ module Chat{
                 if(userData.channelMode===0){
                     //欄#
                     var focusedChannel=this.dis.setFocusChannel(channel);
-                    this.view.focusComment(focusedChannel);
+                    this.view.focusComment(false,focusedChannel);
                 }else{
                     //窓#
                     //もとのほうは薄くする
@@ -308,18 +308,26 @@ module Chat{
                     }),p.firstChild);
                 }
                 log.parentNode.insertBefore(cont,log.nextSibling);
-                comForm.onComment((data:CommentNotify)=>{
+                comForm.event.on("comment",(data:CommentNotify)=>{
                     //返信情報
                     data.response=log.dataset.id;
                     this.process.comment(data);
                     appearAnimation(cont,"vertical",false,true);
                 });
-                comForm.onCancel(()=>{
+                comForm.event.on("cancel",()=>{
                     appearAnimation(cont,"vertical",false,true);
                 });
                 appearAnimation(cont,"vertical",true,true);
-                var ch=log.dataset.channel;
-                comForm.focus(ch ? ch.split(/\s+/)[0] : null);
+                var ch=log.dataset.channel || "";
+                //返信先チャネル決定
+                var result=ch.match(/^#([^#]+)\/(?:#|$)/);
+                console.log(result);
+                if(result){
+                    comForm.setChannel(result[1]);
+                }else{
+                    comForm.setChannel(null);
+                }
+                comForm.focus();
             });
 
         }
@@ -724,7 +732,7 @@ module Chat{
                     }
                 }
                 //コメントにも情報付加
-                p.dataset.channel="#"+(Array.isArray(obj.channel) ? obj.channel.join("/#") : obj.channel)+"/#";
+                p.dataset.channel="#"+(Array.isArray(obj.channel) ? obj.channel.join("/#") : obj.channel)+"/";
             }
             //返信先あり
             if(obj.response){
@@ -1154,7 +1162,7 @@ module Chat{
         getView():ChatView{
             return this.view;
         }
-        focusComment(channel?:string):void{
+        focusComment(focus:bool,channel?:string):void{
         }
         refreshSettings():void{
         }
@@ -1166,7 +1174,7 @@ module Chat{
         private inoutForm:ChatUICollection.InoutForm;
         private commentForm:ChatUICollection.CommentForm;
 
-        constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess,private view:ChatView){
+        constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess,private view:ChatView,dis:ChatLogDisManager){
             super(userData,receiver,process,view);
             this.container=document.createElement("div");
             this.container.classList.add("ui");
@@ -1182,16 +1190,20 @@ module Chat{
             this.inoutForm.onInout((data:InoutNotify)=>{
                 this.process.inout(data);
             });
-            this.commentForm.onComment((data:CommentNotify)=>{
+            this.commentForm.event.on("comment",(data:CommentNotify)=>{
                 this.process.comment(data);
+            });
+            this.commentForm.event.on("changeChannel",(channel:string)=>{
+                dis.setFocusChannel(channel || null);
             });
         }
         getContainer():HTMLElement{
             return this.container;
         }
         //発言欄にフォーカスする
-        focusComment(channel?:string):void{
-            this.commentForm.focus(channel);
+        focusComment(focus:bool,channel?:string):void{
+            if(focus)this.commentForm.focus();
+            if(channel)this.commentForm.setChannel(channel);
         }
     }
     //UIパーツ
@@ -1263,7 +1275,7 @@ module Chat{
         }
         //入退室フォーム
         export class CommentForm extends UIObject{
-            private event:EventEmitter;
+            public event:EventEmitter;
             private container:HTMLFormElement;
             constructor(private canselable){
                 //canselable: キャンセルボタンがつく
@@ -1289,6 +1301,9 @@ module Chat{
                     input.name="channel";
                     input.type="text";
                     input.size=10;
+                    input.addEventListener("change",(e:Event)=>{
+                        this.event.emit("changeChannel",input.value);
+                    },false);
                 }));
                 //発言ボタン
                 p.appendChild(this.makeinput(input=>{
@@ -1331,15 +1346,11 @@ module Chat{
                 //フォームを消す
                 (<HTMLInputElement>form.elements["comment"]).value="";
             }
-            onComment(func:(data:CommentNotify)=>void):void{
-                this.event.on("comment",func);
-            }
-            onCancel(func:()=>void):void{
-                this.event.on("cancel",func);
-            }
             //フォーカスする(チャネル指定可能）
-            focus(channel?:string):void{
+            focus():void{
                 (<HTMLInputElement>this.container.elements["comment"]).focus();
+            }
+            setChannel(channel?:string):void{
                 (<HTMLInputElement>this.container.elements["channel"]).value= channel ? channel : "";
             }
         }
@@ -2420,7 +2431,7 @@ module Chat{
     //コマンドラインみたいなUI
     export class ChatCmdUI extends ChatUI{
         private console:ChatUICollection.Console;
-        constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess,private view:ChatView){
+        constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess,private view:ChatView,dis:ChatLogDisManager){
             super(userData,receiver,process,view);
             this.console=new ChatUICollection.Console(userData,receiver,process,this);
             receiver.on("userinfo",(data:any)=>{
