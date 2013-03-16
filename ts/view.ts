@@ -1215,7 +1215,7 @@ module Chat{
 				this.commentForm.event.emit("afterChangeChannel", false);
             });
 			this.commentForm.event.on("afterChangeChannel",(on:bool)=>{
-				if(on){
+				if(on && this.userData.channelMode==0){
 					dis.addFocusOutlaw(true);
 				}else{
 					dis.removeFocusOutlaw(true);

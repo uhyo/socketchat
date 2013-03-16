@@ -1028,7 +1028,7 @@ var Chat;
                 _this.commentForm.event.emit("afterChangeChannel", false);
             });
             this.commentForm.event.on("afterChangeChannel", function (on) {
-                if(on) {
+                if(on && _this.userData.channelMode == 0) {
                     dis.addFocusOutlaw(true);
                 } else {
                     dis.removeFocusOutlaw(true);
