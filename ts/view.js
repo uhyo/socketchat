@@ -544,6 +544,18 @@ var Chat;
                 
             ]);
         };
+        ChatLogDisManager.prototype.addFocusOutlaw = function (temporal) {
+            this.addCSSRules([
+                this.createDisCSSRule('[data-channel]', temporal, false), 
+                
+            ]);
+        };
+        ChatLogDisManager.prototype.removeFocusOutlaw = function (temporal) {
+            this.removeCSSRules([
+                this.createDisCSSSelector('[data-channel]', temporal, false), 
+                
+            ]);
+        };
         return ChatLogDisManager;
     })();
     Chat.ChatLogDisManager = ChatLogDisManager;    
@@ -1013,6 +1025,14 @@ var Chat;
             });
             this.commentForm.event.on("changeChannel", function (channel) {
                 dis.setFocusChannel(channel || null);
+                _this.commentForm.event.emit("afterChangeChannel", false);
+            });
+            this.commentForm.event.on("afterChangeChannel", function (on) {
+                if(on) {
+                    dis.addFocusOutlaw(true);
+                } else {
+                    dis.removeFocusOutlaw(true);
+                }
             });
         }
         ChatNormalUI.prototype.getContainer = function () {
@@ -1023,6 +1043,7 @@ var Chat;
                 this.commentForm.focus();
             }
             this.commentForm.setChannel(channel);
+            this.commentForm.event.emit("afterChangeChannel", false);
         };
         return ChatNormalUI;
     })(ChatUI);
@@ -1094,6 +1115,7 @@ var Chat;
                 var _this = this;
                         _super.call(this);
                 this.canselable = canselable;
+                this.flagFocusOutlaw = false;
                 this.container = document.createElement("form");
                 this.container.classList.add("commentform");
                 var p;
@@ -1105,6 +1127,9 @@ var Chat;
                     input.size = 60;
                     input.autocomplete = "off";
                     input.required = true;
+                    input.addEventListener("input", function (e) {
+                        return _this.emitInput();
+                    });
                 }));
                 p.appendChild(document.createTextNode("#"));
                 p.appendChild(this.makeinput(function (input) {
@@ -1123,6 +1148,7 @@ var Chat;
                 this.container.addEventListener("submit", function (e) {
                     e.preventDefault();
                     _this.emitComment(e);
+                    _this.emitInput();
                 }, false);
                 if(canselable) {
                     p.appendChild(this.makeinput(function (input) {
@@ -1152,11 +1178,28 @@ var Chat;
                 this.event.emit("comment", data);
                 (form.elements["comment"]).value = "";
             };
+            CommentForm.prototype.emitInput = function () {
+                if(this.getChannel() != "") {
+                    if(this.flagFocusOutlaw) {
+                        this.flagFocusOutlaw = false;
+                        this.event.emit("afterChangeChannel", false);
+                    }
+                    return;
+                }
+                var nowCommentEmpty = (this.container.elements["comment"]).value.length == 0;
+                if((this.flagFocusOutlaw && nowCommentEmpty) || (!this.flagFocusOutlaw && !nowCommentEmpty)) {
+                    this.event.emit("afterChangeChannel", !nowCommentEmpty);
+                }
+                this.flagFocusOutlaw = !nowCommentEmpty;
+            };
             CommentForm.prototype.focus = function () {
                 (this.container.elements["comment"]).focus();
             };
             CommentForm.prototype.setChannel = function (channel) {
                 (this.container.elements["channel"]).value = channel ? channel : "";
+            };
+            CommentForm.prototype.getChannel = function () {
+                return (this.container.elements["channel"]).value;
             };
             return CommentForm;
         })(UIObject);

@@ -640,6 +640,16 @@ module Chat{
                 this.createDisCSSSelector('[data-channel*="#'+channel+'/"]',temporal,anti),
             ]);
         }
+		addFocusOutlaw(temporal:bool):void{
+            this.addCSSRules([
+                this.createDisCSSRule('[data-channel]',temporal,false),
+            ]);
+		}
+		removeFocusOutlaw(temporal:bool):void{
+            this.removeCSSRules([
+                this.createDisCSSSelector('[data-channel]',temporal,false),
+            ]);
+		}
     }
     export interface GyazoSettingObject{
         thumb:bool;  //サムネイル機能ありかどうか
@@ -1202,7 +1212,15 @@ module Chat{
             });
             this.commentForm.event.on("changeChannel",(channel:string)=>{
                 dis.setFocusChannel(channel || null);
+				this.commentForm.event.emit("afterChangeChannel", false);
             });
+			this.commentForm.event.on("afterChangeChannel",(on:bool)=>{
+				if(on){
+					dis.addFocusOutlaw(true);
+				}else{
+					dis.removeFocusOutlaw(true);
+				}
+			});
         }
         getContainer():HTMLElement{
             return this.container;
@@ -1211,7 +1229,8 @@ module Chat{
         focusComment(focus:bool,channel?:string):void{
             if(focus)this.commentForm.focus();
             this.commentForm.setChannel(channel);
-        }
+			this.commentForm.event.emit("afterChangeChannel",false);
+		}
     }
     //UIパーツ
     export module ChatUICollection{
@@ -1284,6 +1303,7 @@ module Chat{
         export class CommentForm extends UIObject{
             public event:EventEmitter;
             private container:HTMLFormElement;
+			private flagFocusOutlaw=false;
             constructor(private canselable){
                 //canselable: キャンセルボタンがつく
                 super();
@@ -1301,6 +1321,7 @@ module Chat{
                     input.size=60;
                     input.autocomplete="off";
                     input.required=true;
+					input.addEventListener("input", (e)=>this.emitInput());
                 }));
                 p.appendChild(document.createTextNode("#"));
                 //チャネル欄
@@ -1321,6 +1342,7 @@ module Chat{
                 this.container.addEventListener("submit",(e:Event)=>{
                     e.preventDefault();
                     this.emitComment(e);
+					this.emitInput();
                 },false);
                 if(canselable){
                     //キャンセルボタン
@@ -1353,12 +1375,33 @@ module Chat{
                 //フォームを消す
                 (<HTMLInputElement>form.elements["comment"]).value="";
             }
+			//コメント欄が変わった時の処理
+			//outlaw(タグがない発言)への注目処理
+			emitInput():void{
+				if(this.getChannel()!=""){
+					//チャネルが指定されている場合はオンにしない
+					if(this.flagFocusOutlaw){
+						//オンなときはオフにする
+						this.flagFocusOutlaw=false;
+						this.event.emit("afterChangeChannel",false);
+					}
+					return;
+				}
+				var nowCommentEmpty=(<HTMLInputElement>this.container.elements["comment"]).value.length==0;
+				if((this.flagFocusOutlaw && nowCommentEmpty) || (!this.flagFocusOutlaw && !nowCommentEmpty)){
+					this.event.emit("afterChangeChannel",!nowCommentEmpty);
+				}
+				this.flagFocusOutlaw=!nowCommentEmpty;
+			}
             //フォーカスする(チャネル指定可能）
             focus():void{
                 (<HTMLInputElement>this.container.elements["comment"]).focus();
             }
             setChannel(channel?:string):void{
                 (<HTMLInputElement>this.container.elements["channel"]).value= channel ? channel : "";
+            }
+            getChannel():string{
+                return (<HTMLInputElement>this.container.elements["channel"]).value;
             }
         }
         export class MottoForm extends UIObject{
