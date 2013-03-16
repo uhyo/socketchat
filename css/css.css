@@ -96,6 +96,10 @@ span.icon.hidetoolbox{
 	color:#999999;
 	cursor:pointer;
 }
+span.icon.volumeicon{
+	/*ボリューム記号*/
+	color:#666600;
+}
 
 div.userinfo{
 	position:fixed;

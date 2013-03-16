@@ -204,7 +204,12 @@ module Chat{
             },false);
             return button;
         }
-        makeVolumeRange():HTMLElement{
+        makeVolumeRange():DocumentFragment{
+            var df=document.createDocumentFragment();
+            /*df.appendChild(makeEl("span",(span)=>{
+                span.className="icon volumeicon";
+                span.textContent="\ue003";
+            }));*/
             var range=<HTMLInputElement>document.createElement("input");
             var ud=this.userData;
             range.name="volume";
@@ -221,7 +226,8 @@ module Chat{
                     ud.save();
                 },1000);
             },false);
-            return range;
+            df.appendChild(range);
+            return df;
         }
         makeChannelModeButton():HTMLElement{
             var button:HTMLInputElement=<HTMLInputElement>document.createElement("input");
@@ -566,6 +572,7 @@ module Chat{
                 //逆
                 attribute=":not("+attribute+")";
             }
+
             return "#"+this.logContainer.id+" p"+attribute;
         }
         private createDisCSSRule(attribute:string, temporal:bool,anti:bool):string{
@@ -590,7 +597,6 @@ module Chat{
                 var rule=<CSSStyleRule>css.cssRules[i];
                 if(cssSelectors.indexOf(rule.selectorText)>=0){
                     css.deleteRule(i);
-                    i--;
                 }
             }
         }
@@ -608,7 +614,7 @@ module Chat{
         }
         private setDischannelStyle(channel:string,temporal:bool,anti:bool):void{
             this.addCSSRules([
-                this.createDisCSSRule('[data-channel|="'+createChannelDatasetString(channel)+'"]',temporal,anti),
+                this.createDisCSSRule('[data-channel*="#'+channel+'/"]',temporal,anti),
             ]);
         }
         removeDischannel(channel:string,temporal:bool,anti:bool):void{
@@ -618,7 +624,7 @@ module Chat{
                 ud.save();
             }
             this.removeCSSRules([
-                this.createDisCSSSelector('[data-channel|="'+createChannelDatasetString(channel)+'"]',temporal,anti),
+                this.createDisCSSSelector('[data-channel*="#'+channel+'/"]',temporal,anti),
             ]);
         }
     }
@@ -721,7 +727,7 @@ module Chat{
                     }
                 }
                 //コメントにも情報付加
-                p.dataset.channel=c.map((ch:string)=>createChannelDatasetString(ch)).join(" ");
+                p.dataset.channel="#"+(Array.isArray(obj.channel) ? obj.channel.join("/#") : obj.channel)+"/#";
             }
             //返信先あり
             if(obj.response){
