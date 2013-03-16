@@ -305,7 +305,6 @@ module Chat{
                 if(p){
                     p.insertBefore(makeEl("span",(el)=>{
                         el.className="icon respin opened";
-                        el.textContent="\ue000";
                     }),p.firstChild);
                 }
                 log.parentNode.insertBefore(cont,log.nextSibling);
@@ -481,7 +480,6 @@ module Chat{
             var toolbox=document.createElement("span");
             toolbox.classList.add("toolbox");
             toolbox.appendChild(makeEl("span",(el)=>{
-                el.textContent="\ue001";    //返信
                 el.className="icon resptip";
                 el.setAttribute("role","button");
                 el.addEventListener("click",(e:Event)=>{
@@ -494,7 +492,7 @@ module Chat{
                 },false);
             }));
             toolbox.appendChild(makeEl("span",(el)=>{
-                el.textContent="\ue004";    //しまう
+                //しまう
                 el.className="icon hidetoolbox";
                 el.setAttribute("role","button");
                 el.addEventListener("click",(e:Event)=>{
@@ -707,7 +705,6 @@ module Chat{
             if(obj.response){
                 var resptip=document.createElement("span");
                 resptip.className="icon respin";
-                resptip.textContent="\ue000";
                 main.appendChild(resptip);
             }
             //コメント部分の生成

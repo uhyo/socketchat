@@ -72,33 +72,48 @@ span.toolbox{
 	white-space:nowrap;
 }
 /* icons? */
-span.icon{
+span.icon::before{
 	font-family:icons;
 	vertical-align:bottom;
 }
-span.icon.respin{
+span.icon{
+	cursor:default;
+}
+span.icon.respin::before{
 	/*返信であることを示すやつ*/
 	color:#888888;
-	cursor:pointer;
+	content:'\e000';
 	transition:color 0.35s ease 0s;
 }
-span.icon.respin.opened{
-	color:#bbbbbb;
-	cursor:auto;
+span.icon.respin{
+	cursor:pointer;
 }
-span.icon.resptip{
+span.icon.respin.opened::before{
+	color:#bbbbbb;
+}
+span.icon.respin.opened{
+	cursor:default;
+}
+span.icon.resptip::before{
 	/*返信ボタン*/
 	color:#00cc00;
+	content:'\e001';
+}
+span.icon.resptip{
 	cursor:pointer;
 }
-span.icon.hidetoolbox{
+span.icon.hidetoolbox::before{
 	/*ツールボックスをかくすボタン*/
 	color:#999999;
+	content:'\e004';
+}
+span.icon.hidetoolbox{
 	cursor:pointer;
 }
-span.icon.volumeicon{
+span.icon.volumeicon::before{
 	/*ボリューム記号*/
 	color:#666600;
+	content:'\e003';
 }
 
 div.userinfo{
