@@ -1,0 +1,211 @@
+@font-face{
+	font-family: icons;
+	src: url("/fonts/font.woff") format("woff");
+}
+body{
+	font-family:'Arial','MS Sans Serif', sans-serif;
+}
+body.discon{
+	background-color:#f4f4f4;
+}
+
+div.logbox{
+	margin-top:0.4em;
+}
+
+.logbox{
+	margin:0;
+}
+.logbox p{
+	margin:0;
+}
+.logbox p.syslog .name{
+	color:#0000ff !important;
+}
+.logbox span.main span.info{
+	font-size:smaller;
+	color:#cccccc;
+	margin-left:0.8ex;
+}
+.logbox span.main span.channels{
+	margin-left:1.5ex;
+	color:#0084b4;
+	cursor:pointer;
+}
+.logbox bdi.comment span.channels{
+	margin-left:0;
+}
+.logbox span.main span.channels:hover span.channel{
+	text-decoration:underline;
+}
+.logbox span.main span.channels:hover span.channel:hover ~ span.channel{
+	text-decoration:none;
+}
+.logbox .name{
+	font-weight:bold;
+}
+.logbox .name:after{
+	content:'> ';
+	font-weight:normal;
+}
+.logbox span.respto:not([data-open="open"]){
+	cursor:pointer;
+}
+.logbox blockquote.resp{
+	margin:0 0 0 3em;
+}
+/*anim用*/
+.verticalanime{
+	transition: height 0.35s ease-out 0s;
+	overflow-y:hidden;
+}
+.horizontalanime{
+	transition: width 0.35s ease-out 0s;
+	overflow-x:hidden;
+}
+.fadeanime{
+	transition: opacity 0.35s ease-out 0s;
+}
+/* toolbox */
+span.toolbox{
+	display:inline-block;
+	white-space:nowrap;
+}
+/* icons? */
+span.icon::before{
+	font-family:icons;
+	vertical-align:bottom;
+}
+span.icon{
+	cursor:default;
+}
+span.icon.respin::before{
+	/*返信であることを示すやつ*/
+	color:#888888;
+	content:'\e000';
+	transition:color 0.35s ease 0s;
+}
+span.icon.respin{
+	cursor:pointer;
+}
+span.icon.respin.opened::before{
+	color:#bbbbbb;
+}
+span.icon.respin.opened{
+	cursor:default;
+}
+span.icon.resptip::before{
+	/*返信ボタン*/
+	color:#00cc00;
+	content:'\e001';
+}
+span.icon.resptip{
+	cursor:pointer;
+}
+span.icon.hidetoolbox::before{
+	/*ツールボックスをかくすボタン*/
+	color:#999999;
+	content:'\e004';
+}
+span.icon.hidetoolbox{
+	cursor:pointer;
+}
+span.icon.volumeicon::before{
+	/*ボリューム記号*/
+	color:#666600;
+	content:'\e003';
+}
+
+div.userinfo{
+	position:fixed;
+	right:10px;
+	bottom:0px;
+	opacity:0.45;
+	text-align:right;
+}
+ul.users{
+	margin:0;
+}
+ul.users li{
+	list-style:none;
+}
+ul.users li span{
+	background-color:#dddddd;
+	font-weight:bold;
+}
+span.s{
+	text-decoration:line-through;
+}
+span.small{
+	font-size:smaller;
+}
+span.code{
+	font-family:monospace;
+	white-space: pre;
+}
+
+div.ui{
+    white-space:nowrap;
+}
+div.ui form{
+	display:inline-block;
+}
+div.ui form p{
+	margin:0;
+}
+.logbox img{
+	vertical-align:middle;
+}
+
+.responding_tip{
+	color:rgb(255,127,39);
+	cursor:pointer;
+	font-weight:bold;
+}
+.responding_tip.checked{
+	color:rgb(127,39,255);
+}
+.userinfo li.rom{
+	display: none;
+}
+
+/* コンソール風 */
+.console{
+	font-family:monospace;
+	background-color:rgba(48,48,48,0.7);
+	color:#ffffff;
+	height:30em;
+	width:100%;
+	position:fixed;
+	left:0;
+	bottom:-30em;
+	padding:0 2em;
+	overflow-y:scroll;
+	
+	-webkit-transition:bottom 0.3s ease;
+	-moz-transition:bottom 0.3s ease;
+	-o-transition:bottom 0.3s ease;
+	transition:bottom 0.3s ease;
+}
+pre.consoleoutput{
+	margin:0;
+	padding:0;
+}
+.console.open{
+	bottom:0 !important;
+}
+.console p{
+	margin:0;
+	white-space:pre;
+}
+.console input{
+	width:90%;
+	border:none;
+	outline:none;
+	color:#ffffff;
+	background-color:transparent;
+	font-family:monospace;
+}
+button#installButton{
+	display: none;
+}

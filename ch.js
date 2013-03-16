@@ -1,3 +1,4 @@
+var fs=require('fs');
 var socketio=require('socket.io'),mongodb=require('mongodb');
 
 var settings=require('./settings');
@@ -41,16 +42,26 @@ var db = new mongodb.Db(settings.DB_NAME,mongoserver,{});
 
 
 //var app = require('express').createServer();
-var app=require('express')();
+var express=require('express');
+var app=express();
+
+//fonts
+app.use('/fonts',express.static(__dirname+"/fonts"));
+//css
+app.use('/css',express.static(__dirname+"/css"));
 
 app.get(/^\/(index\.html)?$/, function(req, res){
-	res.sendfile(__dirname + '/index.html');
+	res.sendfile(__dirname + '/clients/index.html');
 });
-app.get(/^\/(log|list|apiclient|com|smp|smpjump)(\.js)?$/, function(req, res){
+/*app.get(/^\/(log|list|apiclient|com|smp|ts|smpjump)(\.js)?$/, function(req, res){
 	res.sendfile(__dirname + "/"+req.params[0]+'.'+(req.params[1]?'js':'html'));
-});
-app.get(/^\/((?:line|connection|client|firefoxapp)\.js|css\.css|(sound|jihou)\.(mp3|wav|ogg)|smp\.css|manifest\.webapp)$/, function(req, res){
+});*/
+app.get(/^\/((?:line|connection|client|firefoxapp)\.js|(sound|jihou)\.(mp3|wav|ogg)|manifest\.webapp)$/, function(req, res){
 	res.sendfile(__dirname + "/"+req.params[0]);
+});
+//for client ts
+app.get(/^\/ts\/(.+\.js)$/, function(req,res){
+	res.sendfile(__dirname + "/ts/"+req.params[0]);
 });
 
 app.get(/^\/settings.js$/, function(req, res){
@@ -74,6 +85,17 @@ app.get('/show', function(req, res){
 		users_next: users_next,
 		users_s: users_s
 	},{"Content-Type":"text/javascript; charset=UTF-8"});
+});
+//クライアントを探す
+app.get(/^\/([^\/]+)$/,function(req,res){
+	var filename=__dirname+'/clients/'+req.params[0]+'.html';
+	fs.exists(filename,function(result){
+		if(result){
+			res.sendfile(__dirname + '/clients/'+req.params[0]+'.html');
+		}else{
+			res.send(404);
+		}
+	});
 });
 
 //httpでラップ
@@ -537,8 +559,8 @@ function SocketUser(id,name,ip,rom,ua,socket){
 SocketUser.prototype=new User;
 SocketUser.prototype.type="socket";
 SocketUser.prototype.inoutSplash=function(){
-	var obj={"rom":this.rom, id: this.id, name: this.name};
-	this.socket.emit("userinfo",obj), this.socket.broadcast.to("useruser").emit("inout",obj);
+	var obj=this.getUserObj();
+	this.socket.emit("userinfo",obj), this.socket.emit("inout",obj), this.socket.broadcast.to("useruser").emit("inout",obj);
 	toapi(function(x){
 		x==this || x.userinfos.push({"name":"inout","user":obj});
 	}.bind(this));
