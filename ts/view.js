@@ -12,9 +12,11 @@ var Chat;
             document.body.appendChild(this.container);
             this.dis = new ChatLogDisManager(userData);
             if(com) {
-                this.settingView = new ChatSettingView(userData, this);
+                this.linksView = null;
+                this.settingView = null;
             } else {
-                this.settingView = new ChatSettingNormalView(userData, this);
+                this.linksView = new ChatLinksView();
+                this.settingView = new ChatSettingView(userData, this);
             }
             this.logView = new ChatLogView(userData, receiver, process, this, this.dis);
             this.userView = new ChatUserView(receiver, this, this.dis);
@@ -27,7 +29,12 @@ var Chat;
             this.motto.onMotto(function (data) {
                 receiver.motto(data);
             });
-            this.container.appendChild(this.settingView.getContainer());
+            if(this.linksView) {
+                this.container.appendChild(this.linksView.getContainer());
+            }
+            if(this.settingView) {
+                this.container.appendChild(this.settingView.getContainer());
+            }
             this.container.appendChild(this.ui.getContainer());
             this.container.appendChild(this.logView.getContainer());
             this.container.appendChild(this.userView.getContainer());
@@ -53,60 +60,78 @@ var Chat;
         return ChatView;
     })();
     Chat.ChatView = ChatView;    
+    var ChatLinksView = (function () {
+        function ChatLinksView() {
+            this.links = [
+                [
+                    {
+                        url: "http://shogitter.com/",
+                        name: "将棋"
+                    }, 
+                    {
+                        url: "http://81.la/shogiwiki/",
+                        name: "wiki"
+                    }, 
+                    {
+                        url: "http://81.la/cgi-bin/up/",
+                        name: "up"
+                    }, 
+                    
+                ], 
+                [
+                    {
+                        url: "/list",
+                        name: "list"
+                    }, 
+                    {
+                        url: "/log",
+                        name: "log"
+                    }, 
+                    {
+                        url: "/apiclient",
+                        name: "API"
+                    }, 
+                    {
+                        url: "/com",
+                        name: "com"
+                    }, 
+                    
+                ], 
+                
+            ];
+            this.container = document.createElement("div");
+            this.container.classList.add("links");
+            this.container.appendChild(this.makeLinks());
+        }
+        ChatLinksView.prototype.getContainer = function () {
+            return this.container;
+        };
+        ChatLinksView.prototype.makeLinks = function () {
+            var df = document.createDocumentFragment();
+            for(var i = 0, l = this.links.length; i < l; i++) {
+                var ls = this.links[i];
+                var ul = document.createElement("ul");
+                for(var j = 0, m = ls.length; j < m; j++) {
+                    var o = ls[j];
+                    var a = document.createElement("a");
+                    a.href = o.url;
+                    a.target = "_blank";
+                    a.textContent = o.name;
+                    ul.appendChild(makeEl("li", function (li) {
+                        li.appendChild(a);
+                    }));
+                }
+                df.appendChild(ul);
+            }
+            return df;
+        };
+        return ChatLinksView;
+    })();
+    Chat.ChatLinksView = ChatLinksView;    
     var ChatSettingView = (function () {
         function ChatSettingView(userData, view) {
             this.userData = userData;
             this.view = view;
-        }
-        ChatSettingView.prototype.getContainer = function () {
-            return document.createDocumentFragment();
-        };
-        ChatSettingView.prototype.refreshSettings = function () {
-        };
-        return ChatSettingView;
-    })();
-    Chat.ChatSettingView = ChatSettingView;    
-    var ChatSettingNormalView = (function (_super) {
-        __extends(ChatSettingNormalView, _super);
-        function ChatSettingNormalView(userData, view) {
-                _super.call(this, userData, view);
-            this.userData = userData;
-            this.view = view;
-            this.links = [
-                {
-                    url: "http://shogitter.com/",
-                    name: "将棋"
-                }, 
-                {
-                    url: "http://81.la/shogiwiki/",
-                    name: "wiki"
-                }, 
-                {
-                    url: "http://81.la/cgi-bin/up/",
-                    name: "up"
-                }, 
-                {
-                    url: null,
-                    name: null
-                }, 
-                {
-                    url: "/list",
-                    name: "list"
-                }, 
-                {
-                    url: "/log",
-                    name: "log"
-                }, 
-                {
-                    url: "/apiclient",
-                    name: "API"
-                }, 
-                {
-                    url: "/com",
-                    name: "com"
-                }, 
-                
-            ];
             this.gyozaSettings = [
                 "餃子無展開", 
                 "餃子オンマウス", 
@@ -118,29 +143,11 @@ var Chat;
             ];
             this.container = document.createElement("form");
             this.container.classList.add("infobar");
-            this.container.appendChild(this.makeLinks());
             this.container.appendChild(this.makeGyozaButton());
             this.container.appendChild(this.makeVolumeRange());
             this.container.appendChild(this.makeChannelModeButton());
         }
-        ChatSettingNormalView.prototype.makeLinks = function () {
-            var df = document.createDocumentFragment();
-            for(var i = 0, l = this.links.length; i < l; i++) {
-                var o = this.links[i];
-                if(o.url) {
-                    var a = document.createElement("a");
-                    a.href = o.url;
-                    a.target = "_blank";
-                    a.textContent = o.name;
-                    df.appendChild(a);
-                    df.appendChild(document.createTextNode(" "));
-                } else {
-                    df.appendChild(document.createTextNode("| "));
-                }
-            }
-            return df;
-        };
-        ChatSettingNormalView.prototype.makeGyozaButton = function () {
+        ChatSettingView.prototype.makeGyozaButton = function () {
             var _this = this;
             var button = document.createElement("input");
             var ud = this.userData;
@@ -154,7 +161,7 @@ var Chat;
             }, false);
             return button;
         };
-        ChatSettingNormalView.prototype.makeVolumeRange = function () {
+        ChatSettingView.prototype.makeVolumeRange = function () {
             var df = document.createDocumentFragment();
             var range = document.createElement("input");
             var ud = this.userData;
@@ -173,7 +180,7 @@ var Chat;
             df.appendChild(range);
             return df;
         };
-        ChatSettingNormalView.prototype.makeChannelModeButton = function () {
+        ChatSettingView.prototype.makeChannelModeButton = function () {
             var _this = this;
             var button = document.createElement("input");
             var ud = this.userData;
@@ -187,10 +194,10 @@ var Chat;
             }, false);
             return button;
         };
-        ChatSettingNormalView.prototype.getContainer = function () {
+        ChatSettingView.prototype.getContainer = function () {
             return this.container;
         };
-        ChatSettingNormalView.prototype.refreshSettings = function () {
+        ChatSettingView.prototype.refreshSettings = function () {
             var form = this.container, ud = this.userData;
             var gyozabutton = form.elements["gyozabutton"];
             gyozabutton.value = this.gyozaSettings[ud.gyoza];
@@ -199,9 +206,9 @@ var Chat;
             var channelbutton = form.elements["channelmode"];
             channelbutton.value = this.channelSettings[ud.channelMode];
         };
-        return ChatSettingNormalView;
-    })(ChatSettingView);
-    Chat.ChatSettingNormalView = ChatSettingNormalView;    
+        return ChatSettingView;
+    })();
+    Chat.ChatSettingView = ChatSettingView;    
     var ChatLogView = (function () {
         function ChatLogView(userData, receiver, process, view, dis) {
             this.userData = userData;
@@ -2022,29 +2029,29 @@ while(node = tw.previousNode()) {
                 this.print([
                     "command usage: " + this.userData.cmd.syschar + "command", 
                     "in [name] [--auto] [--noauto]", 
-                    "    enter the chatroom", 
-                    "    --auto: auto-enter at the next time", 
-                    "    --noauto: don't auto-enter", 
+                    "	 enter the chatroom", 
+                    "	 --auto: auto-enter at the next time", 
+                    "	 --noauto: don't auto-enter", 
                     "out", 
-                    "    quit the chatroom", 
+                    "	 quit the chatroom", 
                     "motto [until] [--gmt] [--utc]", 
-                    "    HottoMotto", 
-                    "      until(if exists): ex) 2012-01-01, 2013-01-01T00:00", 
+                    "	 HottoMotto", 
+                    "	   until(if exists): ex) 2012-01-01, 2013-01-01T00:00", 
                     "volume [number]", 
-                    "    show/set volume", 
+                    "	 show/set volume", 
                     "set (param) (value)", 
-                    "    set syschar/systemchar", 
-                    "        height", 
+                    "	 set syschar/systemchar", 
+                    "		 height", 
                     "gyazo [num], gyoza [num]", 
-                    "    show/set gyoza mode", 
+                    "	 show/set gyoza mode", 
                     "clear, clean", 
-                    "    clean the console", 
+                    "	 clean the console", 
                     "disip [-d] [ip] ", 
-                    "    set/remove ip into/from disip list", 
+                    "	 set/remove ip into/from disip list", 
                     "dischannel [-d] [channel]", 
-                    "    set/remove channel into/from dischannel list", 
+                    "	 set/remove channel into/from dischannel list", 
                     "go [URL|alias|#channelname]", 
-                    "    alias: 'wiki'", 
+                    "	 alias: 'wiki'", 
                     
                 ].join("\n"));
                 this.die();
@@ -2194,67 +2201,67 @@ while(node = tw.previousNode()) {
             Sl.prototype.run = function () {
                 var sl_steam = [
                     [
-                        "                      (@@) (  ) (@)  ( )  @@    ()    @     O     @     O      @", 
-                        "                 (   )", 
-                        "             (@@@@)", 
-                        "          (    )", 
+                        "						(@@) (	) (@)  ( )	@@	  ()	@	  O		@	  O		 @", 
+                        "				  (   )", 
+                        "			  (@@@@)", 
+                        "		   (	)", 
                         "", 
-                        "        (@@@)", 
+                        "		 (@@@)", 
                         
                     ], 
                     [
-                        "                      (  ) (@@) ( )  (@)  ()    @@    O     @     O     @      O", 
-                        "                 (@@@)", 
-                        "             (    )", 
-                        "          (@@@@)", 
+                        "					   (  ) (@@) ( )  (@)  ()	 @@    O	 @	   O	 @		O", 
+                        "				  (@@@)", 
+                        "			  (    )", 
+                        "		   (@@@@)", 
                         "", 
-                        "        (   )", 
+                        "		 (	 )", 
                         
                     ]
                 ], sl_body = [
-                    "      ====        ________                ___________ ", 
-                    "  _D _|  |_______/        \\__I_I_____===__|_________| ", 
-                    "   |(_)---  |   H\\________/ |   |        =|___ ___|      _________________         ", 
-                    "   /     |  |   H  |  |     |   |         ||_| |_||     _|                \\_____A  ", 
-                    "  |      |  |   H  |__--------------------| [___] |   =|                        |  ", 
-                    "  | ________|___H__/__|_____/[][]~\\_______|       |   -|                        |  ", 
+                    "	   ====		   ________				   ___________ ", 
+                    "  _D _|  |_______/		   \\__I_I_____===__|_________| ", 
+                    "	|(_)---  |	 H\\________/ |   |		   =|___ ___|	   _________________		 ", 
+                    "	/	  |  |	 H	|  |	 |	 |		   ||_| |_||	 _|				   \\_____A  ", 
+                    "  |	  |  |	 H	|__--------------------| [___] |   =|						 |	", 
+                    "  | ________|___H__/__|_____/[][]~\\_______|		|	-|						  |  ", 
                     "  |/ |   |-----------I_____I [][] []  D   |=======|____|________________________|_ ", 
                     
                 ], sl_wheels = [
                     [
                         "__/ =| o |=-O=====O=====O=====O \\ ____Y___________|__|__________________________|_ ", 
-                        " |/-=|___|=    ||    ||    ||    |_____/~\\___/          |_D__D__D_|  |_D__D__D_|   ", 
-                        "  \\_/      \\__/  \\__/  \\__/  \\__/      \\_/               \\_/   \\_/    \\_/   \\_/    ", 
+                        " |/-=|___|=	||	  ||	||	  |_____/~\\___/		  |_D__D__D_|  |_D__D__D_|	 ", 
+                        "  \\_/		 \\__/	\\__/  \\__/  \\__/		 \\_/				\\_/   \\_/    \\_/   \\_/	  ", 
                         
                     ], 
                     [
                         "__/ =| o |=-~~\\  /~~\\  /~~\\  /~~\\ ____Y___________|__|__________________________|_ ", 
-                        " |/-=|___|=O=====O=====O=====O   |_____/~\\___/          |_D__D__D_|  |_D__D__D_|   ", 
-                        "  \\_/      \\__/  \\__/  \\__/  \\__/      \\_/               \\_/   \\_/    \\_/   \\_/    ", 
+                        " |/-=|___|=O=====O=====O=====O   |_____/~\\___/		  |_D__D__D_|  |_D__D__D_|	 ", 
+                        "  \\_/		 \\__/	\\__/  \\__/  \\__/		 \\_/				\\_/   \\_/    \\_/   \\_/	  ", 
                         
                     ], 
                     [
                         "__/ =| o |=-~~\\  /~~\\  /~~\\  /~~\\ ____Y___________|__|__________________________|_ ", 
-                        " |/-=|___|=    ||    ||    ||    |_____/~\\___/          |_D__D__D_|  |_D__D__D_|   ", 
-                        "  \\_/      \\O=====O=====O=====O_/      \\_/               \\_/   \\_/    \\_/   \\_/    ", 
+                        " |/-=|___|=	||	  ||	||	  |_____/~\\___/		  |_D__D__D_|  |_D__D__D_|	 ", 
+                        "  \\_/		 \\O=====O=====O=====O_/	  \\_/				 \\_/	\\_/	\\_/   \\_/    ", 
                         
                     ], 
                     [
                         "__/ =| o |=-~~\\  /~~\\  /~~\\  /~~\\ ____Y___________|__|__________________________|_ ", 
-                        " |/-=|___|=    ||    ||    ||    |_____/~\\___/          |_D__D__D_|  |_D__D__D_|   ", 
-                        "  \\_/      \\_O=====O=====O=====O/      \\_/               \\_/   \\_/    \\_/   \\_/    ", 
+                        " |/-=|___|=	||	  ||	||	  |_____/~\\___/		  |_D__D__D_|  |_D__D__D_|	 ", 
+                        "  \\_/		 \\_O=====O=====O=====O/	  \\_/				 \\_/	\\_/	\\_/   \\_/    ", 
                         
                     ], 
                     [
                         "__/ =| o |=-~~\\  /~~\\  /~~\\  /~~\\ ____Y___________|__|__________________________|_ ", 
-                        " |/-=|___|=   O=====O=====O=====O|_____/~\\___/          |_D__D__D_|  |_D__D__D_|   ", 
-                        "  \\_/      \\__/  \\__/  \\__/  \\__/      \\_/               \\_/   \\_/    \\_/   \\_/    ", 
+                        " |/-=|___|=   O=====O=====O=====O|_____/~\\___/		  |_D__D__D_|  |_D__D__D_|	 ", 
+                        "  \\_/		 \\__/	\\__/  \\__/  \\__/		 \\_/				\\_/   \\_/    \\_/   \\_/	  ", 
                         
                     ], 
                     [
                         "__/ =| o |=-~O=====O=====O=====O\\ ____Y___________|__|__________________________|_ ", 
-                        " |/-=|___|=    ||    ||    ||    |_____/~\\___/          |_D__D__D_|  |_D__D__D_|   ", 
-                        "  \\_/      \\__/  \\__/  \\__/  \\__/      \\_/               \\_/   \\_/    \\_/   \\_/    ", 
+                        " |/-=|___|=	||	  ||	||	  |_____/~\\___/		  |_D__D__D_|  |_D__D__D_|	 ", 
+                        "  \\_/		 \\__/	\\__/  \\__/  \\__/		 \\_/				\\_/   \\_/    \\_/   \\_/	  ", 
                         
                     ], 
                     

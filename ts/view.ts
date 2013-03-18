@@ -41,6 +41,7 @@ module Chat{
 	//チャット外観の全体
 	export class ChatView{
 		private container:HTMLElement;
+		private linksView:ChatLinksView;
 		private settingView:ChatSettingView;
 		public logView:ChatLogView;
 		private userView:ChatUserView;
@@ -59,9 +60,11 @@ module Chat{
 
 			//設定・リンク部分を初期化
 			if(com){
-				this.settingView=new ChatSettingView(userData,this);
+				this.linksView=null;
+				this.settingView=null;
 			}else{
-				this.settingView=new ChatSettingNormalView(userData,this);
+				this.linksView=new ChatLinksView();
+				this.settingView=new ChatSettingView(userData,this);
 			}
 			//ログ表示部分を初期化
 			this.logView=new ChatLogView(userData,receiver,process,this,this.dis);
@@ -81,7 +84,8 @@ module Chat{
 			});
 			//disマネージャ初期化
 			//UIを組もう!
-			this.container.appendChild(this.settingView.getContainer());
+			if(this.linksView)this.container.appendChild(this.linksView.getContainer());
+			if(this.settingView)this.container.appendChild(this.settingView.getContainer());
 			this.container.appendChild(this.ui.getContainer());
 			this.container.appendChild(this.logView.getContainer());
 			this.container.appendChild(this.userView.getContainer());
@@ -108,92 +112,89 @@ module Chat{
 			return this.container;
 		}
 	}
-	//設定・リンク部分(親)
-	export class ChatSettingView{
-		private container:HTMLFormElement;
-		constructor(private userData:ChatUserData,private view:ChatView){
-		}
-		getContainer():Node{
-			return document.createDocumentFragment();
-		}
-		refreshSettings():void{
-		}
-	}
-	export class ChatSettingNormalView extends ChatSettingView{
-		private container:HTMLFormElement;
+	//リンク一覧
+	export class ChatLinksView{
+		private container:HTMLElement;
 		//リンク一覧
-		private links:{url:string;name:string;}[]=[
-			{
-				url:"http://shogitter.com/",
-				name:"将棋",
-			},
-			{
-				url:"http://81.la/shogiwiki/",
-				name:"wiki",
-			},
-			{
-				url:"http://81.la/cgi-bin/up/",
-				name:"up",
-			},
-			{
-				//セパレータ
-				url:null,
-				name:null,
-			},
-			{
-				url:"/list",
-				name:"list",
-			},
-			{
-				url:"/log",
-				name:"log",
-			},
-			{
-				url:"/apiclient",
-				name:"API",
-			},
-			{
-				url:"/com",
-				name:"com",
-			},
-
+		private links:{url:string;name:string;}[][]=[
+			[
+				{
+					url:"http://shogitter.com/",
+					name:"将棋",
+				},
+				{
+					url:"http://81.la/shogiwiki/",
+					name:"wiki",
+				},
+				{
+					url:"http://81.la/cgi-bin/up/",
+					name:"up",
+				},
+			],[
+				{
+					url:"/list",
+					name:"list",
+				},
+				{
+					url:"/log",
+					name:"log",
+				},
+				{
+					url:"/apiclient",
+					name:"API",
+				},
+				{
+					url:"/com",
+					name:"com",
+				},
+			],
 		];
-		//餃子セッティング一覧
-		private gyozaSettings:string[]=["餃子無展開","餃子オンマウス","餃子常時"];
-		//チャネルセッティング一覧
-		private channelSettings:string[]=["欄#","窓#"];
-		constructor(private userData:ChatUserData,private view:ChatView){
-			super(userData,view);
-			this.container=<HTMLFormElement>document.createElement("form");
-			this.container.classList.add("infobar");
-			//まずリンク生成
+		constructor(){
+			this.container=document.createElement("div");
+			this.container.classList.add("links");
 			this.container.appendChild(this.makeLinks());
-			//次に餃子ボタン生成
-			this.container.appendChild(this.makeGyozaButton());
-			//ボリューム操作生成
-			this.container.appendChild(this.makeVolumeRange());
-			//チャネル開き方
-			this.container.appendChild(this.makeChannelModeButton());
+		}
+		getContainer():HTMLElement{
+			return this.container;
 		}
 		makeLinks():DocumentFragment{
 			var df=document.createDocumentFragment();
 
 			for(var i=0,l=this.links.length;i<l;i++){
-				var o=this.links[i];
-				if(o.url){
+				var ls=this.links[i];
+				var ul=document.createElement("ul");
+				for(var j=0,m=ls.length;j<m;j++){
+					var o=ls[j];
+
 					var a=<HTMLAnchorElement>document.createElement("a");
 					a.href=o.url;
 					a.target="_blank";
 					a.textContent=o.name;
-					df.appendChild(a);
-					//スペース開ける
-					df.appendChild(document.createTextNode(" "));
-				}else{
-					//セパレータ
-					df.appendChild(document.createTextNode("| "));
+					ul.appendChild(makeEl("li",(li)=>{
+						li.appendChild(a);
+					}));
 				}
+				df.appendChild(ul);
 			}
 			return df;
+		}
+	}
+	//設定
+	export class ChatSettingView{
+		private container:HTMLFormElement;
+		//餃子セッティング一覧
+		private gyozaSettings:string[]=["餃子無展開","餃子オンマウス","餃子常時"];
+		//チャネルセッティング一覧
+		private channelSettings:string[]=["欄#","窓#"];
+		constructor(private userData:ChatUserData,private view:ChatView){
+			this.container=<HTMLFormElement>document.createElement("form");
+			this.container.classList.add("infobar");
+			//餃子ボタン生成
+			this.container.appendChild(this.makeGyozaButton());
+			//ボリューム操作生成
+			this.container.appendChild(this.makeVolumeRange());
+			//チャネル開き方
+			this.container.appendChild(this.makeChannelModeButton());
 		}
 		makeGyozaButton():HTMLElement{
 			var button:HTMLInputElement=<HTMLInputElement>document.createElement("input");

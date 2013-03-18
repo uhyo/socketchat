@@ -12,6 +12,26 @@ body.discon{
 div.logbox{
 	margin-top:0.4em;
 }
+/* linksview */
+.links{
+	display:inline-block;
+}
+.links ul{
+	display:inline-block;
+	margin:0;
+	padding:0;
+}
+.links ul:not(:first-child){
+	border-left:1px solid black;
+	padding-left:5px;
+}
+.links ul li{
+	display:inline-block;
+	margin-right:0.5ex;
+}
+form.infobar{
+	display:inline-block;
+}
 
 .logbox{
 	margin:0;
