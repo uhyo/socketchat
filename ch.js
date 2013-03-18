@@ -893,14 +893,16 @@ function chalog(query,callback){
 	if(page)optobj.skip=page*value;
 	optobj.limit=value;
 	
-	if(!isNaN(query.starttime)){
-		queryobj.time={$gte:new Date(parseInt(query.starttime))};
+	var std=new Date(query.starttime);
+	if(!isNaN(std.getTime())){
+		queryobj.time={$gte:std};
 	}
-	if(!isNaN(query.endtime)){
+	var end=new Date(query.endtime);
+	if(!isNaN(end.getTime())){
 		if(queryobj.time){
-			queryobj.time["$lte"]=new Date(parseInt(query.endtime));
+			queryobj.time["$lte"]=end;
 		}else{
-			queryobj.time={$lte:new Date(parseInt(query.endtime))};
+			queryobj.time={$lte:end};
 		}
 	}
 	if(query.name){
