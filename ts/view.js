@@ -240,6 +240,9 @@ var Chat;
                 }
             });
             fe.on("openReplyForm", function (log) {
+                if(log.classList.contains("replyready")) {
+                    return;
+                }
                 var comForm = new ChatUICollection.CommentForm(true);
                 var cont = comForm.getContainer();
                 var p = cont.getElementsByTagName("p")[0];
@@ -249,13 +252,16 @@ var Chat;
                     }), p.firstChild);
                 }
                 log.parentNode.insertBefore(cont, log.nextSibling);
+                log.classList.add("replyready");
                 comForm.event.on("comment", function (data) {
                     data.response = log.dataset.id;
                     _this.process.comment(data);
                     appearAnimation(cont, "vertical", false, true);
+                    log.classList.remove("replyready");
                 });
                 comForm.event.on("cancel", function () {
                     appearAnimation(cont, "vertical", false, true);
+                    log.classList.remove("replyready");
                 });
                 appearAnimation(cont, "vertical", true, true);
                 var ch = log.dataset.channel || "";

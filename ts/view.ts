@@ -306,6 +306,10 @@ module Chat{
 			});
 			fe.on("openReplyForm",(log:HTMLElement)=>{
 				//このログに対して返信フォームを開くべきだ
+				if(log.classList.contains("replyready")){
+					//すでに返信フォームが開いている
+					return;
+				}
 				var comForm=new ChatUICollection.CommentForm(true);
 				var cont=comForm.getContainer();
 				//最初にマークつける
@@ -316,14 +320,17 @@ module Chat{
 					}),p.firstChild);
 				}
 				log.parentNode.insertBefore(cont,log.nextSibling);
+				log.classList.add("replyready");	//返信フォームが開いている
 				comForm.event.on("comment",(data:CommentNotify)=>{
 					//返信情報
 					data.response=log.dataset.id;
 					this.process.comment(data);
 					appearAnimation(cont,"vertical",false,true);
+					log.classList.remove("replyready");
 				});
 				comForm.event.on("cancel",()=>{
 					appearAnimation(cont,"vertical",false,true);
+					log.classList.remove("replyready");
 				});
 				appearAnimation(cont,"vertical",true,true);
 				var ch=log.dataset.channel || "";
