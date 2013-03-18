@@ -368,22 +368,27 @@ var Chat;
             var cl = t.classList;
             if(cl.contains("channel") && t.dataset.channel) {
                 this.event.emit("focusChannel", t.dataset.channel);
-            } else if(cl.contains("respin") && !cl.contains("opened")) {
-                cl.add("opened");
-                var log = t.parentNode.parentNode;
-                this.receiver.find({
-                    id: log.dataset.respto
-                }, function (logs) {
-                    if(logs.length > 0) {
-                        var l = logs[0];
-                        var line = _this.lineMaker.make(l);
-                        var bq = document.createElement("blockquote");
-                        bq.classList.add("resp");
-                        bq.appendChild(line);
-                        log.parentNode.insertBefore(bq, log.nextSibling);
-                        appearAnimation(bq, "vertical", true, true);
-                    }
-                });
+            } else if(cl.contains("respin")) {
+                if(cl.contains("opened")) {
+                    var bq = (document).evaluate('ancestor::p/following-sibling::blockquote', t, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+                    appearAnimation(bq, "vertical", false, true);
+                } else {
+                    var log = t.parentNode.parentNode;
+                    this.receiver.find({
+                        id: log.dataset.respto
+                    }, function (logs) {
+                        if(logs.length > 0) {
+                            var l = logs[0];
+                            var line = _this.lineMaker.make(l);
+                            var bq = document.createElement("blockquote");
+                            bq.classList.add("resp");
+                            bq.appendChild(line);
+                            log.parentNode.insertBefore(bq, log.nextSibling);
+                            appearAnimation(bq, "vertical", true, true);
+                        }
+                    });
+                }
+                cl.toggle("opened");
                 return;
             }
             var logp = (document).evaluate('ancestor-or-self::p', t, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;

@@ -454,23 +454,29 @@ module Chat{
 			if(cl.contains("channel") && t.dataset.channel){
 				//チャンネルだ
 				this.event.emit("focusChannel",t.dataset.channel);
-			}else if(cl.contains("respin") && !cl.contains("opened")){
-				cl.add("opened");
-				//親のログを得る
-				var log=<HTMLElement>t.parentNode.parentNode;
-				this.receiver.find({
-					id:log.dataset.respto,
-				},(logs:LogObj[])=>{
-					if(logs.length>0){
-						var l=logs[0];
-						var line:HTMLElement=this.lineMaker.make(l);
-						var bq=document.createElement("blockquote");
-						bq.classList.add("resp");
-						bq.appendChild(line);
-						log.parentNode.insertBefore(bq,log.nextSibling);
-						appearAnimation(bq,"vertical",true,true);
-					}
-				});
+			}else if(cl.contains("respin")){
+				if(cl.contains("opened")){
+					//ログを戻す
+					var bq=<HTMLElement>(<XPathEvaluator>document).evaluate('ancestor::p/following-sibling::blockquote',t,null,XPathResult.FIRST_ORDERED_NODE_TYPE,null).singleNodeValue;
+					appearAnimation(bq,"vertical",false,true);
+				}else{
+					//親のログを得る
+					var log=<HTMLElement>t.parentNode.parentNode;
+					this.receiver.find({
+						id:log.dataset.respto,
+					},(logs:LogObj[])=>{
+						if(logs.length>0){
+							var l=logs[0];
+							var line:HTMLElement=this.lineMaker.make(l);
+							var bq=document.createElement("blockquote");
+							bq.classList.add("resp");
+							bq.appendChild(line);
+							log.parentNode.insertBefore(bq,log.nextSibling);
+							appearAnimation(bq,"vertical",true,true);
+						}
+					});
+				}
+				cl.toggle("opened");
 				return;
 			}
 			//ログクリックを検出

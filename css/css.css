@@ -112,9 +112,6 @@ span.icon.respin{
 span.icon.respin.opened::before{
 	color:#bbbbbb;
 }
-span.icon.respin.opened{
-	cursor:default;
-}
 span.icon.resptip::before{
 	/*返信ボタン*/
 	color:#00cc00;
