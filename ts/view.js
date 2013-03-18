@@ -2370,9 +2370,11 @@ while(node = tw.previousNode()) {
             callback();
             return;
         }
-        var inb;
+        var inb1, inb2;
         var h;
         if(mode === "vertical") {
+            inb1 = el.classList.contains("verticalanime1");
+            el.classList.add("verticalanime1");
             h = el.clientHeight;
             if(appear) {
                 el.style.height = "0";
@@ -2380,6 +2382,8 @@ while(node = tw.previousNode()) {
                 el.style.height = h + "px";
             }
         } else if(mode === "horizontal") {
+            inb1 = el.classList.contains("horizontalanime1");
+            el.classList.add("horizontalanime1");
             h = el.clientWidth;
             if(appear) {
                 el.style.width = "0";
@@ -2387,6 +2391,8 @@ while(node = tw.previousNode()) {
                 el.style.width = h + "px";
             }
         } else if(mode === "fade") {
+            inb1 = el.classList.contains("fadeanime1");
+            el.classList.add("fadeanime1");
             if(appear) {
                 el.style.opacity = "0";
             } else {
@@ -2395,14 +2401,14 @@ while(node = tw.previousNode()) {
         }
         setTimeout(function () {
             if(mode === "vertical") {
-                inb = el.classList.contains("verticalanime");
-                el.classList.add("verticalanime");
+                inb2 = el.classList.contains("verticalanime2");
+                el.classList.add("verticalanime2");
             } else if(mode === "horizontal") {
-                inb = el.classList.contains("horizontalanime");
-                el.classList.add("horizontalanime");
+                inb2 = el.classList.contains("horizontalanime2");
+                el.classList.add("horizontalanime2");
             } else if(mode === "fade") {
-                inb = el.classList.contains("fadeanime");
-                el.classList.add("fadeanime");
+                inb2 = el.classList.contains("fadeanime2");
+                el.classList.add("fadeanime2");
             }
             setTimeout(function () {
                 if(mode === "vertical") {
@@ -2426,13 +2432,22 @@ while(node = tw.previousNode()) {
                 }
                 var listener;
                 el.addEventListener("transitionend", listener = function (e) {
-                    if(!inb) {
+                    if(!inb1) {
                         if(mode === "vertical") {
-                            el.classList.remove("verticalanime");
+                            el.classList.remove("verticalanime1");
                         } else if(mode === "horizontal") {
-                            el.classList.remove("horizontalanime");
+                            el.classList.remove("horizontalanime1");
                         } else if(mode === "fade") {
-                            el.classList.remove("fadeanime");
+                            el.classList.remove("fadeanime1");
+                        }
+                    }
+                    if(!inb2) {
+                        if(mode === "vertical") {
+                            el.classList.remove("verticalanime2");
+                        } else if(mode === "horizontal") {
+                            el.classList.remove("horizontalanime2");
+                        } else if(mode === "fade") {
+                            el.classList.remove("fadeanime2");
                         }
                     }
                     if(finish) {
