@@ -233,6 +233,18 @@ module Chat{
 						input.size=25;
 					}));
 				}));
+				//変更されたらチェックボックスを入れたりする処理
+				fs.addEventListener("change",(e:Event)=>{
+					//先取りinput
+					var inp=<HTMLInputElement>e.target;
+					if(!/^input$/i.test(inp.tagName))return;	//違う
+					if(inp.type==="checkbox")return;	//チェックボックス自身は気にしない
+					//チェックボックスを探す
+					var checkbox=<HTMLInputElement>(<XPathEvaluator>document).evaluate('ancestor-or-self::p/descendant::input[@type="checkbox"]',inp,null,XPathResult.ANY_UNORDERED_NODE_TYPE,null).singleNodeValue;
+					if(checkbox){
+						checkbox.checked= inp.value!=="";
+					}
+				},false);
 			});
 		}
 		makeOperatePart():HTMLFieldSetElement{

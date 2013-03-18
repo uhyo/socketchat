@@ -240,6 +240,19 @@ var Chat;
                         input.size = 25;
                     }));
                 }));
+                fs.addEventListener("change", function (e) {
+                    var inp = e.target;
+                    if(!/^input$/i.test(inp.tagName)) {
+                        return;
+                    }
+                    if(inp.type === "checkbox") {
+                        return;
+                    }
+                    var checkbox = (document).evaluate('ancestor-or-self::p/descendant::input[@type="checkbox"]', inp, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
+                    if(checkbox) {
+                        checkbox.checked = inp.value !== "";
+                    }
+                }, false);
             });
         };
         FindQueryForm.prototype.makeOperatePart = function () {
