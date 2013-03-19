@@ -15,6 +15,10 @@ interface HTMLElement{
 interface XPathNSResolver{
 	lookupNamespaceURI(prefix:string):string;
 }
+//Clipboard API
+interface ClipboardEvent extends Event{
+	clipboardData:DataTransfer;
+}
 declare var XPathResult:{
 	ANY_TYPE:number;
 	NUMBER_TYPE:number;
@@ -317,6 +321,7 @@ module Chat{
 				if(p){
 					p.insertBefore(makeEl("span",(el)=>{
 						el.className="icon respin opened";
+						el.textContent="\ue000";
 					}),p.firstChild);
 				}
 				log.parentNode.insertBefore(cont,log.nextSibling);
@@ -427,6 +432,57 @@ module Chat{
 			this.container.addEventListener("click",<(e:Event)=>void>this.clickHandler.bind(this),false);
 			//ツールボックスの準備をする
 			this.toolbox=this.makeToolbox();
+			//アイコンをコピーされると困る
+			var clistener=(e:ClipboardEvent)=>{
+				var selection=window.getSelection();
+				var box:{range:Range;df:DocumentFragment;}[]=[];
+				for(var i=0,l=selection.rangeCount;i<l;i++){
+					var range=selection.getRangeAt(i);
+					var an=range.commonAncestorContainer;
+					//TreeWalkerでアイコンを探す
+					var tw=document.createTreeWalker(an,NodeFilter.SHOW_ELEMENT,(node:HTMLElement)=>{
+						if(node.classList.contains("icon")){
+							//アイコン
+							return NodeFilter.FILTER_ACCEPT;
+						}else{
+							return NodeFilter.FILTER_SKIP;
+						}
+					},false);
+					tw.currentNode=range.startContainer;
+					var node:HTMLElement;
+					var range2:Range;
+					while(node=<HTMLElement>tw.nextNode()){
+						if(!range2)range2=document.createRange();
+						//範囲を通りすぎてないかチェック
+						range2.selectNode(node);
+						if(range.compareBoundaryPoints(Range.START_TO_END,range2)<=0){
+							//通り過ぎた。終了
+							break;
+						}
+						//TreeWalkerが見失わないようにとりあえず親
+						tw.currentNode=node.parentNode;
+						//アイコンである。消去する
+						var df=range2.extractContents();
+						box.push({
+							range:range2,
+							df:df,
+						});
+						console.log(df);
+						//このrange2は使用済。参照を断つ
+						range2=null;
+					}
+				}
+				//一瞬後（コピー後）に復旧する
+				//setImmediateが欲しい事例
+				setTimeout(()=>{
+					box.reverse();	//連続した奴を消したときに後ろから戻さないと順番が逆になる
+					box.forEach(obj=>{
+						obj.range.insertNode(obj.df);
+						obj.range.detach();
+					});
+				},0);
+			};
+			this.container.addEventListener("copy",clistener,false);
 		}
 		getContainer():HTMLElement{
 			return this.container;
@@ -511,6 +567,7 @@ module Chat{
 			toolbox.appendChild(makeEl("span",(el)=>{
 				el.className="icon resptip";
 				el.setAttribute("role","button");
+				el.textContent="\ue001";
 				el.addEventListener("click",(e:Event)=>{
 					var log=this.selectedLog;
 					if(log){
@@ -524,6 +581,7 @@ module Chat{
 				//しまう
 				el.className="icon hidetoolbox";
 				el.setAttribute("role","button");
+				el.textContent="\ue004";
 				el.addEventListener("click",(e:Event)=>{
 					//クリックするとしまう
 					appearAnimation(toolbox,"fade",false,true);
@@ -737,6 +795,12 @@ module Chat{
 			name.classList.add("name");
 			name.style.color=color;
 			p.appendChild(name);
+			//アレ
+			p.appendChild(makeEl("span",span=>{
+				span.classList.add("nameseparator");
+				span.style.color=color;
+				span.textContent="> ";
+			}));
 			//名前以外の部分の生成
 			var main=document.createElement("span");
 			main.classList.add("main");
@@ -744,6 +808,7 @@ module Chat{
 			if(obj.response){
 				var resptip=document.createElement("span");
 				resptip.className="icon respin";
+				resptip.textContent="\ue000";
 				main.appendChild(resptip);
 			}
 			//コメント部分の生成

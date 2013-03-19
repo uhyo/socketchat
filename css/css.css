@@ -42,6 +42,9 @@ form.infobar{
 .logbox p.syslog .name{
 	color:#0000ff !important;
 }
+.logbox p.syslog .nameseparator{
+	color:#0000ff !important;
+}
 .logbox span.main span.info{
 	font-size:smaller;
 	color:#cccccc;
@@ -63,10 +66,6 @@ form.infobar{
 }
 .logbox .name{
 	font-weight:bold;
-}
-.logbox .name:after{
-	content:'> ';
-	font-weight:normal;
 }
 .logbox span.respto:not([data-open="open"]){
 	cursor:pointer;
@@ -98,46 +97,34 @@ span.toolbox{
 	white-space:nowrap;
 }
 /* icons? */
-span.icon::before{
-	font-family:icons;
-	vertical-align:text-bottom;
-}
 span.icon{
 	cursor:default;
-}
-span.icon.respin::before{
-	/*返信であることを示すやつ*/
-	color:#888888;
-	content:'\e000';
-	margin-right:5px;
-	transition:color 0.35s ease 0s;
+	font-family:icons;
+	vertical-align:text-bottom;
+	-webkit-user-select:none;
+	-moz-user-select:none;
+	-o-user-select:none;
+	user-select:none;
 }
 span.icon.respin{
+	/*返信であることを示すやつ*/
+	color:#888888;
+	margin-right:5px;
+	transition:color 0.35s ease 0s;
 	cursor:pointer;
 }
-span.icon.respin.opened::before{
+span.icon.respin.opened{
 	color:#bbbbbb;
 }
-span.icon.resptip::before{
+span.icon.resptip{
 	/*返信ボタン*/
 	color:#00cc00;
-	content:'\e001';
-}
-span.icon.resptip{
 	cursor:pointer;
-}
-span.icon.hidetoolbox::before{
-	/*ツールボックスをかくすボタン*/
-	color:#999999;
-	content:'\e004';
 }
 span.icon.hidetoolbox{
+	/*ツールボックスをかくすボタン*/
+	color:#999999;
 	cursor:pointer;
-}
-span.icon.volumeicon::before{
-	/*ボリューム記号*/
-	color:#666600;
-	content:'\e003';
 }
 
 div.userinfo{

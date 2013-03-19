@@ -249,6 +249,7 @@ var Chat;
                 if(p) {
                     p.insertBefore(makeEl("span", function (el) {
                         el.className = "icon respin opened";
+                        el.textContent = "\ue000";
                     }), p.firstChild);
                 }
                 log.parentNode.insertBefore(cont, log.nextSibling);
@@ -348,6 +349,49 @@ var Chat;
             }).bind(this);
             this.container.addEventListener("click", this.clickHandler.bind(this), false);
             this.toolbox = this.makeToolbox();
+            var clistener = function (e) {
+                var selection = window.getSelection();
+                var box = [];
+                for(var i = 0, l = selection.rangeCount; i < l; i++) {
+                    var range = selection.getRangeAt(i);
+                    var an = range.commonAncestorContainer;
+                    var tw = document.createTreeWalker(an, NodeFilter.SHOW_ELEMENT, function (node) {
+                        if(node.classList.contains("icon")) {
+                            return NodeFilter.FILTER_ACCEPT;
+                        } else {
+                            return NodeFilter.FILTER_SKIP;
+                        }
+                    }, false);
+                    tw.currentNode = range.startContainer;
+                    var node;
+                    var range2;
+                    while(node = tw.nextNode()) {
+                        if(!range2) {
+                            range2 = document.createRange();
+                        }
+                        range2.selectNode(node);
+                        if(range.compareBoundaryPoints(Range.START_TO_END, range2) <= 0) {
+                            break;
+                        }
+                        tw.currentNode = node.parentNode;
+                        var df = range2.extractContents();
+                        box.push({
+                            range: range2,
+                            df: df
+                        });
+                        console.log(df);
+                        range2 = null;
+                    }
+                }
+                setTimeout(function () {
+                    box.reverse();
+                    box.forEach(function (obj) {
+                        obj.range.insertNode(obj.df);
+                        obj.range.detach();
+                    });
+                }, 0);
+            };
+            this.container.addEventListener("copy", clistener, false);
         }
         ChatLogFlow.prototype.getContainer = function () {
             return this.container;
@@ -418,6 +462,7 @@ var Chat;
             toolbox.appendChild(makeEl("span", function (el) {
                 el.className = "icon resptip";
                 el.setAttribute("role", "button");
+                el.textContent = "\ue001";
                 el.addEventListener("click", function (e) {
                     var log = _this.selectedLog;
                     if(log) {
@@ -428,6 +473,7 @@ var Chat;
             toolbox.appendChild(makeEl("span", function (el) {
                 el.className = "icon hidetoolbox";
                 el.setAttribute("role", "button");
+                el.textContent = "\ue004";
                 el.addEventListener("click", function (e) {
                     appearAnimation(toolbox, "fade", false, true);
                 }, false);
@@ -633,11 +679,17 @@ var Chat;
             name.classList.add("name");
             name.style.color = color;
             p.appendChild(name);
+            p.appendChild(makeEl("span", function (span) {
+                span.classList.add("nameseparator");
+                span.style.color = color;
+                span.textContent = "> ";
+            }));
             var main = document.createElement("span");
             main.classList.add("main");
             if(obj.response) {
                 var resptip = document.createElement("span");
                 resptip.className = "icon respin";
+                resptip.textContent = "\ue000";
                 main.appendChild(resptip);
             }
             var comment = document.createElement("bdi");
