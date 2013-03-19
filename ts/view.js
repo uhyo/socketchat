@@ -45,6 +45,15 @@ var Chat;
             receiver.on("reconnect", function () {
                 document.body.classList.remove("discon");
             });
+            window.addEventListener("scroll", function (e) {
+                var st = document.body.scrollTop || document.documentElement.scrollTop || 0;
+                var cl = document.documentElement.offsetHeight;
+                var i = window.innerHeight;
+                if(st >= cl - i) {
+                    receiver.motto({
+                    });
+                }
+            }, false);
         }
         ChatView.prototype.refreshSettings = function () {
             this.settingView.refreshSettings();

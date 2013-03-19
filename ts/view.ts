@@ -101,6 +101,16 @@ module Chat{
 			receiver.on("reconnect",()=>{
 				document.body.classList.remove("discon");
 			});
+			//下までスクロールしたら自動mottoする
+			window.addEventListener("scroll",(e:UIEvent)=>{
+				var st=document.body.scrollTop || document.documentElement.scrollTop || 0;
+    			var cl=document.documentElement.offsetHeight;
+				var i=window.innerHeight;
+				if(st >= cl-i){
+					//下までスクロールした
+					receiver.motto({});
+				}
+			},false);
 		}
 		//設定がされたので反映させる
 		refreshSettings():void{
