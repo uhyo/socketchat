@@ -59,6 +59,14 @@ module Chat{
 			this.logFlow=new ChatLogFlow(userData,receiver);
 			this.container.appendChild(this.logFlow.getContainer());
 			this.logFlow.refreshSettings();
+			//チャネルをクリックしたら?
+			this.logFlow.event.on("focusChannel",(channel:string)=>{
+				//チャットを開く
+				var a=<HTMLAnchorElement>document.createElement("a");
+				a.href="/#"+channel;
+				a.target="_blank";
+				a.click();
+			});
 		}
 	}
 	//検索条件フォーム

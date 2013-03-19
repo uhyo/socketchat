@@ -67,6 +67,12 @@ var Chat;
             this.logFlow = new Chat.ChatLogFlow(userData, receiver);
             this.container.appendChild(this.logFlow.getContainer());
             this.logFlow.refreshSettings();
+            this.logFlow.event.on("focusChannel", function (channel) {
+                var a = document.createElement("a");
+                a.href = "/#" + channel;
+                a.target = "_blank";
+                a.click();
+            });
         }
         return LogViewerView;
     })();
