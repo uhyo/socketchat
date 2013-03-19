@@ -26,7 +26,7 @@ one of:
 
 * "String"
 * [ CommentObject, CommentObject, ...]
-* {
+  {
     "name":"String",	//tag name
     "attributes":{
       key: value, ...
@@ -37,6 +37,14 @@ one of:
     "child": CommentObject,
   } //makes HTML Element whose name is (name)
     
+== on-browser JavaScript API ==
+  //Global variable: factory
+  factory.getChat(function(chat){
+    chat.api.on("log",function(log){
+      chat.api.inout("Alice");
+      chat.api.say("foo",log._id,"bar");	//comment, response, channel
+    });
+  });
 
 == API formats ==
 最初のリクエストでsessionIdを取得した後は、そのsessionIdをリクエストに加えること（sessionId=(String)）

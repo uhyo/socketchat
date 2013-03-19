@@ -1,22 +1,15 @@
+var __extends = this.__extends || function (d, b) {
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
 var Chat;
 (function (Chat) {
-    var UserListFactory = (function () {
+    var UserListFactory = (function (_super) {
+        __extends(UserListFactory, _super);
         function UserListFactory() {
+                _super.call(this, null, false, null);
         }
-        UserListFactory.prototype.getUserList = function (callback) {
-            var userData = this.makeUserData();
-            var connection = this.makeConnection(userData);
-            var receiver = this.makeReceiver(connection);
-            var view = this.makeView(connection, receiver, userData);
-            if(callback) {
-                callback(new UserList(userData, connection, receiver, view));
-            }
-        };
-        UserListFactory.prototype.makeUserData = function () {
-            var ud = new Chat.ChatUserData();
-            ud.load();
-            return ud;
-        };
         UserListFactory.prototype.makeConnection = function (userData) {
             var connection = new Chat.SocketConnection();
             connection.initConnection(settings);
@@ -26,11 +19,14 @@ var Chat;
         UserListFactory.prototype.makeReceiver = function (connection) {
             return new Chat.ChatReceiver(connection, null);
         };
-        UserListFactory.prototype.makeView = function (connection, receiver, userData) {
+        UserListFactory.prototype.makeView = function (connection, receiver, userData, process) {
             return new UserListView(userData, connection, receiver);
         };
+        UserListFactory.prototype.makeAPI = function (connection, receiver, userData, process, view) {
+            return null;
+        };
         return UserListFactory;
-    })();
+    })(Chat.ChatClientFactory);
     Chat.UserListFactory = UserListFactory;    
     var UserList = (function () {
         function UserList(userData, connection, receiver, view) {
@@ -42,11 +38,12 @@ var Chat;
         return UserList;
     })();
     Chat.UserList = UserList;    
-    var UserListView = (function () {
+    var UserListView = (function (_super) {
+        __extends(UserListView, _super);
         function UserListView(userData, connection, receiver) {
-            this.userData = userData;
-            this.connection = connection;
-            this.receiver = receiver;
+                _super.call(this, userData, connection, receiver, null, false);
+        }
+        UserListView.prototype.initView = function (userData, connection, receiver, process, com) {
             this.container = document.createElement("div");
             document.body.appendChild(this.container);
             this.container.appendChild((function (h1) {
@@ -60,7 +57,7 @@ var Chat;
             receiver.on("newuser", this.newuser.bind(this));
             receiver.on("deluser", this.deluser.bind(this));
             receiver.on("inout", this.inout.bind(this));
-        }
+        };
         UserListView.prototype.initTable = function (table) {
             var thead = table.createTHead();
             [
@@ -123,6 +120,6 @@ var Chat;
             return "rgb(" + Math.floor(parseInt(arr[0]) * 0.75) + "," + Math.floor(parseInt(arr[1]) * 0.75) + "," + Math.floor(parseInt(arr[2]) * 0.75) + ")";
         };
         return UserListView;
-    })();
+    })(Chat.ChatView);
     Chat.UserListView = UserListView;    
 })(Chat || (Chat = {}));

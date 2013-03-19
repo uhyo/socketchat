@@ -13,13 +13,8 @@
     <script src="/ts/logviewer.js"></script>
 
     <script>
-var chat;
-window.addEventListener('load',function(){
-  var factory=new Chat.LogViewerFactory();
-  factory.getLogViewer(function(c){
-  });
-
-},false);
+var factory=new Chat.LogViewerFactory();
+factory.getChat();
     </script>
   </head>
   <body role="application" class="logview">

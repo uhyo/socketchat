@@ -12,17 +12,12 @@
     <script src="/ts/client.js"></script>
 
     <script>
-var chat;
-window.addEventListener('load',function(){
-  //チャネル判定
-  var result=location.hash.match(/^#(.+)$/);
-  channel= result ? result[1] : null;
-  var factory=new Chat.ChatClientFactory(channel,true,"socket");
-  factory.getChat(function(c){
-    chat=c;
-  });
-
-},false);
+//チャネル判定
+var result=location.hash.match(/^#(.+)$/);
+channel= result ? result[1] : null;
+//Global!!
+var factory = new Chat.ChatClientFactory(channel,true,"socket");
+factory.getChat();
     </script>
   </head>
   <body role="application" class="com">

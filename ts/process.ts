@@ -95,7 +95,6 @@ module Chat{
 		}
 		//コメントする
 		comment(data:CommentNotify):void{
-			//チャネル処理とか入れたいけど・・・？
 			//チャネル追加
 			if(this.channel){
 				var ch = data.channel ? data.channel : [];

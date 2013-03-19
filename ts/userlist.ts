@@ -1,22 +1,9 @@
 module Chat{
 	/// <reference path="client.ts"/>
 	//userList
-	export class UserListFactory{
+	export class UserListFactory extends ChatClientFactory{
 		constructor(){
-		}
-		getUserList(callback:(u:UserList)=>void){
-			var userData=this.makeUserData();
-			var connection=this.makeConnection(userData);
-			var receiver=this.makeReceiver(connection);
-			var view=this.makeView(connection,receiver,userData);
-			if(callback){
-				callback(new UserList(userData,connection,receiver,view));
-			}
-		}
-		makeUserData():ChatUserData{
-			var ud=new ChatUserData;
-			ud.load();
-			return ud;
+			super(null,false,null);
 		}
 		makeConnection(userData:ChatUserData):ChatConnection{
 			var connection:ChatConnection=new SocketConnection;
@@ -27,8 +14,11 @@ module Chat{
 		makeReceiver(connection:ChatConnection):ChatReceiver{
 			return new ChatReceiver(connection,null);
 		}
-		makeView(connection:ChatConnection,receiver:ChatReceiver,userData:ChatUserData):UserListView{
+		makeView(connection:ChatConnection,receiver:ChatReceiver,userData:ChatUserData,process:ChatProcess):UserListView{
 			return new UserListView(userData,connection,receiver);
+		}
+		makeAPI(connection:ChatConnection,receiver:ChatReceiver,userData:ChatUserData,process:ChatProcess,view:ChatView):ChatClientAPI{
+			return null;
 		}
 	}
 	export class UserList{
@@ -36,10 +26,16 @@ module Chat{
 		}
 	}
 	//ビュー
-	export class UserListView{
+	export class UserListView extends ChatView{
 		private container:HTMLElement;
 		private table:HTMLTableElement;
-		constructor(private userData:ChatUserData,private connection:ChatConnection,private receiver:ChatReceiver){
+		private userData:ChatUserData;
+		private connection:ChatConnection;
+		private receiver:ChatReceiver;
+		constructor(userData:ChatUserData,connection:ChatConnection,receiver:ChatReceiver){
+			super(userData,connection,receiver,null,false);
+		}
+		initView(userData:ChatUserData,connection:ChatConnection,receiver:ChatReceiver,process:ChatProcess,com:bool):void{
 			this.container=document.createElement("div");
 			//bodyへ
 			document.body.appendChild(this.container);

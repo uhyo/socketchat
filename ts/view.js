@@ -7,6 +7,13 @@ var Chat;
 (function (Chat) {
     var ChatView = (function () {
         function ChatView(userData, connection, receiver, process, com) {
+            this.userData = userData;
+            this.connection = connection;
+            this.receiver = receiver;
+            this.process = process;
+            this.initView(userData, connection, receiver, process, com);
+        }
+        ChatView.prototype.initView = function (userData, connection, receiver, process, com) {
             this.container = document.createElement("div");
             document.body.setAttribute('role', 'application');
             document.body.appendChild(this.container);
@@ -54,7 +61,7 @@ var Chat;
                     });
                 }
             }, false);
-        }
+        };
         ChatView.prototype.refreshSettings = function () {
             this.settingView.refreshSettings();
             this.logView.refreshSettings();

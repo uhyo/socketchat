@@ -1,8 +1,9 @@
 module Chat{
 	/// <reference path="client.ts"/>
 	//userList
-	export class LogViewerFactory{
+	export class LogViewerFactory extends ChatClientFactory{
 		constructor(){
+			super(null,false,null);
 		}
 		getLogViewer(callback:(u:LogViewer)=>void){
 			var userData=this.makeUserData();
@@ -12,11 +13,6 @@ module Chat{
 			if(callback){
 				callback(new LogViewer(userData,connection,receiver,view));
 			}
-		}
-		makeUserData():ChatUserData{
-			var ud=new ChatUserData;
-			ud.load();
-			return ud;
 		}
 		makeConnection(userData:ChatUserData):ChatConnection{
 			var connection:ChatConnection=new SocketConnection;
@@ -30,17 +26,26 @@ module Chat{
 		makeView(connection:ChatConnection,receiver:FindReceiver,userData:ChatUserData):LogViewerView{
 			return new LogViewerView(userData,connection,receiver);
 		}
+		makeAPI(connection:ChatConnection,receiver:ChatReceiver,userData:ChatUserData,process:ChatProcess,view:ChatView):ChatClientAPI{
+			return null;
+		}
 	}
 	export class LogViewer{
 		constructor(private userData:ChatUserData,private connection:ChatConnection,private receiver:ChatReceiver,private view:LogViewerView){
 		}
 	}
 	//ビュー
-	export class LogViewerView{
+	export class LogViewerView extends ChatView{
 		private container:HTMLElement;
 		private qf:FindQueryForm;
 		private logFlow:ChatLogFlow;
-		constructor(private userData:ChatUserData,private connection:ChatConnection,private receiver:FindReceiver){
+		private userData:ChatUserData;
+		private connection:ChatConnection;
+		private receiver:ChatReceiver;
+		constructor(userData:ChatUserData,connection:ChatConnection,receiver:ChatReceiver){
+			super(userData,connection,receiver,null,false);
+		}
+		initView(userData:ChatUserData,connection:ChatConnection,receiver:ChatReceiver,process:ChatProcess,com:bool):void{
 			this.container=document.createElement("div");
 			//bodyへ
 			document.body.appendChild(this.container);

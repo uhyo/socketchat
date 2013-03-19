@@ -5,8 +5,10 @@ var __extends = this.__extends || function (d, b) {
 };
 var Chat;
 (function (Chat) {
-    var LogViewerFactory = (function () {
+    var LogViewerFactory = (function (_super) {
+        __extends(LogViewerFactory, _super);
         function LogViewerFactory() {
+                _super.call(this, null, false, null);
         }
         LogViewerFactory.prototype.getLogViewer = function (callback) {
             var userData = this.makeUserData();
@@ -16,11 +18,6 @@ var Chat;
             if(callback) {
                 callback(new LogViewer(userData, connection, receiver, view));
             }
-        };
-        LogViewerFactory.prototype.makeUserData = function () {
-            var ud = new Chat.ChatUserData();
-            ud.load();
-            return ud;
         };
         LogViewerFactory.prototype.makeConnection = function (userData) {
             var connection = new Chat.SocketConnection();
@@ -34,8 +31,11 @@ var Chat;
         LogViewerFactory.prototype.makeView = function (connection, receiver, userData) {
             return new LogViewerView(userData, connection, receiver);
         };
+        LogViewerFactory.prototype.makeAPI = function (connection, receiver, userData, process, view) {
+            return null;
+        };
         return LogViewerFactory;
-    })();
+    })(Chat.ChatClientFactory);
     Chat.LogViewerFactory = LogViewerFactory;    
     var LogViewer = (function () {
         function LogViewer(userData, connection, receiver, view) {
@@ -47,11 +47,12 @@ var Chat;
         return LogViewer;
     })();
     Chat.LogViewer = LogViewer;    
-    var LogViewerView = (function () {
+    var LogViewerView = (function (_super) {
+        __extends(LogViewerView, _super);
         function LogViewerView(userData, connection, receiver) {
-            this.userData = userData;
-            this.connection = connection;
-            this.receiver = receiver;
+                _super.call(this, userData, connection, receiver, null, false);
+        }
+        LogViewerView.prototype.initView = function (userData, connection, receiver, process, com) {
             var _this = this;
             this.container = document.createElement("div");
             document.body.appendChild(this.container);
@@ -73,9 +74,9 @@ var Chat;
                 a.target = "_blank";
                 a.click();
             });
-        }
+        };
         return LogViewerView;
-    })();
+    })(Chat.ChatView);
     Chat.LogViewerView = LogViewerView;    
     var FindQueryForm = (function (_super) {
         __extends(FindQueryForm, _super);

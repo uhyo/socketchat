@@ -54,7 +54,11 @@ module Chat{
 		//why public
 		public dis:ChatLogDisManager;
 
-		constructor(userData:ChatUserData,connection:ChatConnection,receiver:ChatReceiver,process:ChatProcess,com:bool){
+		constructor(private userData:ChatUserData,private connection:ChatConnection,private receiver:ChatReceiver,private process:ChatProcess,com:bool){
+			this.initView(userData,connection,receiver,process,com);
+		}
+		//表示部分的な?
+		initView(userData:ChatUserData,connection:ChatConnection,receiver:ChatReceiver,process:ChatProcess,com:bool):void{
 			this.container=document.createElement("div");
 			//コンテナはbodyに入れる
 			document.body.setAttribute('role','application');

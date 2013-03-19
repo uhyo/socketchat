@@ -13,13 +13,8 @@
     <script src="/ts/userlist.js"></script>
 
     <script>
-var chat;
-window.addEventListener('load',function(){
-  var factory=new Chat.UserListFactory();
-  factory.getUserList(function(c){
-  });
-
-},false);
+var factory=new Chat.UserListFactory();
+factory.getChat();
     </script>
   </head>
   <body role="application" class="userlist">
