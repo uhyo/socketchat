@@ -400,6 +400,7 @@ var Chat;
             this.channel = channel;
             this.oldest_time = null;
             this.active = false;
+            this.flagMottoing = false;
             this.hub = new ChatHub.Hub(this, connection);
             this.event = getEventEmitter();
             connection.on("init", this.loginit.bind(this));
@@ -417,6 +418,10 @@ var Chat;
         };
         ChatReceiver.prototype.motto = function (data) {
             var _this = this;
+            if(this.flagMottoing) {
+                return;
+            }
+            this.flagMottoing = true;
             if(!data.time) {
                 data.time = this.oldest_time;
             }
@@ -427,6 +432,7 @@ var Chat;
                 query.channel = this.channel;
             }
             this.connection.send("find", query, function (logs) {
+                _this.flagMottoing = false;
                 if(logs.length > 0) {
                     _this.oldest_time = new Date(logs[logs.length - 1].time);
                     _this.event.emit("mottoLog", logs);

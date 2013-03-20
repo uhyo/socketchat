@@ -424,8 +424,11 @@ module Chat{
 		getHub():ChatHub.Hub{
 			return this.hub;
 		}
+		flagMottoing=false;
 		//サーバーにmottoを要求する
 		motto(data:MottoNotify):void{
+			if(this.flagMottoing) return;
+			this.flagMottoing=true;
 			if(!data.time){
 				data.time=this.oldest_time;
 			}
@@ -437,6 +440,7 @@ module Chat{
 				query.channel=this.channel;
 			}
 			this.connection.send("find",query,(logs:LogObj[])=>{
+				this.flagMottoing=false;
 				if(logs.length>0){
 					this.oldest_time=new Date(logs[logs.length-1].time);
 					this.event.emit("mottoLog",logs);
