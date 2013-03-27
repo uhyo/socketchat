@@ -328,7 +328,7 @@ module Chat{
 					//すでに返信フォームが開いている
 					return;
 				}
-				var comForm=new ChatUICollection.CommentForm(true);
+				var comForm=new ChatUICollection.CommentForm(receiver,true);
 				var cont=comForm.getContainer();
 				//最初にマークつける
 				var p=cont.getElementsByTagName("p")[0];
@@ -1293,7 +1293,7 @@ module Chat{
 			this.inoutForm=new ChatUICollection.InoutForm(this.userData,this.receiver);
 			this.container.appendChild(this.inoutForm.getContainer());
 			//次に発言フォーム
-			this.commentForm=new ChatUICollection.CommentForm(false);
+			this.commentForm=new ChatUICollection.CommentForm(receiver,false);
 			this.container.appendChild(this.commentForm.getContainer());
 
 			//操作に対応する
@@ -1397,7 +1397,7 @@ module Chat{
 			public event:EventEmitter;
 			private container:HTMLFormElement;
 			private flagFocusOutlaw=false;
-			constructor(private canselable){
+			constructor(private receiver:ChatReceiver,private canselable){
 				//canselable: キャンセルボタンがつく
 				super();
 				this.container=<HTMLFormElement>document.createElement("form");
@@ -1414,6 +1414,7 @@ module Chat{
 					input.size=60;
 					input.autocomplete="off";
 					input.required=true;
+					input.disabled=true;
 					input.addEventListener("input", (e)=>this.emitInput());
 				}));
 				p.appendChild(document.createTextNode("#"));
@@ -1422,6 +1423,7 @@ module Chat{
 					input.name="channel";
 					input.type="text";
 					input.size=10;
+					input.disabled=true;
 					input.addEventListener("change",(e:Event)=>{
 						this.event.emit("changeChannel",input.value);
 					},false);
@@ -1431,7 +1433,13 @@ module Chat{
 					input.name="commentbutton";
 					input.type="submit";
 					input.value="発言";
+					input.disabled=true;
 				}));
+				this.receiver.on("userinfo",(data:{name:string;rom:bool;})=>{
+					["comment","channel","commentbutton"].forEach(x=>{
+						(<HTMLInputElement>this.container.elements[x]).disabled = data.rom;
+					});
+				});
 				this.container.addEventListener("submit",(e:Event)=>{
 					e.preventDefault();
 					this.emitComment(e);

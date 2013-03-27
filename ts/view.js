@@ -259,7 +259,7 @@ var Chat;
                 if(log.classList.contains("replyready")) {
                     return;
                 }
-                var comForm = new ChatUICollection.CommentForm(true);
+                var comForm = new ChatUICollection.CommentForm(receiver, true);
                 var cont = comForm.getContainer();
                 var p = cont.getElementsByTagName("p")[0];
                 if(p) {
@@ -1101,7 +1101,7 @@ var Chat;
             this.container.classList.add("ui");
             this.inoutForm = new ChatUICollection.InoutForm(this.userData, this.receiver);
             this.container.appendChild(this.inoutForm.getContainer());
-            this.commentForm = new ChatUICollection.CommentForm(false);
+            this.commentForm = new ChatUICollection.CommentForm(receiver, false);
             this.container.appendChild(this.commentForm.getContainer());
             this.inoutForm.onInout(function (data) {
                 _this.process.inout(data);
@@ -1197,9 +1197,10 @@ var Chat;
         ChatUICollection.InoutForm = InoutForm;        
         var CommentForm = (function (_super) {
             __extends(CommentForm, _super);
-            function CommentForm(canselable) {
+            function CommentForm(receiver, canselable) {
                 var _this = this;
                         _super.call(this);
+                this.receiver = receiver;
                 this.canselable = canselable;
                 this.flagFocusOutlaw = false;
                 this.container = document.createElement("form");
@@ -1213,6 +1214,7 @@ var Chat;
                     input.size = 60;
                     input.autocomplete = "off";
                     input.required = true;
+                    input.disabled = true;
                     input.addEventListener("input", function (e) {
                         return _this.emitInput();
                     });
@@ -1222,6 +1224,7 @@ var Chat;
                     input.name = "channel";
                     input.type = "text";
                     input.size = 10;
+                    input.disabled = true;
                     input.addEventListener("change", function (e) {
                         _this.event.emit("changeChannel", input.value);
                     }, false);
@@ -1230,7 +1233,17 @@ var Chat;
                     input.name = "commentbutton";
                     input.type = "submit";
                     input.value = "発言";
+                    input.disabled = true;
                 }));
+                this.receiver.on("userinfo", function (data) {
+                    [
+                        "comment", 
+                        "channel", 
+                        "commentbutton"
+                    ].forEach(function (x) {
+                        (_this.container.elements[x]).disabled = data.rom;
+                    });
+                });
                 this.container.addEventListener("submit", function (e) {
                     e.preventDefault();
                     _this.emitComment(e);
