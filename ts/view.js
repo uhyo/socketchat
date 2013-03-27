@@ -438,7 +438,7 @@ var Chat;
                 if(cl.contains("opened")) {
                     var bq = (document).evaluate('ancestor::p/following-sibling::blockquote', t, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
                     appearAnimation(bq, "vertical", false, true);
-                } else {
+                } else if(!cl.contains("processing")) {
                     var log = t.parentNode.parentNode;
                     this.receiver.find({
                         id: log.dataset.respto
@@ -450,9 +450,12 @@ var Chat;
                             bq.classList.add("resp");
                             bq.appendChild(line);
                             log.parentNode.insertBefore(bq, log.nextSibling);
-                            appearAnimation(bq, "vertical", true, true);
+                            appearAnimation(bq, "vertical", true, true, function () {
+                                cl.remove("processing");
+                            });
                         }
                     });
+                    cl.add("processing");
                 }
                 cl.toggle("opened");
                 return;

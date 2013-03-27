@@ -536,7 +536,7 @@ module Chat{
 					//ログを戻す
 					var bq=<HTMLElement>(<XPathEvaluator>document).evaluate('ancestor::p/following-sibling::blockquote',t,null,XPathResult.FIRST_ORDERED_NODE_TYPE,null).singleNodeValue;
 					appearAnimation(bq,"vertical",false,true);
-				}else{
+				}else if(!cl.contains("processing")){
 					//親のログを得る
 					var log=<HTMLElement>t.parentNode.parentNode;
 					this.receiver.find({
@@ -549,9 +549,12 @@ module Chat{
 							bq.classList.add("resp");
 							bq.appendChild(line);
 							log.parentNode.insertBefore(bq,log.nextSibling);
-							appearAnimation(bq,"vertical",true,true);
+							appearAnimation(bq,"vertical",true,true,()=>{
+								cl.remove("processing");
+							});
 						}
 					});
+					cl.add("processing");
 				}
 				cl.toggle("opened");
 				return;
