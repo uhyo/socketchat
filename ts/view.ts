@@ -598,7 +598,9 @@ module Chat{
 				el.textContent="\ue004";
 				el.addEventListener("click",(e:Event)=>{
 					//クリックするとしまう
-					appearAnimation(toolbox,"fade",false,true);
+					appearAnimation(toolbox,"fade",false,true,()=>{
+						this.selectedLog=null;
+					});
 				},false);
 			}));
 			return toolbox;

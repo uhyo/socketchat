@@ -491,7 +491,9 @@ var Chat;
                 el.setAttribute("role", "button");
                 el.textContent = "\ue004";
                 el.addEventListener("click", function (e) {
-                    appearAnimation(toolbox, "fade", false, true);
+                    appearAnimation(toolbox, "fade", false, true, function () {
+                        _this.selectedLog = null;
+                    });
                 }, false);
             }));
             return toolbox;
