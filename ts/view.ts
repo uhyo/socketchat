@@ -634,7 +634,7 @@ module Chat{
 		}
 		private setDisipStyle(ip:string):void{
 			this.addCSSRules([
-				'.logbox p[data-ip="'+ip+'"]{display:none}',
+				'.logbox > p.log[data-ip="'+ip+'"]{display:none}',
 				'.users li[data-ip="'+ip+'"]{text-decoration:line-through}',
 			]);
 		}
@@ -645,7 +645,7 @@ module Chat{
 				ud.save();
 			}
 			this.removeCSSRules([
-				'.logbox p[data-ip="'+ip+'"]',
+				'.logbox > p.log[data-ip="'+ip+'"]',
 				'.users li[data-ip="'+ip+'"]',
 			]);
 		}
@@ -672,7 +672,7 @@ module Chat{
 				attribute=":not("+attribute+")";
 			}
 
-			return "#"+this.logContainer.id+" p"+attribute;
+			return "#"+this.logContainer.id+" > p.log"+attribute;
 		}
 		private createDisCSSRule(attribute:string, temporal:bool,anti:bool):string{
 			var selector:string=this.createDisCSSSelector(attribute,temporal,anti);

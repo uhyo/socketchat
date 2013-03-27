@@ -531,7 +531,7 @@ var Chat;
         };
         ChatLogDisManager.prototype.setDisipStyle = function (ip) {
             this.addCSSRules([
-                '.logbox p[data-ip="' + ip + '"]{display:none}', 
+                '.logbox > p.log[data-ip="' + ip + '"]{display:none}', 
                 '.users li[data-ip="' + ip + '"]{text-decoration:line-through}', 
                 
             ]);
@@ -545,7 +545,7 @@ var Chat;
                 ud.save();
             }
             this.removeCSSRules([
-                '.logbox p[data-ip="' + ip + '"]', 
+                '.logbox > p.log[data-ip="' + ip + '"]', 
                 '.users li[data-ip="' + ip + '"]', 
                 
             ]);
@@ -568,7 +568,7 @@ var Chat;
             if(anti) {
                 attribute = ":not(" + attribute + ")";
             }
-            return "#" + this.logContainer.id + " p" + attribute;
+            return "#" + this.logContainer.id + " > p.log" + attribute;
         };
         ChatLogDisManager.prototype.createDisCSSRule = function (attribute, temporal, anti) {
             var selector = this.createDisCSSSelector(attribute, temporal, anti);
