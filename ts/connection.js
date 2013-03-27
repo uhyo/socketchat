@@ -486,7 +486,10 @@ var Chat;
             this.event.emit("userinfo", data);
         };
         ChatReceiver.prototype.getUserinfo = function () {
-            return this.myUserinfo;
+            return this.myUserinfo || {
+                name: null,
+                rom: true
+            };
         };
         ChatReceiver.prototype.newuser = function (data) {
             this.event.emit("newuser", data);

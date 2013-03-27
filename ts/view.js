@@ -1208,13 +1208,14 @@ var Chat;
                 var p;
                 p = document.createElement("p");
                 this.container.appendChild(p);
+                var us = receiver.getUserinfo();
                 p.appendChild(this.makeinput(function (input) {
                     input.name = "comment";
                     input.type = "text";
                     input.size = 60;
                     input.autocomplete = "off";
                     input.required = true;
-                    input.disabled = true;
+                    input.disabled = us.rom;
                     input.addEventListener("input", function (e) {
                         return _this.emitInput();
                     });
@@ -1224,7 +1225,7 @@ var Chat;
                     input.name = "channel";
                     input.type = "text";
                     input.size = 10;
-                    input.disabled = true;
+                    input.disabled = us.rom;
                     input.addEventListener("change", function (e) {
                         _this.event.emit("changeChannel", input.value);
                     }, false);
@@ -1233,7 +1234,7 @@ var Chat;
                     input.name = "commentbutton";
                     input.type = "submit";
                     input.value = "発言";
-                    input.disabled = true;
+                    input.disabled = us.rom;
                 }));
                 this.receiver.on("userinfo", function (data) {
                     [

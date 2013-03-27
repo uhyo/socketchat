@@ -1407,6 +1407,7 @@ module Chat{
 				p=<HTMLParagraphElement>document.createElement("p");
 				this.container.appendChild(p);
 
+				var us=receiver.getUserinfo();
 				//発言欄
 				p.appendChild(this.makeinput(input=>{
 					input.name="comment";
@@ -1414,7 +1415,7 @@ module Chat{
 					input.size=60;
 					input.autocomplete="off";
 					input.required=true;
-					input.disabled=true;
+					input.disabled=us.rom;
 					input.addEventListener("input", (e)=>this.emitInput());
 				}));
 				p.appendChild(document.createTextNode("#"));
@@ -1423,7 +1424,7 @@ module Chat{
 					input.name="channel";
 					input.type="text";
 					input.size=10;
-					input.disabled=true;
+					input.disabled=us.rom;
 					input.addEventListener("change",(e:Event)=>{
 						this.event.emit("changeChannel",input.value);
 					},false);
@@ -1433,7 +1434,7 @@ module Chat{
 					input.name="commentbutton";
 					input.type="submit";
 					input.value="発言";
-					input.disabled=true;
+					input.disabled=us.rom;
 				}));
 				this.receiver.on("userinfo",(data:{name:string;rom:bool;})=>{
 					["comment","channel","commentbutton"].forEach(x=>{

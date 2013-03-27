@@ -505,7 +505,10 @@ module Chat{
 			this.event.emit("userinfo",data);
 		}
 		getUserinfo(){
-			return this.myUserinfo;
+			return this.myUserinfo || {
+				name:null,
+				rom:true,
+			};
 		}
 		//誰かきた
 		newuser(data:UserObj):void{
