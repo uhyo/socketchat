@@ -166,6 +166,8 @@ div.ui form p{
 }
 .logbox img{
 	vertical-align:middle;
+	max-width: 128px;
+	max-height: 128px;
 }
 
 .responding_tip{
