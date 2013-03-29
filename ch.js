@@ -368,18 +368,22 @@ User.prototype.says=function(data){
 		var c=data.channel;
 		if(Array.isArray(c)){
 			//配列だった
-			if(c.length===0 || c.some(function(x){return !x || 'string'!==typeof x})){
+			if(c.length===0){
 				//channel=null;
 			}else if(c.length===1){
 				c=c[0];	//文字列化
-				if(!c || 'string'!==typeof c)c=null;	//無効
-				else channel.push(c);
+				channel.push(c);
 			}else{
 				//全部採用
 				channel=c;
 			}
 		}else if('string' === typeof c){
 			channel.push(c);
+		}
+		//チャネルをチェックする
+		if(!channel.every(validateHashtag)){
+			//だめ
+			return;
 		}
 	}
 	if(channel.map(function(c){return c.length;}).reduce(function(a,b){return a+b;},0)>exports.CHAT_CHANNEL_MAX_LENGTH_SUM){
@@ -392,18 +396,20 @@ User.prototype.says=function(data){
 	var flag=false, result;
 	while(result=comment.match(/(?:^|\s+)#(\S+)\s*$/)){
 		//文末のハッシュタグはチャネルに組み入れる
-		if(channel.indexOf(result[1])<0){
+		if(channel.indexOf(result[1])<0 && validateHashtag(result[1])){
 			channel.unshift(result[1]);
+			comment=comment.slice(0,comment.length-result[0].length);	//その部分をカット
+			flag=true;
 		}
-		comment=comment.slice(0,comment.length-result[0].length);	//その部分をカット
-		flag=true;
+		//不適なチャネルだった
+		break;
 	}
 	if(flag && /^\s*$/.test(comment)){
 		//空っぽになってしまった場合は戻す
 		comment=save_str;
 	}
 	//文末以外のチャンネルを割り当てる
-	result=comment.match(/(?:^|\s+)#\S+/g);
+	/*result=comment.match(/(?:^|\s+)#\S+/g);
 	if(result){
 		for(var i=0,l=result.length;i<l;i++){
 			var r=result[i].match(/#(\S+)$/);
@@ -412,13 +418,39 @@ User.prototype.says=function(data){
 				channel.push(hash);
 			}
 		}
+	}*/
+	var sliced=comment;
+	while(sliced){
+		//チャネルを探す
+		var result;
+		if(sliced.charAt(0)==="#"){
+			//チャネルだ
+			result=sliced.match(/^#([^#\s]+)/);
+			if(result){
+				//階層に分ける
+				var chs=result[1].split("/");
+				var inx=chs.indexOf("");
+				//空のがあったらそこは不適
+				if(inx>=0){
+					chs=chs.slice(0,inx);	//空の前まで
+				}
+				var ch=chs.join("/");
+				if(chs.length>0 && validateHashtag(ch)){
+					//これは正しいチャネルだ
+					channel.push(ch);
+				}
+			}
+		}
+		//このブロックの処理は終わった
+		result=sliced.match(/^\S*\s*/);
+		if(result){
+			sliced=sliced.slice(result[0].length);
+		}
 	}
 	//チャネルの処理
 	if(channel.length===0){
 		channel=null;
-	}/*else if(channel.length===1){
-		channel=channel[0];
-	}*/
+	}
 
 	var logobj={"name":this.name,
 		    "comment":comment,
@@ -931,4 +963,19 @@ function chalog(query,callback){
 function getAvailableSocket(){
 	var su=users.filter(function(x){return x.socket})[0];
 	return su ? su.socket : null;
+}
+//ハッシュタグをチェックする
+function validateHashtag(channel){
+	if("string"!==typeof channel)return false;
+	if(channel==="")return false;
+	//スペースや#を含んではいけない
+	if(/\s|#/.test(channel))return false;
+	//スラッシュで始まらない
+	if(/^\//.test(channel))return false;
+	//スラッシュで終わらない
+	if(/\/$/.test(channel))return false;
+	//スラッシュが連続しない
+	if(/\/\//.test(channel))return false;
+	//OK!
+	return true;
 }

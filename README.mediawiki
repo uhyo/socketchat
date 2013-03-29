@@ -98,3 +98,9 @@ GET: /api/say?comment=(String)
   "errormessage":String
  }
  
+== Hashtag validation ==
+* スペースを含まない
+* #を含まない
+* スラッシュで始まらない
+* スラッシュで終わらない
+* スラッシュが連続しない

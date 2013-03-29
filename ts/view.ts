@@ -833,7 +833,7 @@ module Chat{
 			//コメント部分の生成
 			var comment=document.createElement("bdi");
 			comment.appendChild(this.commentHTMLify(obj.commentObject || obj.comment));
-			this.parse(comment);   //解析（URLとか）
+			this.parse(comment,obj);   //解析（URLとか）
 			comment.normalize();
 			main.appendChild(comment);
 			//チャネル
@@ -963,7 +963,7 @@ module Chat{
 			return span;
 		}
 		//ログを解析して追加する
-		parse(rawnode:Node):void{
+		parse(rawnode:Node,obj:LogObj):void{
 			var allowed_tag=["s","small","code"];
 			if(rawnode.nodeType===Node.TEXT_NODE){
 				var node:Text=<Text>rawnode;
@@ -1070,11 +1070,25 @@ module Chat{
 							//前の空白はいらないのでそのまま流す
 							node=node.splitText(res[1].length);
 						}
-						//チャネルのスタイルを変える
-						var span=this.makeChannelSpan(res[2]);
-						//チャネル部分を分離（スペースの分を除く
-						node=node.splitText(res[0].length-res[1].length);
-						node.parentNode.replaceChild(span,node.previousSibling);
+						//ログが所属するチャネルと一致する?
+						var i=Array.isArray(obj.channel) ? obj.channel.length : 0;
+						while(i--){
+							var c=obj.channel[i];
+							if(res[2].slice(0,c.length)===c){
+								//前方一致;この部分がチャネル
+								var span=this.makeChannelSpan(c);
+								//チャネル部分を分離
+								node=node.splitText(c.length+1);
+								node.parentNode.replaceChild(span,node.previousSibling);
+								//残りは何もない。流す
+								node=node.splitText(res[2].length-c.length);
+								break;
+							}
+						}
+						if(i<0){
+							//見つからなかった
+							node=node.splitText(res[2].length+1);
+						}
 						continue;
 					}
 					//その他　上のマークアップが車で通常の文字列
@@ -1095,7 +1109,7 @@ module Chat{
 				}
 				nodes.forEach((x:Node)=>{
 					if(x.parentNode===rawnode)
-						this.parse(x);
+					this.parse(x,obj);
 				});
 
 			}
@@ -1433,6 +1447,14 @@ module Chat{
 					input.addEventListener("change",(e:Event)=>{
 						this.event.emit("changeChannel",input.value);
 					},false);
+					//validate
+					input.addEventListener("input",(e:Event)=>{
+						if(!input.value || validateHashtag(input.value)){
+							input.setCustomValidity("");
+						}else{
+							input.setCustomValidity("不正なチャネル名です");
+						}
+					},false);
 				}));
 				//発言ボタン
 				p.appendChild(this.makeinput(input=>{
@@ -1462,7 +1484,20 @@ module Chat{
 						},false);
 					}));
 				}
-
+				function validateHashtag(channel:string):bool{
+					if("string"!==typeof channel)return false;
+					if(channel==="")return false;
+					//スペースや#を含んではいけない
+					if(/\s|#/.test(channel))return false;
+					//スラッシュで始まらない
+					if(/^\//.test(channel))return false;
+					//スラッシュで終わらない
+					if(/\/$/.test(channel))return false;
+					//スラッシュが連続しない
+					if(/\/\//.test(channel))return false;
+					//OK!
+					return true;
+				}
 			}
 			//入退室ボタンが押されたときの処理
 			emitComment(e:Event):void{

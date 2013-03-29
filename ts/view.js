@@ -715,7 +715,7 @@ var Chat;
             }
             var comment = document.createElement("bdi");
             comment.appendChild(this.commentHTMLify(obj.commentObject || obj.comment));
-            this.parse(comment);
+            this.parse(comment, obj);
             comment.normalize();
             main.appendChild(comment);
             if(obj.channel) {
@@ -820,7 +820,7 @@ var Chat;
             }
             return span;
         };
-        ChatLineMaker.prototype.parse = function (rawnode) {
+        ChatLineMaker.prototype.parse = function (rawnode, obj) {
             var _this = this;
             var allowed_tag = [
                 "s", 
@@ -913,9 +913,20 @@ var Chat;
                         if(res[1]) {
                             node = node.splitText(res[1].length);
                         }
-                        var span = this.makeChannelSpan(res[2]);
-                        node = node.splitText(res[0].length - res[1].length);
-                        node.parentNode.replaceChild(span, node.previousSibling);
+                        var i = Array.isArray(obj.channel) ? obj.channel.length : 0;
+                        while(i--) {
+                            var c = obj.channel[i];
+                            if(res[2].slice(0, c.length) === c) {
+                                var span = this.makeChannelSpan(c);
+                                node = node.splitText(c.length + 1);
+                                node.parentNode.replaceChild(span, node.previousSibling);
+                                node = node.splitText(res[2].length - c.length);
+                                break;
+                            }
+                        }
+                        if(i < 0) {
+                            node = node.splitText(res[2].length + 1);
+                        }
                         continue;
                     }
                     res = node.nodeValue.match(/^(.+?)(?=\[\/?\w+?\]|https?:\/\/|\s+#\S+)/);
@@ -932,7 +943,7 @@ var Chat;
                 }
                 nodes.forEach(function (x) {
                     if(x.parentNode === rawnode) {
-                        _this.parse(x);
+                        _this.parse(x, obj);
                     }
                 });
             }
@@ -1234,6 +1245,13 @@ var Chat;
                     input.addEventListener("change", function (e) {
                         _this.event.emit("changeChannel", input.value);
                     }, false);
+                    input.addEventListener("input", function (e) {
+                        if(!input.value || validateHashtag(input.value)) {
+                            input.setCustomValidity("");
+                        } else {
+                            input.setCustomValidity("不正なチャネル名です");
+                        }
+                    }, false);
                 }));
                 p.appendChild(this.makeinput(function (input) {
                     input.name = "commentbutton";
@@ -1264,6 +1282,27 @@ var Chat;
                             _this.event.emit("cancel");
                         }, false);
                     }));
+                }
+function validateHashtag(channel) {
+                    if("string" !== typeof channel) {
+                        return false;
+                    }
+                    if(channel === "") {
+                        return false;
+                    }
+                    if(/\s|#/.test(channel)) {
+                        return false;
+                    }
+                    if(/^\//.test(channel)) {
+                        return false;
+                    }
+                    if(/\/$/.test(channel)) {
+                        return false;
+                    }
+                    if(/\/\//.test(channel)) {
+                        return false;
+                    }
+                    return true;
                 }
             }
             CommentForm.prototype.emitComment = function (e) {
