@@ -55,6 +55,9 @@ form.infobar{
 	color:#0084b4;
 	cursor:pointer;
 }
+.logbox span.main bdi span.channels{
+	margin-left:0;
+}
 .logbox bdi.comment span.channels{
 	margin-left:0;
 }
@@ -81,15 +84,15 @@ form.infobar{
 	overflow-x:hidden;
 }
 .verticalanime2{
-	transition: height 0.35s ease-out 0s;
+	transition: height 0.15s ease-out 0s;
 }
 .horizontalanime2{
-	transition: width 0.35s ease-out 0s;
+	transition: width 0.15s ease-out 0s;
 }
 .fadeanime1{
 }
 .fadeanime2{
-	transition: opacity 0.35s ease-out 0s;
+	transition: opacity 0.15s ease-out 0s;
 }
 /* toolbox */
 span.toolbox{
@@ -110,7 +113,7 @@ span.icon.respin{
 	/*返信であることを示すやつ*/
 	color:#888888;
 	margin-right:5px;
-	transition:color 0.35s ease 0s;
+	transition:color 0.15s ease 0s;
 	cursor:pointer;
 }
 span.icon.respin.opened{
