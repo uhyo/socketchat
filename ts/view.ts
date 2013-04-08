@@ -838,16 +838,21 @@ module Chat{
 			main.appendChild(comment);
 			//チャネル
 			if(obj.channel){
+				//コメントにも情報付加
+				p.dataset.channel="#"+(Array.isArray(obj.channel) ? obj.channel.join("/#") : obj.channel)+"/";
 				//配列か
 				var c:string[] = Array.isArray(obj.channel) ? obj.channel : [obj.channel];
+				//ログ中のチャネルリンクを抽出
+				var sps=comment.getElementsByClassName("channels");
+				var chhs=Array.prototype.map.call(sps,function(x:HTMLElement){
+					return x.textContent;
+				});
 				for(var i=0,l=c.length;i<l;i++){
 					//ログのチャンネル名と、本文中のハッシュタグがかぶる場合は本文を優先
-					if(obj.comment.indexOf("#"+c[i])===-1){
+					if(chhs.indexOf("#"+c[i])===-1){
 						main.appendChild(this.makeChannelSpan(c[i]));
 					}
 				}
-				//コメントにも情報付加
-				p.dataset.channel="#"+(Array.isArray(obj.channel) ? obj.channel.join("/#") : obj.channel)+"/";
 			}
 			//返信先あり
 			if(obj.response){
@@ -1071,9 +1076,16 @@ module Chat{
 							node=node.splitText(res[1].length);
 						}
 						//ログが所属するチャネルと一致する?
-						var i=Array.isArray(obj.channel) ? obj.channel.length : 0;
+						var chs=Array.isArray(obj.channel) ? obj.channel.concat([]) : [];
+						var i=chs.length;
+						if(i>0){
+							//長さでソート
+							chs.sort((a:string,b:string)=>{
+								return a.length-b.length;
+							});
+						}
 						while(i--){
-							var c=obj.channel[i];
+							var c=chs[i];
 							if(res[2].slice(0,c.length)===c){
 								//前方一致;この部分がチャネル
 								var span=this.makeChannelSpan(c);

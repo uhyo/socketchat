@@ -719,15 +719,19 @@ var Chat;
             comment.normalize();
             main.appendChild(comment);
             if(obj.channel) {
+                p.dataset.channel = "#" + (Array.isArray(obj.channel) ? obj.channel.join("/#") : obj.channel) + "/";
                 var c = Array.isArray(obj.channel) ? obj.channel : [
                     obj.channel
                 ];
+                var sps = comment.getElementsByClassName("channels");
+                var chhs = Array.prototype.map.call(sps, function (x) {
+                    return x.textContent;
+                });
                 for(var i = 0, l = c.length; i < l; i++) {
-                    if(obj.comment.indexOf("#" + c[i]) === -1) {
+                    if(chhs.indexOf("#" + c[i]) === -1) {
                         main.appendChild(this.makeChannelSpan(c[i]));
                     }
                 }
-                p.dataset.channel = "#" + (Array.isArray(obj.channel) ? obj.channel.join("/#") : obj.channel) + "/";
             }
             if(obj.response) {
                 p.dataset.respto = obj.response;
@@ -913,9 +917,15 @@ var Chat;
                         if(res[1]) {
                             node = node.splitText(res[1].length);
                         }
-                        var i = Array.isArray(obj.channel) ? obj.channel.length : 0;
+                        var chs = Array.isArray(obj.channel) ? obj.channel.concat([]) : [];
+                        var i = chs.length;
+                        if(i > 0) {
+                            chs.sort(function (a, b) {
+                                return a.length - b.length;
+                            });
+                        }
                         while(i--) {
-                            var c = obj.channel[i];
+                            var c = chs[i];
                             if(res[2].slice(0, c.length) === c) {
                                 var span = this.makeChannelSpan(c);
                                 node = node.splitText(c.length + 1);
