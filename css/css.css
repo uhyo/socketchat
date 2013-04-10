@@ -67,6 +67,9 @@ form.infobar{
 .logbox span.main span.channels:hover span.channel:hover ~ span.channel{
 	text-decoration:none;
 }
+.logbox span.main bdi{
+	display:inline-block;
+}
 .logbox .name{
 	font-weight:bold;
 }
