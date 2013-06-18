@@ -70,6 +70,26 @@ var Chat;
         ChatView.prototype.focusComment = function (focus, channel) {
             this.ui.focusComment(focus, channel);
         };
+        ChatView.prototype.showSiyou = function () {
+            alert("\
+・「餃子無展開」「餃子常時」「餃子オンマウス」ボタン\n\
+　gyazo.comでアップロードされた画像のサムネイル表示設定\n\
+\n\
+・「欄#」「窓#」ボタン\n\
+　発言欄に「#○○」でタグが付く\n\
+　タグのリンクをクリックで専用ウィンドウ開いたり自動補完したりする\n\
+\n\
+・[s], [small], [code]について\n\
+　[s]取り消し線[/s]\n\
+　[small]文字サイズ小さく[/small]\n\
+　[code]等幅フォント+改行無し[/code]\n\
+　いずれも閉じ省略可能でその場合は発言の最後まで適用\n\
+\n\
+・発言クリックで右に出る矢印について\n\
+　緑クリックで下に枠が出るのでそこに入力して発言すると返信になる\n\
+　灰色クリックで矢印を消す\n\
+");
+        };
         ChatView.prototype.getContainer = function () {
             return this.container;
         };
@@ -162,6 +182,7 @@ var Chat;
             this.container.appendChild(this.makeGyozaButton());
             this.container.appendChild(this.makeVolumeRange());
             this.container.appendChild(this.makeChannelModeButton());
+            this.container.appendChild(this.makeSiyouButton());
         }
         ChatSettingView.prototype.makeGyozaButton = function () {
             var _this = this;
@@ -207,6 +228,18 @@ var Chat;
                 ud.channelMode = (ud.channelMode + 1) % _this.channelSettings.length;
                 button.value = _this.channelSettings[ud.channelMode];
                 ud.save();
+            }, false);
+            return button;
+        };
+        ChatSettingView.prototype.makeSiyouButton = function () {
+            var _this = this;
+            var button = document.createElement("input");
+            var ud = this.userData;
+            button.name = "siyou";
+            button.type = "button";
+            button.value = "仕様";
+            button.addEventListener("click", function (e) {
+                _this.view.showSiyou();
             }, false);
             return button;
         };
