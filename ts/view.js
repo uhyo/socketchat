@@ -90,6 +90,15 @@ var Chat;
 　灰色クリックで矢印を消す\n\
 ");
         };
+        ChatView.prototype.openConsole = function () {
+            var cons = new ChatCmdUI(this.userData, this.receiver, this.process, this, this.dis);
+            var sole = cons.getConsole();
+            this.container.appendChild(cons.getContainer());
+            sole.openConsole();
+            sole.onClose(function () {
+                cons.cleanup();
+            });
+        };
         ChatView.prototype.getContainer = function () {
             return this.container;
         };
@@ -1134,6 +1143,8 @@ var Chat;
             this.process = process;
             this.view = view;
         }
+        ChatUI.prototype.cleanup = function () {
+        };
         ChatUI.prototype.getContainer = function () {
             return this.container;
         };
@@ -1459,7 +1470,20 @@ function validateHashtag(channel) {
                 this.container.addEventListener("click", function (e) {
                     _this.focusConsole();
                 }, false);
-                document.addEventListener("keydown", this.keydown.bind(this), false);
+                var handler = this.keydown.bind(this);
+                document.addEventListener("keydown", handler, false);
+                this.event.on("exit", function () {
+                    document.removeEventListener("keydown", handler, false);
+                });
+            };
+            Console.prototype.cleanup = function () {
+                var _this = this;
+                this.event.emit("exit");
+                setTimeout(function () {
+                    if(_this.container.parentNode) {
+                        _this.container.parentNode.removeChild(_this.container);
+                    }
+                }, 350);
             };
             Console.prototype.keydown = function (e) {
                 if(this.cmdprocess) {
@@ -1516,6 +1540,10 @@ function validateHashtag(channel) {
             Console.prototype.closeConsole = function () {
                 this.container.classList.remove("open");
                 this.command.blur();
+                this.event.emit("close");
+            };
+            Console.prototype.onClose = function (func) {
+                this.event.on("close", func);
             };
             Console.prototype.focusConsole = function () {
                 var sc = document.documentElement.scrollTop || document.body.scrollTop;
@@ -2500,7 +2528,7 @@ while(node = tw.previousNode()) {
             this.process = process;
             this.view = view;
             this.console = new ChatUICollection.Console(userData, receiver, process, this);
-            receiver.on("userinfo", function (data) {
+            receiver.on("userinfo", this.userinfoHandle = function (data) {
                 if(!data.rom && data.name) {
                     _this.console.print("Hello, " + data.name, {
                         color: "#ffff00"
@@ -2508,6 +2536,13 @@ while(node = tw.previousNode()) {
                 }
             });
         }
+        ChatCmdUI.prototype.cleanup = function () {
+            this.receiver.removeListener("userinfo", this.userinfoHandle);
+            this.console.cleanup();
+        };
+        ChatCmdUI.prototype.getConsole = function () {
+            return this.console;
+        };
         ChatCmdUI.prototype.getContainer = function () {
             return this.console.getContainer();
         };

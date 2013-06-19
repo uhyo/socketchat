@@ -147,6 +147,16 @@ module Chat{
 　灰色クリックで矢印を消す\n\
 ");
 		}
+		//強制的にコンソールを開く
+		openConsole():void{
+			var cons=new ChatCmdUI(this.userData,this.receiver,this.process,this,this.dis);
+			var sole=cons.getConsole();
+			this.container.appendChild(cons.getContainer());
+			sole.openConsole();
+			sole.onClose(()=>{
+				cons.cleanup();
+			});
+		}
 		getContainer():HTMLElement{
 			return this.container;
 		}
@@ -662,7 +672,7 @@ module Chat{
 		registerLogContainer(c:HTMLElement):void{
 			this.logContainer=c;
 		}
-		addDisip(ip:string,temporal?:bool=false):bool{
+		addDisip(ip:string,temporal:bool=false):bool{
 			var ud=this.userData;
 			if(ud.disip.indexOf(ip)>=0)return false;
 			if(!temporal){
@@ -1332,6 +1342,9 @@ module Chat{
 		private container:Node;
 		constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess,private view:ChatView){
 		}
+		cleanup():void{
+			//UI消えるときの後処理
+		}
 		getContainer():Node{
 			return this.container;
 		}
@@ -1670,7 +1683,19 @@ module Chat{
 					this.focusConsole();
 				},false);
 				//キーを捕捉する
-				document.addEventListener("keydown",this.keydown.bind(this),false);
+				var handler=this.keydown.bind(this);
+				document.addEventListener("keydown",handler,false);
+				//後始末
+				this.event.on("exit",()=>{
+					document.removeEventListener("keydown",handler,false);
+				});
+			}
+			//自分も始末する
+			cleanup():void{
+				this.event.emit("exit");
+				setTimeout(()=>{
+					if(this.container.parentNode)this.container.parentNode.removeChild(this.container);
+				},350);
 			}
 			//キーを・・・
 			keydown(e:KeyboardEvent):void{
@@ -1732,6 +1757,10 @@ module Chat{
 			closeConsole():void{
 				this.container.classList.remove("open");
 				this.command.blur();
+				this.event.emit("close");
+			}
+			onClose(func:()=>void):void{
+				this.event.on("close",func);
 			}
 			focusConsole():void{
 				//コンソールにフォーカスする
@@ -2177,7 +2206,7 @@ module Chat{
 				this.console.put(str,option);
 			}
 			//エラー表示
-			error(str:string,option?:any={}):void{
+			error(str:string,option:any={}):void{
 				option.color="#ff6666";
 				this.print(str,option);
 			}
@@ -2670,14 +2699,22 @@ module Chat{
 	//コマンドラインみたいなUI
 	export class ChatCmdUI extends ChatUI{
 		private console:ChatUICollection.Console;
+		private userinfoHandle:(...args:any[])=>any;
 		constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess,private view:ChatView,dis:ChatLogDisManager){
 			super(userData,receiver,process,view);
 			this.console=new ChatUICollection.Console(userData,receiver,process,this);
-			receiver.on("userinfo",(data:any)=>{
+			receiver.on("userinfo",this.userinfoHandle=(data:any)=>{
 				if(!data.rom && data.name){
 					this.console.print("Hello, "+data.name,{color:"#ffff00"});
 				}
 			});
+		}
+		cleanup():void{
+			this.receiver.removeListener("userinfo",this.userinfoHandle);
+			this.console.cleanup();
+		}
+		getConsole():ChatUICollection.Console{
+			return this.console;
 		}
 		getContainer():HTMLElement{
 			return this.console.getContainer();
@@ -2694,7 +2731,7 @@ module Chat{
 		element.id=base+number;
 		return;
 	}
-	function appearAnimation(el:HTMLElement,mode:string,appear:bool,finish:bool,callback?:()=>void=function(){}):void{
+	function appearAnimation(el:HTMLElement,mode:string,appear:bool,finish:bool,callback:()=>void=function(){}):void{
 		//transition heightが設定してあることが前提
 		//mode:"vertical","horizontal","fade"
 		//appear: true->出現 false->消滅
