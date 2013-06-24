@@ -893,7 +893,7 @@ function api(mode,req,res){
 	}
 	var put={"error":false,
 		"userinfos":user.userinfos,
-		"myid":user.id,
+		"userinfo":user.getUserObj(),
 		"logs":user.logs,
 		"sessionid":user.sessionId
 	};
