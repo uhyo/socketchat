@@ -894,6 +894,7 @@ function api(mode,req,res){
 	var put={"error":false,
 		"userinfos":user.userinfos,
 		"myid":user.id,
+		"rom":user.rom,
 		"logs":user.logs,
 		"sessionid":user.sessionId
 	};
