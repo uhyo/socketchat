@@ -998,6 +998,10 @@ function bans(ip){
 	});
 }
 function addban(startip, endip, limit){
+	/*
+	DB構成
+	{start: IP範囲最初(数値), end: IP範囲最後(数値), time:BAN追加時刻(Date型), limit:BAN期限時刻(Date型)}
+	*/
 	start = ip2long(startip);
 	end = ip2long(endip);
 	if(limit){
