@@ -129,6 +129,9 @@ db.open(function(err,_db){
 				makelog({"type":"system"},syslog);
 			});
 		});
+		db.collection("ban",function(err,collection){
+			ban=collection;
+		});
 	});
 });
 var users=[],users_next=1;
@@ -978,4 +981,52 @@ function validateHashtag(channel){
 	if(/\/\//.test(channel))return false;
 	//OK!
 	return true;
+}
+function bans(ip){
+	ban.findOne({"limit": {$lte: new Date()}}, function(err,arr){
+		if(arr){
+			ban.remove({"limit": {$lte: new Date()}});
+		}
+	});
+	var longip = ip2long(ip);
+	ban.findOne({"start": {$lte: longip}, "end": {$gte: longip} }, function(err,arr){
+		if(arr){
+			return true;
+		}else{
+			return false;
+		}
+	});
+}
+function addban(startip, endip, limit){
+	start = ip2long(startip);
+	end = ip2long(endip);
+	if(limit){
+		var insert = {"start": startip, "end": endip, "time": new Date()};
+	}else{
+		var insert = {"start": startip, "end": endip, "time": new Date(), "limit": new Date(limit)};
+	}
+}
+function ip2long(ip) {
+  var i = 0;
+  ip = ip.match(/^([1-9]\d*|0[0-7]*|0x[\da-f]+)(?:\.([1-9]\d*|0[0-7]*|0x[\da-f]+))?(?:\.([1-9]\d*|0[0-7]*|0x[\da-f]+))?(?:\.([1-9]\d*|0[0-7]*|0x[\da-f]+))?$/i); // Verify ip format.
+  if (!ip) {
+    return false;
+  }
+  ip[0] = 0;
+  for (i = 1; i < 5; i += 1) {
+    ip[0] += !! ((ip[i] || '').length);
+    ip[i] = parseInt(ip[i]) || 0;
+  }
+  ip.push(256, 256, 256, 256);
+  ip[4 + ip[0]] *= Math.pow(256, 4 - ip[0]);
+  if (ip[1] >= ip[5] || ip[2] >= ip[6] || ip[3] >= ip[7] || ip[4] >= ip[8]) {
+    return false;
+  }
+  return ip[1] * (ip[0] === 1 || 16777216) + ip[2] * (ip[0] <= 2 || 65536) + ip[3] * (ip[0] <= 3 || 256) + ip[4] * 1;
+}
+function long2ip(ip) {
+  if (!isFinite(ip))
+    return false;
+
+  return [ip >>> 24, ip >>> 16 & 0xFF, ip >>> 8 & 0xFF, ip & 0xFF].join('.');
 }
