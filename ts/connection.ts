@@ -1,6 +1,6 @@
+/// <reference path="definition.ts"/>
 declare var io:any;
 module Chat{
-	/// <reference path="definition.ts"/>
 	export interface EventEmitter{
 		addListener:(event:string,listener:(...args:any[])=>any)=>void;
 		on:(event:string,listener:(...args:any[])=>any)=>void;
@@ -17,9 +17,11 @@ module Chat{
 	}
 	export class ChatConnection{
 		//内部用
-		private event:EventEmitter;
+		//protected
+		public event:EventEmitter;
 		//ソケット
-		private connection: EventEmitter;
+		//protected
+		public connection: EventEmitter;
 		constructor(){
 			this.event=getEventEmitter();
 		}
@@ -76,8 +78,8 @@ module Chat{
 	}
 	//Socket.ioを用いたコネクション
 	export class SocketConnection extends ChatConnection{
-		private event:EventEmitter;
-		private connection:EventEmitter;
+		//private event:EventEmitter;
+		//private connection:EventEmitter;
 		//コネクションを作る
 		initConnection(settings:any):void{
 			//connectionはSocket.ioのコネクション
@@ -87,7 +89,7 @@ module Chat{
 			});
 
 		}
-		register(lastid:string,channel:string,mode?:string="client"):void{
+		register(lastid:string,channel:string,mode:string="client"):void{
 			//client・・・チャットユーザー
 			this.send("register",{"mode":mode,"lastid":lastid,channel:channel});
 			this.connection.on("reconnect",()=>{
@@ -102,8 +104,8 @@ module Chat{
 	}
 	//親ウィンドウに寄生しているコネクション（チャネルウィンドウ用）
 	export class ChildConnection extends ChatConnection{
-		private event:EventEmitter;
-		private connection:EventEmitter;
+		//private event:EventEmitter;
+		//private connection:EventEmitter;
 		private port:MessagePort;
 		//リクエストに一意IDをつける
 		private requestId=0;
@@ -398,7 +400,8 @@ module Chat{
 	// サーバーから情報を受け取るぞ!
 	export class ChatReceiver{
 		private oldest_time:Date=null;	  // 保有している最も古いログ
-		private event:EventEmitter; //内部使用
+		//protected
+		public event:EventEmitter; //内部使用
 		private hub:ChatHub.Hub;
 		//自分用にuserinfoをとっておく
 		private myUserinfo:{
@@ -406,7 +409,8 @@ module Chat{
 			rom:bool;
 		};
 		private active:bool=false;	//こっちから送っても大丈夫か
-		constructor(private connection:ChatConnection,private channel:string){
+		//protected
+		constructor(public connection:ChatConnection,private channel:string){
 			this.hub=new ChatHub.Hub(this,connection);
 			this.event=getEventEmitter();
 			//通信初期化

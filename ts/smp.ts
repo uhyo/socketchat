@@ -1,9 +1,9 @@
+/// <reference path="client.ts"/>
 module Chat{
-	/// <reference path="client.ts"/>
 	export module ChatUICollection{
 		export class SwitchViewForm extends UIObject{
-			public event:EventEmitter;
-			private container:HTMLFormElement;
+			//public event:EventEmitter;
+			//private container:HTMLFormElement;
 			constructor(){
 				super();
 				this.container=<HTMLFormElement>document.createElement("form");
@@ -59,13 +59,13 @@ module Chat{
 		}
 	}
 	export class ChatSmpView extends ChatView{
-		private container;
-		private linksView:ChatLinksView;
-		private settingView:ChatSettingView;
-		public logView:ChatLogView;
-		private userView:ChatUserView;
-		private ui:ChatUI;
-		private motto:ChatUICollection.MottoForm;
+		//private container;
+		//private linksView:ChatLinksView;
+		//private settingView:ChatSettingView;
+		//public logView:ChatLogView;
+		//private userView:ChatUserView;
+		//private ui:ChatUI;
+		//private motto:ChatUICollection.MottoForm;
 		//--
 		private switchView:ChatUICollection.SwitchViewForm;
 		constructor(userData:ChatUserData,connection:ChatConnection,receiver:ChatReceiver,process:ChatProcess){
@@ -100,7 +100,7 @@ module Chat{
 		}
 	}
 	export class SmpClientFactory extends ChatClientFactory{
-		constructor(private channel:string,private connection:string){
+		constructor(channel:string,connection:string){
 			super(channel,false,connection);
 		}
 		makeView(connection:ChatConnection,receiver:ChatReceiver,userData:ChatUserData,process:ChatProcess){

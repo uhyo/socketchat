@@ -1,4 +1,5 @@
 var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     __.prototype = b.prototype;
     d.prototype = new __();
@@ -8,7 +9,7 @@ var Chat;
     var UserListFactory = (function (_super) {
         __extends(UserListFactory, _super);
         function UserListFactory() {
-                _super.call(this, null, false, null);
+            _super.call(this, null, false, null);
         }
         UserListFactory.prototype.makeConnection = function (userData) {
             var connection = new Chat.SocketConnection();
@@ -27,7 +28,7 @@ var Chat;
         };
         return UserListFactory;
     })(Chat.ChatClientFactory);
-    Chat.UserListFactory = UserListFactory;    
+    Chat.UserListFactory = UserListFactory;
     var UserList = (function () {
         function UserList(userData, connection, receiver, view) {
             this.userData = userData;
@@ -37,22 +38,26 @@ var Chat;
         }
         return UserList;
     })();
-    Chat.UserList = UserList;    
+    Chat.UserList = UserList;
+
     var UserListView = (function (_super) {
         __extends(UserListView, _super);
         function UserListView(userData, connection, receiver) {
-                _super.call(this, userData, connection, receiver, null, false);
+            _super.call(this, userData, connection, receiver, null, false);
         }
         UserListView.prototype.initView = function (userData, connection, receiver, process, com) {
             this.container = document.createElement("div");
+
             document.body.appendChild(this.container);
             this.container.appendChild((function (h1) {
                 h1.textContent = "UserList";
                 return h1;
             })(document.createElement("h1")));
+
             this.table = document.createElement("table");
             this.initTable(this.table);
             this.container.appendChild(this.table);
+
             receiver.on("userinit", this.userinit.bind(this));
             receiver.on("newuser", this.newuser.bind(this));
             receiver.on("deluser", this.deluser.bind(this));
@@ -60,11 +65,7 @@ var Chat;
         };
         UserListView.prototype.initTable = function (table) {
             var thead = table.createTHead();
-            [
-                "名前", 
-                "IPアドレス", 
-                "UA"
-            ].forEach(function (x) {
+            ["名前", "IPアドレス", "UA"].forEach(function (x) {
                 var th = document.createElement("th");
                 th.textContent = x;
                 thead.appendChild(th);
@@ -77,49 +78,49 @@ var Chat;
             var tr = this.table.insertRow(-1);
             tr.style.color = this.getColorByIP(user.ip);
             tr.dataset.id = String(user.id);
-            [
-                "(ROM)", 
-                user.ip, 
-                user.ua
-            ].forEach(function (x) {
+            ["(ROM)", user.ip, user.ua].forEach(function (x) {
                 var td = tr.insertCell(-1);
                 td.textContent = x;
             });
-            if(!user.rom) {
+            if (!user.rom) {
                 this.inout(user);
             }
         };
+
         UserListView.prototype.deluser = function (userid) {
             var tr = this.getElement(userid);
-            if(tr) {
+            if (tr) {
                 this.table.deleteRow(tr.rowIndex);
             }
         };
+
         UserListView.prototype.inout = function (user) {
             var tr = this.getElement(user.id);
-            if(tr) {
+            if (tr) {
                 var td = tr.cells[0];
-                if(user.rom) {
+                if (user.rom) {
                     td.textContent = "(ROM)";
                 } else {
                     td.textContent = user.name;
                 }
             }
         };
+
         UserListView.prototype.getElement = function (userid) {
             var rows = this.table.rows;
-            for(var i = 0, l = rows.length; i < l; i++) {
-                if((rows[i]).dataset.id === String(userid)) {
+            for (var i = 0, l = rows.length; i < l; i++) {
+                if ((rows[i]).dataset.id === String(userid)) {
                     return rows[i];
                 }
             }
             return null;
         };
+
         UserListView.prototype.getColorByIP = function (ip) {
             var arr = ip.split(/\./);
             return "rgb(" + Math.floor(parseInt(arr[0]) * 0.75) + "," + Math.floor(parseInt(arr[1]) * 0.75) + "," + Math.floor(parseInt(arr[2]) * 0.75) + ")";
         };
         return UserListView;
     })(Chat.ChatView);
-    Chat.UserListView = UserListView;    
+    Chat.UserListView = UserListView;
 })(Chat || (Chat = {}));

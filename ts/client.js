@@ -12,47 +12,55 @@ var Chat;
         }
         return ChatClient;
     })();
-    Chat.ChatClient = ChatClient;    
+    Chat.ChatClient = ChatClient;
+
     var ChatClientFactory = (function () {
         function ChatClientFactory(channel, com, connection) {
+            var _this = this;
             this.channel = channel;
             this.com = com;
             this.connection = connection;
-            var _this = this;
             this.domReady = false;
             this.child = !!sessionStorage.getItem("independent_flag");
+
             document.addEventListener("DOMContentLoaded", function (e) {
                 _this.domReady = true;
             }, false);
         }
         ChatClientFactory.prototype.getChat = function (callback) {
             var _this = this;
-            if(this.chat) {
-                if(callback) {
+            if (this.chat) {
+                if (callback) {
                     callback(this.chat);
                 }
                 return;
             }
+
             var userData = this.makeUserData();
             var listener = function (e) {
                 var connection = _this.makeConnection(userData);
                 connection.onConnection(function (sessionid) {
-                    if(sessionid) {
+                    if (sessionid) {
                         userData.lastid = sessionid;
                         userData.save();
                     }
+
                     var receiver = _this.makeReceiver(connection);
+
                     var process = _this.makeProcess(connection, receiver, userData);
+
                     var view = _this.makeView(connection, receiver, userData, process);
+
                     var api = _this.makeAPI(connection, receiver, userData, process, view);
+
                     var chat = new ChatClient(userData, connection, receiver, process, view, api, _this.channel);
                     _this.chat = chat;
-                    if(callback) {
+                    if (callback) {
                         callback(chat);
                     }
                 });
             };
-            if(this.domReady) {
+            if (this.domReady) {
                 listener(null);
             } else {
                 document.addEventListener("DOMContentLoaded", listener, false);
@@ -65,9 +73,9 @@ var Chat;
         };
         ChatClientFactory.prototype.makeConnection = function (userData) {
             var connection;
-            if(this.child) {
+            if (this.child) {
                 connection = new Chat.ChildConnection();
-            } else if(this.connection === "socket") {
+            } else if (this.connection === "socket") {
                 connection = new Chat.SocketConnection();
             } else {
                 connection = new Chat.ChatConnection();
@@ -90,7 +98,8 @@ var Chat;
         };
         return ChatClientFactory;
     })();
-    Chat.ChatClientFactory = ChatClientFactory;    
+    Chat.ChatClientFactory = ChatClientFactory;
+
     var ChatClientAPI = (function () {
         function ChatClientAPI(userData, connection, receiver, process, view) {
             this.userData = userData;
@@ -98,46 +107,36 @@ var Chat;
             this.receiver = receiver;
             this.process = process;
             this.view = view;
-            this.acceptedEvents = [
-                "log", 
-                "userinfo", 
-                "newuser", 
-                "deluser", 
-                "init"
-            ];
+            this.acceptedEvents = ["log", "userinfo", "newuser", "deluser", "init"];
         }
         ChatClientAPI.prototype.on = function (event, listener) {
-            if(this.acceptedEvents.indexOf(event) === -1) {
+            if (this.acceptedEvents.indexOf(event) === -1)
                 return;
-            }
             this.receiver.on(event, listener);
         };
         ChatClientAPI.prototype.once = function (event, listener) {
-            if(this.acceptedEvents.indexOf(event) === -1) {
+            if (this.acceptedEvents.indexOf(event) === -1)
                 return;
-            }
             this.receiver.once(event, listener);
         };
         ChatClientAPI.prototype.removeListener = function (event, listener) {
-            if(this.acceptedEvents.indexOf(event) === -1) {
+            if (this.acceptedEvents.indexOf(event) === -1)
                 return;
-            }
             this.receiver.removeListener(event, listener);
         };
+
         ChatClientAPI.prototype.inout = function (name) {
             var data = {
                 name: name
             };
             this.process.inout(data);
         };
+
         ChatClientAPI.prototype.say = function (comment, response, channel) {
-            if(!channel) {
-                channel = null;
-            } else if("string" === typeof channel) {
-                channel = [
-                    channel
-                ];
-            } else if(!Array.isArray(channel)) {
+            if (!channel)
+                channel = null; else if ("string" === typeof channel) {
+                channel = [channel];
+            } else if (!Array.isArray(channel)) {
                 throw null;
             }
             var data = {
@@ -149,5 +148,5 @@ var Chat;
         };
         return ChatClientAPI;
     })();
-    Chat.ChatClientAPI = ChatClientAPI;    
+    Chat.ChatClientAPI = ChatClientAPI;
 })(Chat || (Chat = {}));

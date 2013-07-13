@@ -1,9 +1,9 @@
+/// <reference path="definition.ts"/>
+/// <reference path="connection.ts"/>
+/// <reference path="process.ts"/>
+/// <reference path="view.ts"/>
 declare var settings:any;	//settingsが/settings.jsによって与えられる
 module Chat{
-	/// <reference path="definition.ts"/>
-	/// <reference path="connection.ts"/>
-	/// <reference path="process.ts"/>
-	/// <reference path="view.ts"/>
 
 	//枠的な?
 	export class ChatClient{
@@ -15,7 +15,8 @@ module Chat{
 		private child:bool;
 		private chat:ChatClient;
 		private domReady:bool=false;
-		constructor(private channel:string,private com:bool,private connection:string){
+		//protected
+		constructor(public channel:string,private com:bool,public connection:string){
 			//子かどうかの判定入れる
 			this.child= !!sessionStorage.getItem("independent_flag");
 			//ready?

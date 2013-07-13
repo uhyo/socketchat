@@ -1,5 +1,5 @@
+/// <reference path="client.ts"/>
 module Chat{
-	/// <reference path="client.ts"/>
 	//userList
 	export class UserListFactory extends ChatClientFactory{
 		constructor(){
@@ -27,11 +27,11 @@ module Chat{
 	}
 	//ビュー
 	export class UserListView extends ChatView{
-		private container:HTMLElement;
+		//private container:HTMLElement;
 		private table:HTMLTableElement;
-		private userData:ChatUserData;
-		private connection:ChatConnection;
-		private receiver:ChatReceiver;
+		//private userData:ChatUserData;
+		//private connection:ChatConnection;
+		//private receiver:ChatReceiver;
 		constructor(userData:ChatUserData,connection:ChatConnection,receiver:ChatReceiver){
 			super(userData,connection,receiver,null,false);
 		}

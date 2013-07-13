@@ -1,5 +1,5 @@
+/// <reference path="client.ts"/>
 module Chat{
-	/// <reference path="client.ts"/>
 	//userList
 	export class LogViewerFactory extends ChatClientFactory{
 		constructor(){
@@ -36,12 +36,8 @@ module Chat{
 	}
 	//ビュー
 	export class LogViewerView extends ChatView{
-		private container:HTMLElement;
 		private qf:FindQueryForm;
 		private logFlow:ChatLogFlow;
-		private userData:ChatUserData;
-		private connection:ChatConnection;
-		private receiver:ChatReceiver;
 		constructor(userData:ChatUserData,connection:ChatConnection,receiver:ChatReceiver){
 			super(userData,connection,receiver,null,false);
 		}
@@ -76,8 +72,8 @@ module Chat{
 	}
 	//検索条件フォーム
 	export class FindQueryForm extends ChatUICollection.UIObject{
-		private event:EventEmitter;
-		private container:HTMLFormElement;
+		//private event:EventEmitter;
+		//private container:HTMLFormElement;
 		private query:FindQuery=null;	//現在のクエリ
 		constructor(){
 			super();
@@ -311,8 +307,8 @@ module Chat{
 	}
 	//拡張Receiver（resultをうけとれる）
 	export class FindReceiver extends ChatReceiver{
-		private event:EventEmitter;
-		constructor(private connection:ChatConnection){
+		//private event:EventEmitter;
+		constructor(connection:ChatConnection){
 			super(connection,null);
 			//追加
 			connection.on("result",this.result.bind(this));

@@ -1,4 +1,5 @@
 var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     __.prototype = b.prototype;
     d.prototype = new __();
@@ -8,14 +9,14 @@ var Chat;
     var LogViewerFactory = (function (_super) {
         __extends(LogViewerFactory, _super);
         function LogViewerFactory() {
-                _super.call(this, null, false, null);
+            _super.call(this, null, false, null);
         }
         LogViewerFactory.prototype.getLogViewer = function (callback) {
             var userData = this.makeUserData();
             var connection = this.makeConnection(userData);
             var receiver = this.makeReceiver(connection);
             var view = this.makeView(connection, receiver, userData);
-            if(callback) {
+            if (callback) {
                 callback(new LogViewer(userData, connection, receiver, view));
             }
         };
@@ -36,7 +37,7 @@ var Chat;
         };
         return LogViewerFactory;
     })(Chat.ChatClientFactory);
-    Chat.LogViewerFactory = LogViewerFactory;    
+    Chat.LogViewerFactory = LogViewerFactory;
     var LogViewer = (function () {
         function LogViewer(userData, connection, receiver, view) {
             this.userData = userData;
@@ -46,28 +47,34 @@ var Chat;
         }
         return LogViewer;
     })();
-    Chat.LogViewer = LogViewer;    
+    Chat.LogViewer = LogViewer;
+
     var LogViewerView = (function (_super) {
         __extends(LogViewerView, _super);
         function LogViewerView(userData, connection, receiver) {
-                _super.call(this, userData, connection, receiver, null, false);
+            _super.call(this, userData, connection, receiver, null, false);
         }
         LogViewerView.prototype.initView = function (userData, connection, receiver, process, com) {
             var _this = this;
             this.container = document.createElement("div");
+
             document.body.appendChild(this.container);
             this.container.appendChild((function (h1) {
                 h1.textContent = "Chalog Viewer";
                 return h1;
             })(document.createElement("h1")));
+
             this.qf = new FindQueryForm();
             this.container.appendChild(this.qf.getContainer());
+
             this.qf.onQuery(function (query) {
                 _this.connection.send("query", query);
             });
+
             this.logFlow = new Chat.ChatLogFlow(userData, receiver);
             this.container.appendChild(this.logFlow.getContainer());
             this.logFlow.refreshSettings();
+
             this.logFlow.event.on("focusChannel", function (channel) {
                 var a = document.createElement("a");
                 a.href = "/#" + channel;
@@ -77,12 +84,13 @@ var Chat;
         };
         return LogViewerView;
     })(Chat.ChatView);
-    Chat.LogViewerView = LogViewerView;    
+    Chat.LogViewerView = LogViewerView;
+
     var FindQueryForm = (function (_super) {
         __extends(FindQueryForm, _super);
         function FindQueryForm() {
             var _this = this;
-                _super.call(this);
+            _super.call(this);
             this.query = null;
             this.container = document.createElement("form");
             this.container.appendChild(this.makeRangePart());
@@ -91,32 +99,35 @@ var Chat;
             this.container.addEventListener("submit", function (e) {
                 var form = e.target;
                 e.preventDefault();
-                var query = {
-                };
+
+                var query = {};
                 query.value = Number(formValue("page_number"));
                 query.page = 0;
                 var range = getRadioValue(form, "range");
-                if(range === "time") {
+                if (range === "time") {
                     var of = (new Date()).getTimezoneOffset() * 60000;
                     query.starttime = new Date((new Date(formValue("starttime"))).getTime() + of);
                     query.endtime = new Date((new Date(formValue("endtime"))).getTime() + of);
                 }
-                if(formChecked("use_name_or_ip")) {
+                if (formChecked("use_name_or_ip")) {
                     var noi = getRadioValue(form, "name_or_ip");
-                    if(noi === "name") {
+                    if (noi === "name") {
                         query.name = formValue("name_or_ip_value");
-                    } else if(noi === "ip") {
+                    } else if (noi === "ip") {
                         query.ip = formValue("name_or_ip_value");
                     }
                 }
-                if(formChecked("use_comment")) {
+                if (formChecked("use_comment")) {
                     query.comment = formValue("comment_value");
                 }
-                if(formChecked("use_channel")) {
+                if (formChecked("use_channel")) {
                     query.channel = formValue("channel_value");
                 }
+
                 _this.query = query;
+
                 _this.event.emit("query", query);
+
                 function formValue(name) {
                     return (form.elements[name]).value;
                 }
@@ -126,16 +137,13 @@ var Chat;
             }, false);
         }
         FindQueryForm.prototype.movePage = function (inc) {
-            if(!this.query) {
+            if (!this.query)
                 return;
-            }
-            if(!this.query.page) {
+            if (!this.query.page)
                 this.query.page = 0;
-            }
             this.query.page += inc;
-            if(this.query.page < 0) {
+            if (this.query.page < 0)
                 this.query.page = 0;
-            }
             this.event.emit("query", this.query);
         };
         FindQueryForm.prototype.onQuery = function (callback) {
@@ -158,7 +166,8 @@ var Chat;
                 }));
                 var now = (new Date()).toISOString();
                 now = now.replace(/(?:Z|[-+]\d\d(?::?\d\d)?)$/, "");
-                if(/^.+?T\d\d:\d\d:\d\d[\.,]\d+$/.test(now)) {
+
+                if (/^.+?T\d\d:\d\d:\d\d[\.,]\d+$/.test(now)) {
                     now = now.replace(/[\.,]\d+$/, "");
                 }
                 p.appendChild(Chat.makeEl("label", function (label) {
@@ -247,16 +256,16 @@ var Chat;
                         input.size = 25;
                     }));
                 }));
+
                 fs.addEventListener("change", function (e) {
                     var inp = e.target;
-                    if(!/^input$/i.test(inp.tagName)) {
+                    if (!/^input$/i.test(inp.tagName))
                         return;
-                    }
-                    if(inp.type === "checkbox") {
+                    if (inp.type === "checkbox")
                         return;
-                    }
+
                     var checkbox = (document).evaluate('ancestor-or-self::p/descendant::input[@type="checkbox"]', inp, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
-                    if(checkbox) {
+                    if (checkbox) {
                         checkbox.checked = inp.value !== "";
                     }
                 }, false);
@@ -296,6 +305,7 @@ var Chat;
                         var output = el;
                         output.name = "thispage";
                         output.value = "";
+
                         _this.event.on("query", function (q) {
                             output.value = q.page + "ページ目";
                         });
@@ -312,12 +322,13 @@ var Chat;
         };
         return FindQueryForm;
     })(Chat.ChatUICollection.UIObject);
-    Chat.FindQueryForm = FindQueryForm;    
+    Chat.FindQueryForm = FindQueryForm;
+
     var FindReceiver = (function (_super) {
         __extends(FindReceiver, _super);
         function FindReceiver(connection) {
-                _super.call(this, connection, null);
-            this.connection = connection;
+            _super.call(this, connection, null);
+
             connection.on("result", this.result.bind(this));
         }
         FindReceiver.prototype.result = function (data) {
@@ -325,7 +336,8 @@ var Chat;
         };
         return FindReceiver;
     })(Chat.ChatReceiver);
-    Chat.FindReceiver = FindReceiver;    
+    Chat.FindReceiver = FindReceiver;
+
     function makeInput(callback) {
         return Chat.makeEl("input", function (el) {
             return callback(el);
@@ -333,7 +345,7 @@ var Chat;
     }
     function makeInputAndLabel(text, follow, callback) {
         return Chat.makeEl("label", function (label) {
-            if(follow) {
+            if (follow) {
                 label.appendChild(makeInput(callback));
                 label.appendChild(document.createTextNode(text));
             } else {
@@ -344,13 +356,12 @@ var Chat;
     }
     function getRadioValue(form, name) {
         var t = form.elements[name];
-        if(t && t.length && t.item) {
-            for(var i = 0, l = t.length; i < l; i++) {
-                if(t[i].checked) {
+        if (t && t.length && t.item) {
+            for (var i = 0, l = t.length; i < l; i++) {
+                if (t[i].checked)
                     return t[i].value;
-                }
             }
-        } else if(t) {
+        } else if (t) {
             return t.checked ? t.value : null;
         }
         return null;

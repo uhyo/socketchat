@@ -1,3 +1,5 @@
+/// <reference path="connection.ts"/>
+/// <reference path="process.ts"/>
 //HTML5 additions for TypeScript lib
 interface HTMLTimeElement extends HTMLElement{
 	dateTime?:string;
@@ -39,22 +41,24 @@ interface XPathEvaluator{
 interface Document extends XPathEvaluator{}
 
 module Chat{
-/// <reference path="connection.ts"/>
-/// <reference path="process.ts"/>
 
 	//チャット外観の全体
 	export class ChatView{
-		private container:HTMLElement;
-		private linksView:ChatLinksView;
-		private settingView:ChatSettingView;
+		//protected
+		public container:HTMLElement;
+		public linksView:ChatLinksView;
+		public settingView:ChatSettingView;
+		//public
 		public logView:ChatLogView;
-		private userView:ChatUserView;
-		private ui:ChatUI;
-		private motto:ChatUICollection.MottoForm;
+		//protected
+		public userView:ChatUserView;
+		public ui:ChatUI;
+		public motto:ChatUICollection.MottoForm;
 		//why public
 		public dis:ChatLogDisManager;
 
-		constructor(private userData:ChatUserData,private connection:ChatConnection,private receiver:ChatReceiver,private process:ChatProcess,com:bool){
+		//protected
+		constructor(public userData:ChatUserData,public connection:ChatConnection,public receiver:ChatReceiver,public process:ChatProcess,com:bool){
 			this.initView(userData,connection,receiver,process,com);
 		}
 		//表示部分的な?
@@ -691,7 +695,7 @@ module Chat{
 		removeDisip(ip:string,temporal?:bool):void{
 			var ud=this.userData;
 			if(!temporal){
-				ud.disip=ud.disip.filter((x:string)=>{x!==ip});
+				ud.disip=ud.disip.filter((x:string)=>{return x!==ip});
 				ud.save();
 			}
 			this.removeCSSRules([
@@ -990,7 +994,7 @@ module Chat{
 			}
 		}
 		//チャネル表示
-		makeChannelSpan(channel:string):HTMLElement{
+		makeChannelSpan(channel:string):HTMLSpanElement{
 			var span=document.createElement("span");
 			span.className="channels";
 			var wholeChannel:string="";
@@ -1122,7 +1126,7 @@ module Chat{
 						}
 						//ログが所属するチャネルと一致する?
 						var chs=Array.isArray(obj.channel) ? obj.channel.concat([]) : [];
-						var i=chs.length;
+						var i:number=chs.length;
 						if(i>0){
 							//長さでソート
 							chs.sort((a:string,b:string)=>{
@@ -1339,13 +1343,15 @@ module Chat{
 	}
 	//UI
 	export class ChatUI{
-		private container:Node;
-		constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess,private view:ChatView){
+		//protected
+		public container:HTMLElement;
+		//protected
+		constructor(public userData:ChatUserData,public receiver:ChatReceiver,public process:ChatProcess,public view:ChatView){
 		}
 		cleanup():void{
 			//UI消えるときの後処理
 		}
-		getContainer():Node{
+		getContainer():HTMLElement{
 			return this.container;
 		}
 		getView():ChatView{
@@ -1358,12 +1364,12 @@ module Chat{
 	}
 	//発言などのUI部分
 	export class ChatNormalUI extends ChatUI{
-		private container:HTMLElement;
+		//private container:HTMLElement;
 		//パーツたち
 		private inoutForm:ChatUICollection.InoutForm;
 		private commentForm:ChatUICollection.CommentForm;
 
-		constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess,private view:ChatView,dis:ChatLogDisManager){
+		constructor(userData:ChatUserData,receiver:ChatReceiver,process:ChatProcess,view:ChatView,dis:ChatLogDisManager){
 			super(userData,receiver,process,view);
 			this.container=document.createElement("div");
 			this.container.classList.add("ui");
@@ -1407,8 +1413,9 @@ module Chat{
 	//UIパーツ
 	export module ChatUICollection{
 		export class UIObject{
-			private event:EventEmitter;
-			private container:HTMLElement;
+			//protected
+			public event:EventEmitter;
+			public container:HTMLElement;
 			constructor(){
 				this.event=getEventEmitter();
 			}
@@ -1424,11 +1431,12 @@ module Chat{
 		}
 		//入退室フォーム
 		export class InoutForm extends UIObject{
-			private event:EventEmitter;
-			private container:HTMLFormElement;
+			//private event:EventEmitter;
+			//private container:HTMLFormElement;
 			constructor(private userData:ChatUserData,private receiver:ChatReceiver){
 				super();
-				this.container=<HTMLFormElement>document.createElement("form");
+				this.container=document.createElement("form");
+				var cont=<HTMLFormElement>this.container;
 				var p:HTMLParagraphElement;
 
 				p=<HTMLParagraphElement>document.createElement("p");
@@ -1452,8 +1460,8 @@ module Chat{
 				}));
 				//入退室時にフォームがかわる
 				this.receiver.on("userinfo",(data:{name:string;rom:bool;})=>{
-					(<HTMLInputElement>this.container.elements["uname"]).disabled = !data.rom;
-					(<HTMLInputElement>this.container.elements["inoutbutton"]).value = data.rom ? "入室" : "退室";
+					(<HTMLInputElement>cont.elements["uname"]).disabled = !data.rom;
+					(<HTMLInputElement>cont.elements["inoutbutton"]).value = data.rom ? "入室" : "退室";
 				});
 				this.container.addEventListener("submit",(e:Event)=>{
 					e.preventDefault();
@@ -1462,8 +1470,9 @@ module Chat{
 			}
 			//入退室ボタンが押されたときの処理
 			emitInout(e:Event):void{
+				var cont=<HTMLFormElement>this.container;
 				var data:InoutNotify={
-					name:(<HTMLInputElement>this.container.elements["uname"]).value,
+					name:(<HTMLInputElement>cont.elements["uname"]).value,
 				};
 				this.event.emit("inout",data);
 			}
@@ -1473,13 +1482,14 @@ module Chat{
 		}
 		//入退室フォーム
 		export class CommentForm extends UIObject{
-			public event:EventEmitter;
-			private container:HTMLFormElement;
+			//public event:EventEmitter;
+			//protected:none
+			public container:HTMLFormElement;
 			private flagFocusOutlaw=false;
 			constructor(private receiver:ChatReceiver,private canselable){
 				//canselable: キャンセルボタンがつく
 				super();
-				this.container=<HTMLFormElement>document.createElement("form");
+				this.container=document.createElement("form");
 				this.container.classList.add("commentform");
 				var p:HTMLParagraphElement;
 
@@ -1607,8 +1617,8 @@ module Chat{
 			}
 		}
 		export class MottoForm extends UIObject{
-			private event:EventEmitter;
-			private container:HTMLFormElement;
+			//private event:EventEmitter;
+			//private container:HTMLFormElement;
 			constructor(){
 				super();
 				this.container=<HTMLFormElement>document.createElement("form");
@@ -1639,8 +1649,8 @@ module Chat{
 		}
 		//コマンドライン用コンソール
 		export class Console extends UIObject{
-			private event:EventEmitter;
-			private container:HTMLElement;
+			//private event:EventEmitter;
+			//private container:HTMLElement;
 			private consoleo:HTMLElement;
 			private command:HTMLInputElement;
 			private commandtopelement:HTMLElement;
@@ -2416,7 +2426,7 @@ module Chat{
 					this.die();
 					return;
 				}
-				var key=args[0].active ? args[0].value : void 0;
+				var key=args[0].active ? args[0].value : null;
 				var value=args[1].value;
 				//複数の設定を変更できる
 				switch(key){
@@ -2700,7 +2710,7 @@ module Chat{
 	export class ChatCmdUI extends ChatUI{
 		private console:ChatUICollection.Console;
 		private userinfoHandle:(...args:any[])=>any;
-		constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess,private view:ChatView,dis:ChatLogDisManager){
+		constructor(userData:ChatUserData,receiver:ChatReceiver,process:ChatProcess,view:ChatView,dis:ChatLogDisManager){
 			super(userData,receiver,process,view);
 			this.console=new ChatUICollection.Console(userData,receiver,process,this);
 			receiver.on("userinfo",this.userinfoHandle=(data:any)=>{

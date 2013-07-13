@@ -1,6 +1,6 @@
+/// <reference path="definition.ts"/>
+/// <reference path="connection.ts"/>
 module Chat{
-	/// <reference path="definition.ts"/>
-	/// <reference path="connection.ts"/>
 	//-----------------
 	//ユーザーの情報を保存するぞ!
 	export class ChatUserData{
