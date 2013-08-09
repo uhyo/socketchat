@@ -6,7 +6,7 @@ var Chat;
         ChatUserData.prototype.load = function () {
             this.lastid = localStorage.getItem("lastid") || null;
             this.name = localStorage.getItem("socketchat_name") || null;
-            this.gyoza = Number(localStorage.getItem("gyoza")) || 2;
+            this.gyoza = Number(localStorage.getItem("gyoza") || 2);
             this.volume = Number(localStorage.getItem("volume"));
             if (isNaN(this.volume))
                 this.volume = 50;
