@@ -851,6 +851,15 @@ function api(mode,req,res){
 		//ユーザー一覧の請求
 		reply(getUsersData());
 		return;
+	}else if(mode=="hashtag"){
+		if(!req.query.query){
+			reply({error:true},400);
+			return;
+		}
+		searchHashtag(req.query.query,function(tags){
+			reply(tags);
+		});
+		return;
 	}
 	//sessionidを作る
 	var query=req.query;
@@ -958,6 +967,13 @@ function chalog(query,callback){
 		
 		callback(resobj);
 		
+	});
+}
+function searchHashtag(tag,callback){
+	//一致
+	var regexp = new RegExp("^"+tag.replace(/(\W)/g,"\\$1"));
+	chcoll.find({_id:regexp}).sort({count:-1}).toArray(function(err,docs){
+		callback({tags:docs});
 	});
 }
 function getAvailableSocket(){
