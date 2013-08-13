@@ -12,7 +12,7 @@ module Chat{
 		public channelMode:number;	//チャネル開き方設定(0～1)
 		public disip:string[];
 		public dischannel:string[]; //dischannel対象一覧
-		public autoin:bool;		//自動入室有効かどうか
+		public autoin:boolean;		//自動入室有効かどうか
 		//コマンドライン系
 		public cmd:{
 			height:string;	//コマンドライン高さ
@@ -69,7 +69,7 @@ module Chat{
 			}
 		}
 		//入退室する
-		inout(data:InoutNotify,operation?:string):bool{
+		inout(data:InoutNotify,operation?:string):boolean{
 			if(operation){
 				//operationがあるとき:一方通行
 				var userinfo=this.receiver.getUserinfo();

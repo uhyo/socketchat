@@ -10,8 +10,18 @@ interface HTMLOutputElement extends HTMLElement{
 	type:string;
 }
 interface HTMLElement{
-	dataset:any;
-	hidden:bool;
+}
+interface DOMStringMap{
+	//強引な解決策。使うもの全部登録
+	channel:string;
+	ip:string;
+	actives:string;
+	roms:string;
+	id:string;
+	respto:string;
+}
+interface Document{
+	createTreeWalker(root:Node,type:number,func:Function,flag:boolean):TreeWalker;
 }
 //DOM3 XPath
 interface XPathNSResolver{
@@ -58,11 +68,11 @@ module Chat{
 		public dis:ChatLogDisManager;
 
 		//protected
-		constructor(public userData:ChatUserData,public connection:ChatConnection,public receiver:ChatReceiver,public process:ChatProcess,com:bool){
+		constructor(public userData:ChatUserData,public connection:ChatConnection,public receiver:ChatReceiver,public process:ChatProcess,com:boolean){
 			this.initView(userData,connection,receiver,process,com);
 		}
 		//表示部分的な?
-		initView(userData:ChatUserData,connection:ChatConnection,receiver:ChatReceiver,process:ChatProcess,com:bool):void{
+		initView(userData:ChatUserData,connection:ChatConnection,receiver:ChatReceiver,process:ChatProcess,com:boolean):void{
 			this.container=document.createElement("div");
 			//コンテナはbodyに入れる
 			document.body.setAttribute('role','application');
@@ -112,7 +122,7 @@ module Chat{
 			//下までスクロールしたら自動mottoする
 			window.addEventListener("scroll",(e:UIEvent)=>{
 				var st=document.body.scrollTop || document.documentElement.scrollTop || 0;
-    			var cl=document.documentElement.offsetHeight;
+    			var cl=(<HTMLElement>document.documentElement).offsetHeight;
 				var i=window.innerHeight;
 				if(st >= cl-i){
 					//下までスクロールした
@@ -127,7 +137,7 @@ module Chat{
 			this.ui.refreshSettings();
 		}
 		//発言欄にフォーカスする
-		focusComment(focus:bool,channel?:string):void{
+		focusComment(focus:boolean,channel?:string):void{
 			this.ui.focusComment(focus,channel);
 		}
 		//仕様を表示してあげる
@@ -551,7 +561,7 @@ module Chat{
 			return this.container;
 		}
 		//ログを一つ追加
-		getLog(obj:LogObj,initmode:bool):void{
+		getLog(obj:LogObj,initmode:boolean):void{
 			//initmode: それがログ初期化段階かどうか
 			var line:HTMLElement=this.lineMaker.make(obj);
 			this.container.insertBefore(line,this.container.firstChild);
@@ -676,7 +686,7 @@ module Chat{
 		registerLogContainer(c:HTMLElement):void{
 			this.logContainer=c;
 		}
-		addDisip(ip:string,temporal:bool=false):bool{
+		addDisip(ip:string,temporal:boolean=false):boolean{
 			var ud=this.userData;
 			if(ud.disip.indexOf(ip)>=0)return false;
 			if(!temporal){
@@ -692,7 +702,7 @@ module Chat{
 				'.users li[data-ip="'+ip+'"]{text-decoration:line-through}',
 			]);
 		}
-		removeDisip(ip:string,temporal?:bool):void{
+		removeDisip(ip:string,temporal?:boolean):void{
 			var ud=this.userData;
 			if(!temporal){
 				ud.disip=ud.disip.filter((x:string)=>{return x!==ip});
@@ -720,7 +730,7 @@ module Chat{
 		}
 		//disChannel用のcssルールを作る
 		//attribute=要素セレクタにつける属性
-		private createDisCSSSelector(attribute:string,temporal:bool,anti:bool):string{
+		private createDisCSSSelector(attribute:string,temporal:boolean,anti:boolean):string{
 			if(anti){
 				//逆
 				attribute=":not("+attribute+")";
@@ -728,7 +738,7 @@ module Chat{
 
 			return "#"+this.logContainer.id+" > p.log"+attribute;
 		}
-		private createDisCSSRule(attribute:string, temporal:bool,anti:bool):string{
+		private createDisCSSRule(attribute:string, temporal:boolean,anti:boolean):string{
 			var selector:string=this.createDisCSSSelector(attribute,temporal,anti);
 			var body= temporal ? "opacity:0.3;" : "display:none;";
 			return selector+"{"+body+"}";
@@ -755,7 +765,7 @@ module Chat{
 		}
 		//disChannelを追加する
 		//temporal: 一時的（保存しない） anti:逆（特定のやつ以外dis）
-		addDischannel(channel:string,temporal:bool,anti:bool):bool{
+		addDischannel(channel:string,temporal:boolean,anti:boolean):boolean{
 			var ud=this.userData;
 			if(ud.dischannel.indexOf(channel)>=0)return false;
 			if(!temporal){
@@ -765,12 +775,12 @@ module Chat{
 			this.setDischannelStyle(channel,temporal,anti);
 			return true;
 		}
-		private setDischannelStyle(channel:string,temporal:bool,anti:bool):void{
+		private setDischannelStyle(channel:string,temporal:boolean,anti:boolean):void{
 			this.addCSSRules([
 				this.createDisCSSRule('[data-channel*="#'+channel+'/"]',temporal,anti),
 			]);
 		}
-		removeDischannel(channel:string,temporal:bool,anti:bool):void{
+		removeDischannel(channel:string,temporal:boolean,anti:boolean):void{
 			var ud=this.userData;
 			if(!temporal){
 				ud.dischannel=ud.dischannel.filter((x:string)=>x!==channel);
@@ -780,23 +790,23 @@ module Chat{
 				this.createDisCSSSelector('[data-channel*="#'+channel+'/"]',temporal,anti),
 			]);
 		}
-		addFocusOutlaw(temporal:bool):void{
+		addFocusOutlaw(temporal:boolean):void{
 			this.addCSSRules([
 				this.createDisCSSRule('[data-channel]',temporal,false),
 			]);
 		}
-		removeFocusOutlaw(temporal:bool):void{
+		removeFocusOutlaw(temporal:boolean):void{
 			this.removeCSSRules([
 				this.createDisCSSSelector('[data-channel]',temporal,false),
 			]);
 		}
 	}
 	export interface GyazoSettingObject{
-		thumb:bool;  //サムネイル機能ありかどうか
+		thumb:boolean;  //サムネイル機能ありかどうか
 		url:{
 			image:string;	//画像のURL（あとにid付加）
 			thumb:string;	//サムネイルURL
-			ext:bool;	//?
+			ext:boolean;	//?
 		};
 		text:{
 			normal: string;
@@ -1294,7 +1304,7 @@ module Chat{
 			var sp:HTMLElement=document.createElement("span");
 			sp.textContent=user.name;
 			sp.title=user.ip+" / "+user.ua;
-			li.dataset.id=user.id;
+			li.dataset.id=String(user.id);
 			li.dataset.ip=user.ip;
 			li.appendChild(sp);
 			this.userList.appendChild(li);
@@ -1357,7 +1367,7 @@ module Chat{
 		getView():ChatView{
 			return this.view;
 		}
-		focusComment(focus:bool,channel?:string):void{
+		focusComment(focus:boolean,channel?:string):void{
 		}
 		refreshSettings():void{
 		}
@@ -1392,7 +1402,7 @@ module Chat{
 				dis.setFocusChannel(channel || null);
 				this.commentForm.event.emit("afterChangeChannel", false);
 			});
-			this.commentForm.event.on("afterChangeChannel",(on:bool)=>{
+			this.commentForm.event.on("afterChangeChannel",(on:boolean)=>{
 				if(on && this.userData.channelMode==0){
 					dis.addFocusOutlaw(true);
 				}else{
@@ -1404,7 +1414,7 @@ module Chat{
 			return this.container;
 		}
 		//発言欄にフォーカスする
-		focusComment(focus:bool,channel?:string):void{
+		focusComment(focus:boolean,channel?:string):void{
 			if(focus)this.commentForm.focus();
 			this.commentForm.setChannel(channel);
 			this.commentForm.event.emit("afterChangeChannel",false);
@@ -1459,7 +1469,7 @@ module Chat{
 					input.value="入室";
 				}));
 				//入退室時にフォームがかわる
-				this.receiver.on("userinfo",(data:{name:string;rom:bool;})=>{
+				this.receiver.on("userinfo",(data:{name:string;rom:boolean;})=>{
 					(<HTMLInputElement>cont.elements["uname"]).disabled = !data.rom;
 					(<HTMLInputElement>cont.elements["inoutbutton"]).value = data.rom ? "入室" : "退室";
 				});
@@ -1533,7 +1543,7 @@ module Chat{
 					input.value="発言";
 					input.disabled=us.rom;
 				}));
-				this.receiver.on("userinfo",(data:{name:string;rom:bool;})=>{
+				this.receiver.on("userinfo",(data:{name:string;rom:boolean;})=>{
 					["comment","channel","commentbutton"].forEach(x=>{
 						(<HTMLInputElement>this.container.elements[x]).disabled = data.rom;
 					});
@@ -1554,7 +1564,7 @@ module Chat{
 						},false);
 					}));
 				}
-				function validateHashtag(channel:string):bool{
+				function validateHashtag(channel:string):boolean{
 					if("string"!==typeof channel)return false;
 					if(channel==="")return false;
 					//スペースや#を含んではいけない
@@ -2064,20 +2074,20 @@ module Chat{
 	//コマンドライン用プロセス
 	export module ChatCmdProcessCollection{
 		export interface Arg{
-			active:bool;	//false: 省略された
-			option:bool;	//false: ただの引数 true: オプション
+			active:boolean;	//false: 省略された
+			option:boolean;	//false: ただの引数 true: オプション
 			value:string;
 			params?:string[];	//オプションの引数たち
 		}
 		export interface ArgRequest{
 			//argひとつの形式を定める
-			option:bool;
+			option:boolean;
 			name?:string[];   //optionのときにオプション名
 			num?:number;	//optionのときに可能な数
 		}
 		export class Process{
 			//want protected
-			public key:(e:KeyboardEvent)=>bool=null;
+			public key:(e:KeyboardEvent)=>boolean=null;
 			//protectedが欲しい事例
 			constructor(public ui:ChatUI,public console:ChatUICollection.Console,public process:ChatProcess,public userData:ChatUserData,public arg:string){
 			}
@@ -2204,7 +2214,7 @@ module Chat{
 					return word;
 				}
 			}
-			gotKey(e:KeyboardEvent):bool{
+			gotKey(e:KeyboardEvent):boolean{
 				if(!this.key)return true;	//妨げない
 				return this.key(e);
 			}
@@ -2224,7 +2234,7 @@ module Chat{
 				this.console.indent(num,callback);
 			}
 			//行単位入力
-			input(multiline:bool,callback:(str:string)=>void):void{
+			input(multiline:boolean,callback:(str:string)=>void):void{
 				//multiline:複数行対応
 				this.console.openInput("");
 				var result="";
@@ -2248,7 +2258,7 @@ module Chat{
 				};
 			}
 			//キー単位入力
-			inputKey(callback:(e:KeyboardEvent)=>bool):void{
+			inputKey(callback:(e:KeyboardEvent)=>boolean):void{
 				this.console.openInput("");
 				this.key=(e:KeyboardEvent)=>{
 					e.preventDefault();
@@ -2309,7 +2319,7 @@ module Chat{
 					this.die();
 					return;
 				}
-				var result:bool=this.process.inout(data,"in");
+				var result:boolean=this.process.inout(data,"in");
 				if(!result){
 					//失敗
 					this.error("You are already in the room.");
@@ -2323,7 +2333,7 @@ module Chat{
 				var data:InoutNotify={
 					name:null,
 				};
-				var result:bool=this.process.inout(data,"out");
+				var result:boolean=this.process.inout(data,"out");
 				if(!result){
 					//失敗
 					this.error("You are not in the room.");
@@ -2741,7 +2751,7 @@ module Chat{
 		element.id=base+number;
 		return;
 	}
-	function appearAnimation(el:HTMLElement,mode:string,appear:bool,finish:bool,callback:()=>void=function(){}):void{
+	function appearAnimation(el:HTMLElement,mode:string,appear:boolean,finish:boolean,callback:()=>void=function(){}):void{
 		//transition heightが設定してあることが前提
 		//mode:"vertical","horizontal","fade"
 		//appear: true->出現 false->消滅
@@ -2760,7 +2770,7 @@ module Chat{
 			return;  //未対応
 		}
 		//クラス付加
-		var inb1:bool, inb2:bool;
+		var inb1:boolean, inb2:boolean;
 		var h:number;
 		if(mode==="vertical"){
 			inb1=el.classList.contains("verticalanime1");

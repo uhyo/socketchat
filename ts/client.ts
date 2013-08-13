@@ -12,11 +12,11 @@ module Chat{
 	}
 	//Factory
 	export class ChatClientFactory{
-		private child:bool;
+		private child:boolean;
 		private chat:ChatClient;
-		private domReady:bool=false;
+		private domReady:boolean=false;
 		//protected
-		constructor(public channel:string,private com:bool,public connection:string){
+		constructor(public channel:string,private com:boolean,public connection:string){
 			//子かどうかの判定入れる
 			this.child= !!sessionStorage.getItem("independent_flag");
 			//ready?

@@ -1,5 +1,6 @@
 var Chat;
 (function (Chat) {
+    //枠的な?
     var ChatClient = (function () {
         function ChatClient(userData, connection, receiver, process, view, api, channel) {
             this.userData = userData;
@@ -14,15 +15,19 @@ var Chat;
     })();
     Chat.ChatClient = ChatClient;
 
+    //Factory
     var ChatClientFactory = (function () {
+        //protected
         function ChatClientFactory(channel, com, connection) {
             var _this = this;
             this.channel = channel;
             this.com = com;
             this.connection = connection;
             this.domReady = false;
+            //子かどうかの判定入れる
             this.child = !!sessionStorage.getItem("independent_flag");
 
+            //ready?
             document.addEventListener("DOMContentLoaded", function (e) {
                 _this.domReady = true;
             }, false);
@@ -36,8 +41,10 @@ var Chat;
                 return;
             }
 
+            //userData取得
             var userData = this.makeUserData();
             var listener = function (e) {
+                //connection作る
                 var connection = _this.makeConnection(userData);
                 connection.onConnection(function (sessionid) {
                     if (sessionid) {
@@ -45,14 +52,19 @@ var Chat;
                         userData.save();
                     }
 
+                    //receiver
                     var receiver = _this.makeReceiver(connection);
 
+                    //process作る
                     var process = _this.makeProcess(connection, receiver, userData);
 
+                    //view
                     var view = _this.makeView(connection, receiver, userData, process);
 
+                    //api
                     var api = _this.makeAPI(connection, receiver, userData, process, view);
 
+                    //作る
                     var chat = new ChatClient(userData, connection, receiver, process, view, api, _this.channel);
                     _this.chat = chat;
                     if (callback) {
@@ -100,6 +112,7 @@ var Chat;
     })();
     Chat.ChatClientFactory = ChatClientFactory;
 
+    //API
     var ChatClientAPI = (function () {
         function ChatClientAPI(userData, connection, receiver, process, view) {
             this.userData = userData;
@@ -109,6 +122,7 @@ var Chat;
             this.view = view;
             this.acceptedEvents = ["log", "userinfo", "newuser", "deluser", "init"];
         }
+        //イベント操作用
         ChatClientAPI.prototype.on = function (event, listener) {
             if (this.acceptedEvents.indexOf(event) === -1)
                 return;
@@ -125,6 +139,7 @@ var Chat;
             this.receiver.removeListener(event, listener);
         };
 
+        //入退室
         ChatClientAPI.prototype.inout = function (name) {
             var data = {
                 name: name
@@ -132,9 +147,11 @@ var Chat;
             this.process.inout(data);
         };
 
+        //発言
         ChatClientAPI.prototype.say = function (comment, response, channel) {
             if (!channel)
-                channel = null; else if ("string" === typeof channel) {
+                channel = null;
+else if ("string" === typeof channel) {
                 channel = [channel];
             } else if (!Array.isArray(channel)) {
                 throw null;

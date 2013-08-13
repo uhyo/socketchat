@@ -6,6 +6,7 @@ var __extends = this.__extends || function (d, b) {
 };
 var Chat;
 (function (Chat) {
+    //EventEmitter constructor
     function getEventEmitter() {
         return new io.EventEmitter();
     }
@@ -14,17 +15,23 @@ var Chat;
         function ChatConnection() {
             this.event = getEventEmitter();
         }
+        //コネクション初期化メソッド
         ChatConnection.prototype.initConnection = function (settings) {
+            //ダミーだけど・・・
             this.connection = getEventEmitter();
         };
 
+        //サーバーに登録
         ChatConnection.prototype.register = function (lastid, channel, mode) {
+            //lastid: 前回のセッションID（自動復帰可能）, channel:チャネル
         };
 
+        //コネクション確立したら
         ChatConnection.prototype.onConnection = function (func) {
             this.event.on("connect", func);
         };
 
+        //サーバーからログ探す
         ChatConnection.prototype.findLog = function (query, callback) {
             this.send("find", query, function (arr) {
                 if (!Array.isArray(arr)) {
@@ -35,12 +42,14 @@ var Chat;
             });
         };
 
+        //ユーザー一覧をサーバーから取得する
         ChatConnection.prototype.getUsers = function (callback) {
             this.send("users", function (arr) {
                 callback(arr);
             });
         };
 
+        //サーバーへコマンド発行（socket.ioのemit）
         ChatConnection.prototype.send = function (event) {
             var args = [];
             for (var _i = 0; _i < (arguments.length - 1); _i++) {
@@ -48,6 +57,7 @@ var Chat;
             }
         };
 
+        //--connection操作
         ChatConnection.prototype.emit = function (event) {
             var args = [];
             for (var _i = 0; _i < (arguments.length - 1); _i++) {
@@ -56,6 +66,7 @@ var Chat;
             this.connection.emit.apply(this.connection, [event].concat(args));
         };
 
+        //サーバーから
         ChatConnection.prototype.on = function (event, listener) {
             this.connection.on(event, listener);
         };
@@ -72,13 +83,18 @@ var Chat;
     })();
     Chat.ChatConnection = ChatConnection;
 
+    //Socket.ioを用いたコネクション
     var SocketConnection = (function (_super) {
         __extends(SocketConnection, _super);
         function SocketConnection() {
             _super.apply(this, arguments);
         }
+        //private event:EventEmitter;
+        //private connection:EventEmitter;
+        //コネクションを作る
         SocketConnection.prototype.initConnection = function (settings) {
             var _this = this;
+            //connectionはSocket.ioのコネクション
             this.connection = io.connect(settings.SOCKET_HOST_NAME || (location.protocol + "//" + location.host));
             this.connection.once("connect", function () {
                 _this.event.emit("connect", (_this.connection).socket.sessionid);
@@ -87,8 +103,10 @@ var Chat;
         SocketConnection.prototype.register = function (lastid, channel, mode) {
             if (typeof mode === "undefined") { mode = "client"; }
             var _this = this;
+            //client・・・チャットユーザー
             this.send("register", { "mode": mode, "lastid": lastid, channel: channel });
             this.connection.on("reconnect", function () {
+                //再接続時には登録しなおす
                 _this.send("register", { "mode": mode, "lastid": lastid, channel: channel });
             });
         };
@@ -97,44 +115,54 @@ var Chat;
             for (var _i = 0; _i < (arguments.length - 1); _i++) {
                 args[_i] = arguments[_i + 1];
             }
+            //サーバーへ送る
             this.connection.emit.apply(this.connection, [event].concat(args));
         };
         return SocketConnection;
     })(ChatConnection);
     Chat.SocketConnection = SocketConnection;
 
+    //親ウィンドウに寄生しているコネクション（チャネルウィンドウ用）
     var ChildConnection = (function (_super) {
         __extends(ChildConnection, _super);
         function ChildConnection() {
             _super.apply(this, arguments);
+            //リクエストに一意IDをつける
             this.requestId = 0;
+            //ack（コールバックつきメッセージ）につけるID
             this.ackId = 0;
             this.savedAck = {};
         }
         ChildConnection.prototype.initConnection = function (settings) {
             var _this = this;
+            //コネクションを持っておく
             this.connection = getEventEmitter();
 
+            //通信確立は受動的（親から連絡がくるのを待つ）
             window.addEventListener("message", function (ev) {
                 var d = ev.data;
 
                 if (d.name === "init") {
+                    //portsに通信用のMessagePortが入っている
                     _this.port = ev.ports[0];
                     if (!_this.port) {
                         throw new Error("no port");
                     }
                     _this.initPort(_this.port);
 
+                    //準備ができたので伝える
                     _this.port.postMessage({
                         name: "ready"
                     });
                     _this.event.emit("connect", null);
                 } else if (d.name === "ping") {
+                    //確認用（送り返す）
                     d.name = "pong";
                     ev.source.postMessage(d, ev.origin);
                 }
             }, false);
 
+            //終了時は親に教える
             window.addEventListener("unload", function (ev) {
                 _this.port.postMessage({
                     name: "unload"
@@ -142,6 +170,7 @@ var Chat;
             }, false);
         };
 
+        // 親へ送る
         ChildConnection.prototype.push = function (event, args) {
             console.log("pushhhh", event, args);
             debugger;
@@ -149,11 +178,14 @@ var Chat;
             var func_index_array = [];
             for (var i = 0, l = args.length; i < l; i++) {
                 if ("function" === typeof args[i]) {
+                    //関数は送れないぞ!
+                    //func_arrayに覚えておく
                     func_array.push({
                         index: func_number + i,
                         func: args[i]
                     });
 
+                    //func_index_arrayで関数の位置を教えてあげる
                     func_index_array.push(func_number + i);
                     args.splice(i, 1);
                     i--, l--;
@@ -161,12 +193,14 @@ var Chat;
                 }
             }
             if (func_number > 0) {
+                //関数を送った（レスポンスを期待）→リクエストをとっておく
                 this.savedAck[this.ackId] = {
                     ackId: this.ackId,
                     func_number: func_number,
                     func_array: func_array
                 };
 
+                //ここからかいてね!
                 this.port.postMessage({
                     name: event,
                     args: args,
@@ -182,31 +216,43 @@ var Chat;
             }
         };
 
+        //（親経由で）サーバーへ送る
         ChildConnection.prototype.send = function (event) {
             var args = [];
             for (var _i = 0; _i < (arguments.length - 1); _i++) {
                 args[_i] = arguments[_i + 1];
             }
+            /*var messageObj:any={
+            name:event,
+            args:args,
+            };
+            this.push("message",[messageObj]);*/
             this.push("message", [event].concat(args));
         };
 
+        //ポートを初期化する
         ChildConnection.prototype.initPort = function (port) {
             var _this = this;
             port.start();
             port.addEventListener("message", function (ev) {
                 var d = ev.data.args[0];
                 if (ev.data.name === "handle") {
+                    //handle（イベントが流れてきた）
+                    //イベントを発生させる
                     _this.connection.emit.apply(_this.connection, [d.event].concat(d.args));
                 } else if (ev.data.name === "ackresponse") {
+                    //コールバックが帰ってきた
                     var obj = _this.savedAck[d.ackId];
                     console.log("back!", d, obj, _this.savedAck);
                     obj.func_array[d.funcindex].func.apply(_this, d.args);
 
+                    //用なし
                     delete _this.savedAck[d.ackId];
                 }
             }, false);
         };
 
+        //コネクション: もらうには親に申請しないといけない
         ChildConnection.prototype.emit = function (event) {
             var args = [];
             for (var _i = 0; _i < (arguments.length - 1); _i++) {
@@ -215,10 +261,12 @@ var Chat;
             this.connection.emit.apply(this.connection, [event].concat(args));
         };
 
+        //サーバーから
         ChildConnection.prototype.on = function (event, listener) {
             this.requestId++;
             var id = this.requestId;
 
+            //WeakMapが欲しいけど放置
             this.push("request", [event, this.requestId]);
             this.connection.on(event, listener);
         };
@@ -226,6 +274,7 @@ var Chat;
             this.requestId++;
             var id = this.requestId;
 
+            //WeakMapが欲しいけど放置
             this.push("request", [event, this.requestId]);
             this.connection.once(event, listener);
         };
@@ -239,34 +288,42 @@ var Chat;
     })(ChatConnection);
     Chat.ChildConnection = ChildConnection;
 
+    //子どもへ送る処理に関するサブモジュール
     (function (ChatHub) {
+        //ハブ（自分から派生した子ウィンドウに送ってあげる）
         var Hub = (function () {
             function Hub(receiver, connection) {
                 this.receiver = receiver;
                 this.connection = connection;
                 this.children = [];
             }
+            //子どもを作る!!!
             Hub.prototype.makeChild = function (port, closecallback) {
                 var c = new Child(this, port, closecallback);
 
+                //初期化処理をする
                 c.init();
                 return c;
             };
 
+            //子どもを追加
             Hub.prototype.addChild = function (c) {
                 this.children.push(c);
             };
 
+            //子どもを初期化してあげる
             Hub.prototype.initChild = function (c, channel) {
                 c.imServer(this.receiver, this.connection, channel);
             };
 
+            //子どもを捨てる
             Hub.prototype.removeChild = function (c) {
                 this.children = this.children.filter(function (x) {
                     return x !== c;
                 });
             };
 
+            //親コネクションから送る
             Hub.prototype.send = function () {
                 var args = [];
                 for (var _i = 0; _i < (arguments.length - 0); _i++) {
@@ -275,6 +332,7 @@ var Chat;
                 this.connection.send.apply(this.connection, args);
             };
 
+            //コネクション得る
             Hub.prototype.getConnection = function () {
                 return this.connection;
             };
@@ -282,7 +340,10 @@ var Chat;
         })();
         ChatHub.Hub = Hub;
 
+        //ハブでつながった子ども
         var Child = (function () {
+            //hub:親のハブ
+            //port:この子どもに送るためのMessagePort
             function Child(hub, port, closecallback) {
                 this.hub = hub;
                 this.port = port;
@@ -290,19 +351,23 @@ var Chat;
                 this.event = Chat.getEventEmitter();
                 this.requestMap = {};
             }
+            //ポートを使用可能にする
             Child.prototype.init = function () {
                 var _this = this;
                 var port = this.port;
                 port.start();
 
+                //メッセージを受け取る
                 port.addEventListener("message", function (ev) {
                     var d = ev.data;
                     _this.handleMessage(d.name, d.args, d.ackId, d.func_index_array);
                 });
             };
 
+            //サーバーのようにふるまう（初期化）
             Child.prototype.imServer = function (receiver, connection, channel) {
                 var _this = this;
+                //まずログをとってくる
                 connection.findLog({
                     channel: channel
                 }, function (logs) {
@@ -313,25 +378,31 @@ var Chat;
                     ]);
                 });
 
+                //ユーザー一覧をとってくる
                 connection.getUsers(function (users) {
                     _this.sendEvent("users", null, [users]);
                 });
 
+                //現在の自分の状況をアレする
                 this.sendEvent("userinfo", null, [receiver.getUserinfo()]);
             };
 
+            //子どもから送られてきたメッセージを処理する
             Child.prototype.handleMessage = function (event, args, ackId, func_index_array) {
                 var _this = this;
                 if ("number" === typeof ackId && func_index_array) {
                     for (var i = 0, l = func_index_array.length; i < l; i++) {
+                        //argsに追加してあげる
                         args.splice(func_index_array[i], 0, back_handle.bind(this, ackId, i));
                     }
 
+                    //送り返すぞ!
                     function back_handle(ackId, funcindex) {
                         var args = [];
                         for (var _i = 0; _i < (arguments.length - 2); _i++) {
                             args[_i] = arguments[_i + 2];
                         }
+                        //funcindex:最初の関数が0(func_index_arrayの添字)
                         console.log("back!", ackId, funcindex, args);
                         this.send("ackresponse", {
                             ackId: ackId,
@@ -342,6 +413,7 @@ var Chat;
                 }
 
                 if (event === "unload") {
+                    //実体が閉じられた（役目終了）
                     this.port.close();
                     this.hub.removeChild(this);
                     if (this.closecallback) {
@@ -351,8 +423,10 @@ var Chat;
                 }
 
                 if (event === "request") {
+                    //event(string),requestid(number) そのイベントのID
                     var e = this.event, evname = args[0], requestid = args[1];
 
+                    //ハンドラ登録
                     var handler = function () {
                         var args = [];
                         for (var _i = 0; _i < (arguments.length - 0); _i++) {
@@ -363,6 +437,7 @@ var Chat;
                     var connection = this.hub.getConnection();
                     connection.on(evname, handler);
 
+                    //リクエストマップに登録（消去時用）
                     this.requestMap[requestid] = handler;
                     return;
                 }
@@ -384,6 +459,7 @@ var Chat;
                 }
             };
 
+            //実体へメッセージ送信
             Child.prototype.send = function (event) {
                 var args = [];
                 for (var _i = 0; _i < (arguments.length - 1); _i++) {
@@ -395,6 +471,7 @@ var Chat;
                 });
             };
 
+            //イベント発生を通知する
             Child.prototype.sendEvent = function (event, requestid, args) {
                 this.send("handle", {
                     args: args,
@@ -408,7 +485,9 @@ var Chat;
     })(Chat.ChatHub || (Chat.ChatHub = {}));
     var ChatHub = Chat.ChatHub;
 
+    // サーバーから情報を受け取るぞ!
     var ChatReceiver = (function () {
+        //protected
         function ChatReceiver(connection, channel) {
             this.connection = connection;
             this.channel = channel;
@@ -418,6 +497,7 @@ var Chat;
             this.hub = new ChatHub.Hub(this, connection);
             this.event = getEventEmitter();
 
+            //通信初期化
             connection.on("init", this.loginit.bind(this));
             connection.on("log", this.log.bind(this));
             connection.on("users", this.userinit.bind(this));
@@ -426,6 +506,7 @@ var Chat;
             connection.on("deluser", this.deluser.bind(this));
             connection.on("inout", this.inout.bind(this));
 
+            //コネクション
             connection.on("disconnect", this.disconnect.bind(this));
             connection.on("reconnect", this.reconnect.bind(this));
         }
@@ -433,6 +514,7 @@ var Chat;
             return this.hub;
         };
 
+        //サーバーにmottoを要求する
         ChatReceiver.prototype.motto = function (data) {
             var _this = this;
             if (this.flagMottoing)
@@ -445,6 +527,7 @@ var Chat;
                 motto: data
             };
             if (this.channel) {
+                //チャネルをaddする
                 query.channel = this.channel;
             }
             this.connection.send("find", query, function (logs) {
@@ -456,10 +539,12 @@ var Chat;
             });
         };
 
+        //ログを探す
         ChatReceiver.prototype.find = function (data, callback) {
             this.connection.send("find", data, callback);
         };
 
+        //イベント操作用
         ChatReceiver.prototype.on = function (event, listener) {
             this.event.on(event, listener);
         };
@@ -473,6 +558,7 @@ var Chat;
             this.event.removeAllListeners(event);
         };
 
+        //準備できたら読んで・・・
         ChatReceiver.prototype.ready = function (callback) {
             if (this.active) {
                 callback();
@@ -481,10 +567,12 @@ var Chat;
             }
         };
 
+        //最終発言を教えてもらう
         ChatReceiver.prototype.getOldest = function () {
             return this.oldest_time;
         };
 
+        //最初のログを送ってきた
         ChatReceiver.prototype.loginit = function (data) {
             if (data.logs) {
                 this.oldest_time = new Date(data.logs[data.logs.length - 1].time);
@@ -493,18 +581,23 @@ var Chat;
             this.event.emit("loginit", data.logs);
         };
 
+        //ログを送ってきた
         ChatReceiver.prototype.log = function (data) {
+            //チャネルフィルター!!
             console.log(data);
             if (this.channel && (!Array.isArray(data.channel) || data.channel.indexOf(this.channel) < 0)) {
+                // チャネルが合わない
                 return;
             }
             this.event.emit("log", data);
         };
 
+        //ユーザー一覧だ
         ChatReceiver.prototype.userinit = function (data) {
             this.event.emit("userinit", data);
         };
 
+        //自分の情報を教えてもらう
         ChatReceiver.prototype.userinfo = function (data) {
             this.myUserinfo = data;
             this.event.emit("userinfo", data);
@@ -516,18 +609,22 @@ var Chat;
             };
         };
 
+        //誰かきた
         ChatReceiver.prototype.newuser = function (data) {
             this.event.emit("newuser", data);
         };
 
+        //いなくなった
         ChatReceiver.prototype.deluser = function (userid) {
             this.event.emit("deluser", userid);
         };
 
+        //入退室した
         ChatReceiver.prototype.inout = function (data) {
             this.event.emit("inout", data);
         };
 
+        //コネクション
         ChatReceiver.prototype.disconnect = function () {
             this.event.emit("disconnect");
         };

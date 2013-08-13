@@ -406,9 +406,9 @@ module Chat{
 		//自分用にuserinfoをとっておく
 		private myUserinfo:{
 			name:string;
-			rom:bool;
+			rom:boolean;
 		};
-		private active:bool=false;	//こっちから送っても大丈夫か
+		private active:boolean=false;	//こっちから送っても大丈夫か
 		//protected
 		constructor(public connection:ChatConnection,private channel:string){
 			this.hub=new ChatHub.Hub(this,connection);
@@ -504,7 +504,7 @@ module Chat{
 			this.event.emit("userinit",data);
 		}
 		//自分の情報を教えてもらう
-		userinfo(data:{name:string;rom:bool;}):void{
+		userinfo(data:{name:string;rom:boolean;}):void{
 			this.myUserinfo=data;
 			this.event.emit("userinfo",data);
 		}

@@ -7,7 +7,7 @@ module Chat{
 		ip:string;
 		channel:any;	//文字列か配列
 		comment:string; //コメント（文字列化された）
-		syslog?:bool;
+		syslog?:boolean;
 		commentObject?:any; //文字列表現でないコメントがある場合
 		ipff?:string;	//Forwarded forの場合のもとIP
 		response?:string;
@@ -17,7 +17,7 @@ module Chat{
 		id:number;	//Id
 		name:string;
 		ip:string;
-		rom:bool;
+		rom:boolean;
 		ua:string;
 	}
 	//サーバーへ送る用だ!
