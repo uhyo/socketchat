@@ -163,15 +163,15 @@ filters.push(function(logobj,user){
 		if(settings.USING_REVERSE_PROXY){
 			var pop = popxff(ip);
 			logobj.ip=pop.popped;
-			if(pop.remain) logobj.ifpp = pop.remain;
+			if(pop.remain) logobj.ipff = pop.remain;
 		}else{
 			logobj.ipff=ip;
 		}
 	}
 	function popxff(ipstring){
 		var ips = ipstring.split(",");
-		var popped = ips[ips.length-1].replace("^\s+|\s+$","");
-		var remain = ips.slice(0,ips.length-1).concat(",");
+		var popped = ips[ips.length-1].replace(/^\s+|\s+$/g,"");
+		var remain = ips.slice(0,ips.length-1).join(",");
 		return {popped: popped, remain: (remain||null)};
 	}
 });
