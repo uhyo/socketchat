@@ -10,7 +10,9 @@ exports.DB_NAME="socketchat";
 exports.DB_USER="test";
 exports.DB_PASS="test";
 exports.HTTP_PORT = 8080;
-exports.SOCKET_HOST_NAME = null;*/
+exports.SOCKET_HOST_NAME = null;
+exports.USING_REVERSE_PROXY = true;
+*/
 
 exports.CHAT_FIRST_LOG=50;	//最初どれだけログ表示するか
 exports.CHAT_MOTTO_LOG=50;	//HottoMotto時デフォルト時にログをどれだけ表示するか
@@ -158,7 +160,19 @@ filters.push(function(logobj,user){
 	function setxff(ip){
 //		var add={"name":"span","attributes":{"class":"info"},"child":"(Forwarded For:"+ip+")"};
 //		logobj.comment=pushLogobj(logobj.comment,add);
-		logobj.ipff=ip;
+		if(settings.USING_REVERSE_PROXY){
+			var pop = popxff(ip);
+			logobj.ip=pop.popped;
+			if(pop.remain) logobj.ifpp = pop.remain;
+		}else{
+			logobj.ipff=ip;
+		}
+	}
+	function popxff(ipstring){
+		var ips = ipstring.split(",");
+		var popped = ips[ips.length-1].replace("^\s+|\s+$","");
+		var remain = ips.slice(0,ips.length-1).concat(",");
+		return {popped: popped, remain: (remain||null)};
 	}
 });
 //hito-maru-gogo
