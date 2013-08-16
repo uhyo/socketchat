@@ -144,35 +144,8 @@ var filters=[];
 //Forwarded For
 filters.push(function(logobj,user){
 	if(!user)return;
-	switch(user.type){
-		case "socket":
-			if(user.socket && user.socket.handshake && user.socket.handshake.headers["x-forwarded-for"]){
-				setxff(user.socket.handshake.headers["x-forwarded-for"]);
-			}
-			break;
-		case "api":
-			if(user.lastreq && user.lastreq.header("x-forwarded-for")){
-				setxff(user.lastreq.header("x-forwarded-for"));
-			}
-			break;
-			
-	}
-	function setxff(ip){
-//		var add={"name":"span","attributes":{"class":"info"},"child":"(Forwarded For:"+ip+")"};
-//		logobj.comment=pushLogobj(logobj.comment,add);
-		if(settings.USING_REVERSE_PROXY){
-			var pop = popxff(ip);
-			logobj.ip=pop.popped;
-			if(pop.remain) logobj.ipff = pop.remain;
-		}else{
-			logobj.ipff=ip;
-		}
-	}
-	function popxff(ipstring){
-		var ips = ipstring.split(",");
-		var popped = ips[ips.length-1].replace(/^\s+|\s+$/g,"");
-		var remain = ips.slice(0,ips.length-1).join(",");
-		return {popped: popped, remain: (remain||null)};
+	if(user.xff && user.xff.length>0){
+		logobj.ipff=user.xff.join(",");
 	}
 });
 //hito-maru-gogo
@@ -268,14 +241,15 @@ function forEachTextLogobj(logobj,callback){
 }
 
 
-function User(id,name,ip,rom,ua){
-	this.id=id,this.name=name,this.ip=ip,this.rom=rom,this.ua=ua;
+function User(id,name,ip,rom,ua,xff){
+	//xff: [ip,ip,...]
+	this.id=id,this.name=name,this.ip=ip,this.rom=rom,this.ua=ua,this.xff=xff;
 	
 	this.ss=[];	//最近の発言
 }
 User.prototype.getUserObj=function(){
 	//外部出力用
-	return {"id":this.id,"name":this.name,"ip":this.ip,"rom":this.rom,"ua":this.ua};
+	return {"id":this.id,"name":this.name,"ip":this.ip,"rom":this.rom,"ua":this.ua,"xff":this.xff};
 };
 User.prototype.type="user";
 //says,inout
@@ -596,7 +570,7 @@ User.prototype.delUserSplash=function(){
 };
 
 
-function SocketUser(id,name,ip,rom,ua,socket){
+function SocketUser(id,name,ip,rom,ua,xff,socket){
 	User.apply(this,arguments);
 	this.socket=socket;
 	
@@ -612,7 +586,7 @@ SocketUser.prototype.inoutSplash=function(){
 	}.bind(this));
 };
 
-function APIUser(id,name,ip,rom,ua,sessionId){
+function APIUser(id,name,ip,rom,ua,xff,sessionId){
 	User.apply(this,arguments);
 	this.sessionId=sessionId;
 	
@@ -729,9 +703,9 @@ function getUsersData(){
 	return p;
 }
 function addSocketUser(socket,lastid){
-	var zombie=dead.filter(function(x){return x.socket && x.socket.id==lastid})[0];
+	var zombie=dead.filter(function(x){return x.socket && x.socket.id===lastid})[0];
 	var user, zombie_rom;
-	user=users.filter(function(x){return x.socket && x.socket.id==lastid && x.timerid})[0];
+	user=users.filter(function(x){return x.socket && x.socket.id===lastid && x.timerid})[0];
 	if(user && !user.rom){
 		//音もなく復帰
 		clearTimeout(user.timerid);
@@ -750,11 +724,23 @@ function addSocketUser(socket,lastid){
 		zombie.rom=true;
 	}else{
 		//新規
+		var xffstr=socket.handshake.headers["x-forwarded-for"];
+		var xff=[], ip=socket.handshake.address.address;
+		if(xffstr){
+			xff=xffstr.split(",").map(function(ip){
+				return ip.replace(/\s/g,"");
+			});
+			if(settings.USING_REVERSE_PROXY){
+				//リバースプロキシを使っている場合はipが127.0.0.1になるはずなので捨てる
+				ip=xff.pop();
+			}
+		}
 		user=new SocketUser(users_next,null,
-			  socket.handshake.address.address,true,
-			  socket.handshake.headers["user-agent"],
-			  socket
-			  );
+			ip,true,
+			socket.handshake.headers["user-agent"],
+			xff,
+			socket
+		);
 	}
 	users.push(user);
 	var uob=user.getUserObj();
@@ -889,9 +875,20 @@ function api(mode,req,res){
 			if(users.filter(function(x){return x.sessionId==sessionId}).length)sessionId=null;
 		}
 		//ROMに追加
+		var ip=req.connection.remoteAddress, xff=[], xffstr;
+		if(xffstr=req.header("x-forwarded-for")){
+			xff=xffstr.slice(",").map(function(ip){
+				return ip.replace(/\s/g,"");
+			});
+			if(settings.USING_REVERSE_PROXY){
+				//127
+				ip=xff.pop();
+			}
+		}
 		user=new APIUser(users_next,null,
-			req.connection.remoteAddress,true,
+			ip,true,
 			req.header("User-Agent"),
+			xff,
 			sessionId);
 		var socket=getAvailableSocket();
 		var uob=user.getUserObj();
