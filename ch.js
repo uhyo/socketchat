@@ -877,7 +877,7 @@ function api(mode,req,res){
 		//ROMに追加
 		var ip=req.connection.remoteAddress, xff=[], xffstr;
 		if(xffstr=req.header("x-forwarded-for")){
-			xff=xffstr.slice(",").map(function(ip){
+			xff=xffstr.split(",").map(function(ip){
 				return ip.replace(/\s/g,"");
 			});
 			if(settings.USING_REVERSE_PROXY){
