@@ -41,7 +41,7 @@ module Chat{
 		constructor(userData:ChatUserData,connection:ChatConnection,receiver:ChatReceiver){
 			super(userData,connection,receiver,null,false);
 		}
-		initView(userData:ChatUserData,connection:ChatConnection,receiver:ChatReceiver,process:ChatProcess,com:bool):void{
+		initView(userData:ChatUserData,connection:ChatConnection,receiver:ChatReceiver,process:ChatProcess,com:boolean):void{
 			this.container=document.createElement("div");
 			//bodyへ
 			document.body.appendChild(this.container);
@@ -118,7 +118,7 @@ module Chat{
 				function formValue(name:string):string{
 					return (<HTMLInputElement>form.elements[name]).value;
 				}
-				function formChecked(name:string):bool{
+				function formChecked(name:string):boolean{
 					return (<HTMLInputElement>form.elements[name]).checked;
 				}
 			},false);
@@ -188,6 +188,18 @@ module Chat{
 					label.appendChild(document.createTextNode("新しいほうから検索"));
 				}));
 			}));
+				//変更されたらラジオボックスを入れたりする処理
+				fs.addEventListener("change",(e:Event)=>{
+					//先取りinput
+					var inp=<HTMLInputElement>e.target;
+					if(!/^input$/i.test(inp.tagName))return;	//違う
+					if(inp.type==="radio")return;	//チェックボックス自身は気にしない
+					//ラジオボックスを探す
+					var radio=<HTMLInputElement>(<XPathEvaluator>document).evaluate('ancestor-or-self::p/descendant::input[@type="radio"]',inp,null,XPathResult.ANY_UNORDERED_NODE_TYPE,null).singleNodeValue;
+					if(radio){
+						radio.checked=true;
+					}
+				},false);
 			return fs;
 		}
 		makeQueryPart():HTMLFieldSetElement{
@@ -332,7 +344,7 @@ module Chat{
 	function makeInput(callback:(el:HTMLInputElement)=>void){
 		return makeEl("input",(el)=>callback(<HTMLInputElement>el));
 	}
-	function makeInputAndLabel(text:string,follow:bool,callback:(el:HTMLInputElement)=>void){
+	function makeInputAndLabel(text:string,follow:boolean,callback:(el:HTMLInputElement)=>void){
 		return makeEl("label",(label)=>{
 			if(follow){
 				label.appendChild(makeInput(callback));

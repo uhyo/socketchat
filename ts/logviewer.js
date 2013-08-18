@@ -4,8 +4,10 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
+/// <reference path="client.ts"/>
 var Chat;
 (function (Chat) {
+    //userList
     var LogViewerFactory = (function (_super) {
         __extends(LogViewerFactory, _super);
         function LogViewerFactory() {
@@ -49,6 +51,7 @@ var Chat;
     })();
     Chat.LogViewer = LogViewer;
 
+    //ビュー
     var LogViewerView = (function (_super) {
         __extends(LogViewerView, _super);
         function LogViewerView(userData, connection, receiver) {
@@ -58,24 +61,30 @@ var Chat;
             var _this = this;
             this.container = document.createElement("div");
 
+            //bodyへ
             document.body.appendChild(this.container);
             this.container.appendChild((function (h1) {
                 h1.textContent = "Chalog Viewer";
                 return h1;
             })(document.createElement("h1")));
 
+            //
             this.qf = new FindQueryForm();
             this.container.appendChild(this.qf.getContainer());
 
+            //クエリが発行されたら・・・?
             this.qf.onQuery(function (query) {
                 _this.connection.send("query", query);
             });
 
+            //ログ表示部分
             this.logFlow = new Chat.ChatLogFlow(userData, receiver);
             this.container.appendChild(this.logFlow.getContainer());
             this.logFlow.refreshSettings();
 
+            //チャネルをクリックしたら?
             this.logFlow.event.on("focusChannel", function (channel) {
+                //チャットを開く
                 var a = document.createElement("a");
                 a.href = "/#" + channel;
                 a.target = "_blank";
@@ -86,11 +95,14 @@ var Chat;
     })(Chat.ChatView);
     Chat.LogViewerView = LogViewerView;
 
+    //検索条件フォーム
     var FindQueryForm = (function (_super) {
         __extends(FindQueryForm, _super);
         function FindQueryForm() {
             var _this = this;
             _super.call(this);
+            //private event:EventEmitter;
+            //private container:HTMLFormElement;
             this.query = null;
             this.container = document.createElement("form");
             this.container.appendChild(this.makeRangePart());
@@ -100,11 +112,13 @@ var Chat;
                 var form = e.target;
                 e.preventDefault();
 
+                //クエリつくる
                 var query = {};
                 query.value = Number(formValue("page_number"));
                 query.page = 0;
                 var range = getRadioValue(form, "range");
                 if (range === "time") {
+                    //時間
                     var of = (new Date()).getTimezoneOffset() * 60000;
                     query.starttime = new Date((new Date(formValue("starttime"))).getTime() + of);
                     query.endtime = new Date((new Date(formValue("endtime"))).getTime() + of);
@@ -112,6 +126,7 @@ var Chat;
                 if (formChecked("use_name_or_ip")) {
                     var noi = getRadioValue(form, "name_or_ip");
                     if (noi === "name") {
+                        //名前
                         query.name = formValue("name_or_ip_value");
                     } else if (noi === "ip") {
                         query.ip = formValue("name_or_ip_value");
@@ -124,8 +139,10 @@ var Chat;
                     query.channel = formValue("channel_value");
                 }
 
+                //現在のクエリとして保存
                 _this.query = query;
 
+                //クエリ発行
                 _this.event.emit("query", query);
 
                 function formValue(name) {
@@ -136,6 +153,7 @@ var Chat;
                 }
             }, false);
         }
+        //ページ移動してクエリ発行
         FindQueryForm.prototype.movePage = function (inc) {
             if (!this.query)
                 return;
@@ -203,6 +221,22 @@ var Chat;
                     label.appendChild(document.createTextNode("新しいほうから検索"));
                 }));
             }));
+
+            //変更されたらラジオボックスを入れたりする処理
+            fs.addEventListener("change", function (e) {
+                //先取りinput
+                var inp = e.target;
+                if (!/^input$/i.test(inp.tagName))
+                    return;
+                if (inp.type === "radio")
+                    return;
+
+                //ラジオボックスを探す
+                var radio = (document).evaluate('ancestor-or-self::p/descendant::input[@type="radio"]', inp, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
+                if (radio) {
+                    radio.checked = true;
+                }
+            }, false);
             return fs;
         };
         FindQueryForm.prototype.makeQueryPart = function () {
@@ -257,13 +291,16 @@ var Chat;
                     }));
                 }));
 
+                //変更されたらチェックボックスを入れたりする処理
                 fs.addEventListener("change", function (e) {
+                    //先取りinput
                     var inp = e.target;
                     if (!/^input$/i.test(inp.tagName))
                         return;
                     if (inp.type === "checkbox")
                         return;
 
+                    //チェックボックスを探す
                     var checkbox = (document).evaluate('ancestor-or-self::p/descendant::input[@type="checkbox"]', inp, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
                     if (checkbox) {
                         checkbox.checked = inp.value !== "";
@@ -306,6 +343,7 @@ var Chat;
                         output.name = "thispage";
                         output.value = "";
 
+                        //イベント
                         _this.event.on("query", function (q) {
                             output.value = q.page + "ページ目";
                         });
@@ -324,14 +362,18 @@ var Chat;
     })(Chat.ChatUICollection.UIObject);
     Chat.FindQueryForm = FindQueryForm;
 
+    //拡張Receiver（resultをうけとれる）
     var FindReceiver = (function (_super) {
         __extends(FindReceiver, _super);
+        //private event:EventEmitter;
         function FindReceiver(connection) {
             _super.call(this, connection, null);
 
+            //追加
             connection.on("result", this.result.bind(this));
         }
         FindReceiver.prototype.result = function (data) {
+            //ログを初期化する感じで!
             this.event.emit("loginit", data.logs);
         };
         return FindReceiver;
