@@ -736,7 +736,7 @@ module Chat{
 				attribute=":not("+attribute+")";
 			}
 
-			return "#"+this.logContainer.id+" > p.log"+attribute;
+			return ".logbox > p.log"+attribute;
 		}
 		private createDisCSSRule(attribute:string, temporal:boolean,anti:boolean):string{
 			var selector:string=this.createDisCSSSelector(attribute,temporal,anti);

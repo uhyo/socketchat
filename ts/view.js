@@ -744,7 +744,7 @@ var Chat;
                 attribute = ":not(" + attribute + ")";
             }
 
-            return "#" + this.logContainer.id + " > p.log" + attribute;
+            return ".logbox > p.log" + attribute;
         };
         ChatLogDisManager.prototype.createDisCSSRule = function (attribute, temporal, anti) {
             var selector = this.createDisCSSSelector(attribute, temporal, anti);
