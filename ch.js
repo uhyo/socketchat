@@ -503,7 +503,7 @@ User.prototype.setIpXff = function(ip, xff){
 		this.ip = ip;
 		this.xff=[];
 	}else{
-		this.xff=xffstr.split(",").map(function(ip){
+		this.xff=xff.split(",").map(function(ip){
 			return ip.replace(/\s/g,"");
 		});
 		if(settings.USING_REVERSE_PROXY){
