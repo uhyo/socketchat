@@ -78,9 +78,11 @@ app.get('/chalog', function(req, res){
 		res.send(resobj);
 	});
 });
+/*
 app.get(/^\/api\/(.*)$/, function(req,res){
 	api(req.params[0],req,res);
 });
+*/
 app.get('/show', function(req, res){
 	res.send({
 		users: users,
