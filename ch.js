@@ -243,9 +243,9 @@ function forEachTextLogobj(logobj,callback){
 }
 
 
-function User(id,name,ip,rom,ua,xff){
+function User(id,name,rom,ua){
 	//xff: [ip,ip,...]
-	this.id=id,this.name=name,this.ip=ip,this.rom=rom,this.ua=ua,this.xff=xff;
+	this.id=id,this.name=name,this.rom=rom,this.ua=ua;
 	
 	this.ss=[];	//最近の発言
 }
@@ -498,6 +498,20 @@ User.prototype.inoutSplash=function(){
 		x==this || x.userinfos.push({"name":"inout","user":obj});
 	}.bind(this));*/
 };
+User.prototype.setIpXff = function(ip, xff){
+	if(!xff){
+		this.ip = ip;
+		this.xff=[];
+	}else{
+		this.xff=xffstr.split(",").map(function(ip){
+			return ip.replace(/\s/g,"");
+		});
+		if(settings.USING_REVERSE_PROXY){
+			//127
+			this.ip=this.xff.pop();
+		}
+	}
+};
 //何か探してあげる
 function findlog(query,callback){
 	if(!query){
@@ -572,7 +586,7 @@ User.prototype.delUserSplash=function(){
 };
 
 
-function SocketUser(id,name,ip,rom,ua,xff,socket){
+function SocketUser(id,name,rom,ua,socket){
 	User.apply(this,arguments);
 	this.socket=socket;
 	
@@ -588,7 +602,7 @@ SocketUser.prototype.inoutSplash=function(){
 	}.bind(this));
 };
 
-function APIUser(id,name,ip,rom,ua,xff,sessionId){
+function APIUser(id,name,rom,ua,sessionId){
 	User.apply(this,arguments);
 	this.sessionId=sessionId;
 	
@@ -720,29 +734,18 @@ function addSocketUser(socket,lastid){
 	if(zombie){
 		user=zombie;
 		zombie.socket=socket;
-		zombie.ip=socket.handshake.address.address;
+		zombie.setIpXff(socket.handshake.address.address, socket.handshake.headers["x-forwarded-for"]);
 		zombie.ua=socket.handshake.headers["user-agent"];
 		zombie_rom=zombie.rom;
 		zombie.rom=true;
 	}else{
 		//新規
-		var xffstr=socket.handshake.headers["x-forwarded-for"];
-		var xff=[], ip=socket.handshake.address.address;
-		if(xffstr){
-			xff=xffstr.split(",").map(function(ip){
-				return ip.replace(/\s/g,"");
-			});
-			if(settings.USING_REVERSE_PROXY){
-				//リバースプロキシを使っている場合はipが127.0.0.1になるはずなので捨てる
-				ip=xff.pop();
-			}
-		}
 		user=new SocketUser(users_next,null,
-			ip,true,
+			true,
 			socket.handshake.headers["user-agent"],
-			xff,
 			socket
 		);
+		user.setIpXff(socket.handshake.address.address, socket.handshake.headers["x-forwarded-for"]);
 	}
 	users.push(user);
 	var uob=user.getUserObj();
@@ -877,21 +880,11 @@ function api(mode,req,res){
 			if(users.filter(function(x){return x.sessionId==sessionId}).length)sessionId=null;
 		}
 		//ROMに追加
-		var ip=req.connection.remoteAddress, xff=[], xffstr;
-		if(xffstr=req.header("x-forwarded-for")){
-			xff=xffstr.split(",").map(function(ip){
-				return ip.replace(/\s/g,"");
-			});
-			if(settings.USING_REVERSE_PROXY){
-				//127
-				ip=xff.pop();
-			}
-		}
 		user=new APIUser(users_next,null,
-			ip,true,
+			true,
 			req.header("User-Agent"),
-			xff,
 			sessionId);
+		user.setIpXff(req.connection.remoteAddress, req.header("x-forwarded-for"));
 		var socket=getAvailableSocket();
 		var uob=user.getUserObj();
 		socket && (socket.emit("newuser",uob), socket.broadcast.to("useruser").emit("newuser",uob));
