@@ -19,6 +19,7 @@ module Chat{
 		constructor(public channel:string,private com:boolean,public connection:string){
 			//子かどうかの判定入れる
 			this.child= !!sessionStorage.getItem("independent_flag");
+			if(channel) document.title="#"+channel+" - "+document.title;
 			//ready?
 			document.addEventListener("DOMContentLoaded",(e:Event)=>{
 				this.domReady=true;

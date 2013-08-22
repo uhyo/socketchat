@@ -26,6 +26,8 @@ var Chat;
             this.domReady = false;
             //子かどうかの判定入れる
             this.child = !!sessionStorage.getItem("independent_flag");
+            if (channel)
+                document.title = "#" + channel + " - " + document.title;
 
             //ready?
             document.addEventListener("DOMContentLoaded", function (e) {
