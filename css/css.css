@@ -45,6 +45,9 @@ form.infobar{
 .logbox p.syslog .nameseparator{
 	color:#0000ff !important;
 }
+.logbox p .nameseparator{
+	unicode-bidi: -webkit-isolate;
+}
 .logbox span.main span.info{
 	font-size:smaller;
 	color:#cccccc;
@@ -66,9 +69,6 @@ form.infobar{
 }
 .logbox span.main span.channels:hover span.channel:hover ~ span.channel{
 	text-decoration:none;
-}
-.logbox span.main bdi{
-	display:inline-block;
 }
 .logbox .name{
 	font-weight:bold;
