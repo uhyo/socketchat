@@ -19,7 +19,6 @@ module Chat{
 		constructor(public channel:string,private com:boolean,public connection:string){
 			//子かどうかの判定入れる
 			this.child= !!sessionStorage.getItem("independent_flag");
-			if(channel) document.title="#"+channel+" - "+document.title;
 			//ready?
 			document.addEventListener("DOMContentLoaded",(e:Event)=>{
 				this.domReady=true;
@@ -49,7 +48,7 @@ module Chat{
 					//process作る
 					var process:ChatProcess=this.makeProcess(connection,receiver,userData);
 					//view
-					var view:ChatView=this.makeView(connection,receiver,userData,process);
+					var view:ChatView=this.makeView(connection,receiver,userData,process,this.channel);
 					//api
 					var api:ChatClientAPI=this.makeAPI(connection,receiver,userData,process,view);
 					//作る
@@ -90,8 +89,8 @@ module Chat{
 		makeProcess(connection:ChatConnection,receiver:ChatReceiver,userData:ChatUserData):ChatProcess{
 			return new ChatProcess(connection,receiver,userData,this.channel);
 		}
-		makeView(connection:ChatConnection,receiver:ChatReceiver,userData:ChatUserData,process:ChatProcess):ChatView{
-			return new ChatView(userData,connection,receiver,process,this.com);
+		makeView(connection:ChatConnection,receiver:ChatReceiver,userData:ChatUserData,process:ChatProcess,channel:string):ChatView{
+			return new ChatView(userData,connection,receiver,process,this.com,this.channel);
 		}
 		makeAPI(connection:ChatConnection,receiver:ChatReceiver,userData:ChatUserData,process:ChatProcess,view:ChatView):ChatClientAPI{
 			return new ChatClientAPI(userData,connection,receiver,process,view);

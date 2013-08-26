@@ -9,15 +9,15 @@ var Chat;
     //チャット外観の全体
     var ChatView = (function () {
         //protected
-        function ChatView(userData, connection, receiver, process, com) {
+        function ChatView(userData, connection, receiver, process, com, channel) {
             this.userData = userData;
             this.connection = connection;
             this.receiver = receiver;
             this.process = process;
-            this.initView(userData, connection, receiver, process, com);
+            this.initView(userData, connection, receiver, process, com, channel);
         }
         //表示部分的な?
-        ChatView.prototype.initView = function (userData, connection, receiver, process, com) {
+        ChatView.prototype.initView = function (userData, connection, receiver, process, com, channel) {
             this.container = document.createElement("div");
 
             //コンテナはbodyに入れる
@@ -44,7 +44,7 @@ var Chat;
             if (com) {
                 this.ui = new ChatCmdUI(userData, receiver, process, this, this.dis);
             } else {
-                this.ui = new ChatNormalUI(userData, receiver, process, this, this.dis);
+                this.ui = new ChatNormalUI(userData, receiver, process, this, this.dis, channel);
             }
 
             //HottoMottoボタンを初期化
@@ -80,6 +80,9 @@ var Chat;
                     receiver.motto({});
                 }
             }, false);
+            if (channel) {
+                document.title = "#" + channel + " - " + document.title;
+            }
         };
 
         //設定がされたので反映させる
@@ -367,7 +370,7 @@ var Chat;
                     //すでに返信フォームが開いている
                     return;
                 }
-                var comForm = new ChatUICollection.CommentForm(receiver, true);
+                var comForm = new ChatUICollection.CommentForm(receiver, true, null);
                 var cont = comForm.getContainer();
 
                 //最初にマークつける
@@ -1444,7 +1447,7 @@ var Chat;
     //発言などのUI部分
     var ChatNormalUI = (function (_super) {
         __extends(ChatNormalUI, _super);
-        function ChatNormalUI(userData, receiver, process, view, dis) {
+        function ChatNormalUI(userData, receiver, process, view, dis, channel) {
             var _this = this;
             _super.call(this, userData, receiver, process, view);
             this.container = document.createElement("div");
@@ -1456,7 +1459,7 @@ var Chat;
             this.container.appendChild(this.inoutForm.getContainer());
 
             //次に発言フォーム
-            this.commentForm = new ChatUICollection.CommentForm(receiver, false);
+            this.commentForm = new ChatUICollection.CommentForm(receiver, false, channel);
             this.container.appendChild(this.commentForm.getContainer());
 
             //操作に対応する
@@ -1471,7 +1474,7 @@ var Chat;
                 _this.commentForm.event.emit("afterChangeChannel", false);
             });
             this.commentForm.event.on("afterChangeChannel", function (on) {
-                if (on && _this.userData.channelMode == 0) {
+                if (on) {
                     dis.addFocusOutlaw(true);
                 } else {
                     dis.removeFocusOutlaw(true);
@@ -1577,7 +1580,7 @@ var Chat;
         //入退室フォーム
         var CommentForm = (function (_super) {
             __extends(CommentForm, _super);
-            function CommentForm(receiver, canselable) {
+            function CommentForm(receiver, canselable, channel) {
                 var _this = this;
                 //canselable: キャンセルボタンがつく
                 _super.call(this);
@@ -1613,6 +1616,8 @@ var Chat;
                     input.type = "text";
                     input.size = 10;
                     input.disabled = us.rom;
+                    if (channel)
+                        input.value = channel;
                     input.addEventListener("change", function (e) {
                         _this.event.emit("changeChannel", input.value);
                     }, false);

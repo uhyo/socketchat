@@ -61,7 +61,7 @@ var Chat;
                     var process = _this.makeProcess(connection, receiver, userData);
 
                     //view
-                    var view = _this.makeView(connection, receiver, userData, process);
+                    var view = _this.makeView(connection, receiver, userData, process, _this.channel);
 
                     //api
                     var api = _this.makeAPI(connection, receiver, userData, process, view);
@@ -104,8 +104,8 @@ var Chat;
         ChatClientFactory.prototype.makeProcess = function (connection, receiver, userData) {
             return new Chat.ChatProcess(connection, receiver, userData, this.channel);
         };
-        ChatClientFactory.prototype.makeView = function (connection, receiver, userData, process) {
-            return new Chat.ChatView(userData, connection, receiver, process, this.com);
+        ChatClientFactory.prototype.makeView = function (connection, receiver, userData, process, channel) {
+            return new Chat.ChatView(userData, connection, receiver, process, this.com, this.channel);
         };
         ChatClientFactory.prototype.makeAPI = function (connection, receiver, userData, process, view) {
             return new ChatClientAPI(userData, connection, receiver, process, view);
