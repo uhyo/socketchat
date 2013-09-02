@@ -151,7 +151,7 @@ filters.push(function(logobj,user){
 	}
 });
 //hito-maru-gogo
-/*filters.push(function(logobj){
+filters.push(function(logobj){
 	var tms=["まる","ひと","ふた","さん","よん","GO!","ろく","なな","はち","きゅう"];
 	var date=new Date(logobj.time);
 	if(date.getMinutes()==55){
@@ -160,7 +160,8 @@ filters.push(function(logobj,user){
 		var add={"name":"span","attributes":{},"style":{"font-size":"2em"},"child":com};
 		logobj.comment=pushLogobj(logobj.comment,add);
 	}
-});*/
+});
+/*
 //ｼｬﾍﾞｯﾀｰ
 filters.push(function(logobj){
 	var date=new Date(logobj.time);
@@ -213,7 +214,7 @@ filters.push(function(logobj){
 			return katakanas;
 		});
 	}
-});
+});*/
 function pushLogobj(to,logobj){
 	if(typeof to=="object"){
 		if(to instanceof Array){
