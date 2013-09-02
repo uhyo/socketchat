@@ -852,7 +852,7 @@ module Chat{
 				thumb: true,
 				url: {
 					image: "http://g.81.la/",
-					thumb: "http://g.81.la/thumbnail.php?id=",
+					thumb: "http://g.81.la/thumb/",
 					ext: false,
 				},
 				text: {
