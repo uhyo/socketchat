@@ -165,12 +165,12 @@ var Chat;
                         name: "log"
                     },
                     {
-                        url: "/apiclient",
-                        name: "API"
-                    },
-                    {
                         url: "/com",
                         name: "com"
+                    },
+                    {
+                        url: "/smp",
+                        name: "SMP"
                     }
                 ]
             ];
