@@ -1116,6 +1116,7 @@ var Chat;
                     if (res) {
                         if (allowed_tag.indexOf(res[1]) < 0) {
                             node = node.splitText(res[0].length);
+                            continue;
                         }
 
                         //閉じるべきタグを探す
