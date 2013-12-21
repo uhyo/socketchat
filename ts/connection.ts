@@ -2,10 +2,10 @@
 declare var io:any;
 module Chat{
 	export interface EventEmitter{
-		addListener:(event:string,listener:(...args:any[])=>any)=>void;
-		on:(event:string,listener:(...args:any[])=>any)=>void;
-		once:(event:string,listener:(...args:any[])=>any)=>void;
-		removeListener:(event:string,listener:(...args:any[])=>any)=>void;
+		addListener:(event:string,listener:Function)=>void;
+		on:(event:string,listener:Function)=>void;
+		once:(event:string,listener:Function)=>void;
+		removeListener:(event:string,listener:Function)=>void;
 		removeAllListeners:(event?:string)=>void;
 		listeners:(event:string)=>any;
 		emit:(event:string,...args:any[])=>void;
@@ -36,7 +36,7 @@ module Chat{
 			//lastid: 前回のセッションID（自動復帰可能）, channel:チャネル
 		}
 		//コネクション確立したら
-		onConnection(func:(...args:any[])=>any):void{
+		onConnection(func:Function):void{
 			this.event.on("connect",func);
 		}
 		//サーバーからログ探す
@@ -63,13 +63,13 @@ module Chat{
 			this.connection.emit.apply(this.connection,[event].concat(args));
 		}
 		//サーバーから
-		on(event:string,listener:(...args:any[])=>any):void{
+		on(event:string,listener:Function):void{
 			this.connection.on(event,listener);
 		}
-		once(event:string,listener:(...args:any[])=>any):void{
+		once(event:string,listener:Function):void{
 			this.connection.once(event,listener);
 		}
-		removeListener(event:string,listener:(...args:any[])=>any){
+		removeListener(event:string,listener:Function){
 			this.connection.removeListener(event,listener);
 		}
 		removeAllListeners(event?:string){
@@ -221,21 +221,21 @@ module Chat{
 			this.connection.emit.apply(this.connection,[event].concat(args));
 		}
 		//サーバーから
-		on(event:string,listener:(...args:any[])=>any):void{
+		on(event:string,listener:Function):void{
 			this.requestId++;	//新しいID
 			var id=this.requestId;	//現在のIDメモ
 			//WeakMapが欲しいけど放置
 			this.push("request",[event,this.requestId]);
 			this.connection.on(event,listener);
 		}
-		once(event:string,listener:(...args:any[])=>any):void{
+		once(event:string,listener:Function):void{
 			this.requestId++;	//新しいID
 			var id=this.requestId;	//現在のIDメモ
 			//WeakMapが欲しいけど放置
 			this.push("request",[event,this.requestId]);
 			this.connection.once(event,listener);
 		}
-		removeListener(event:string,listener:(...args:any[])=>any){
+		removeListener(event:string,listener:Function){
 			this.connection.removeListener(event,listener);
 		}
 		removeAllListeners(event?:string){
@@ -283,12 +283,12 @@ module Chat{
 			//内部利用のEmitter
 			private event:EventEmitter;
 			//ハンドラとリクエストIDを対応付けるマップ
-			private requestMap:{ [index:number]:(...args:any[])=>any; };
+			private requestMap:{ [index:number]:Function; };
 			//hub:親のハブ
 			//port:この子どもに送るためのMessagePort
 			constructor(private hub:Hub,private port:MessagePort,private closecallback?:()=>void){
 				this.event=getEventEmitter();
-				this.requestMap=<{ [index:number]:(...args:any[])=>any; }>{};
+				this.requestMap=<{ [index:number]:Function; }>{};
 			}
 			//ポートを使用可能にする
 			init():void{
@@ -456,13 +456,13 @@ module Chat{
 			this.connection.send("find",data,callback);
 		}
 		//イベント操作用
-		on(event:string,listener:(...args:any[])=>any):void{
+		on(event:string,listener:Function):void{
 			this.event.on(event,listener);
 		}
-		once(event:string,listener:(...args:any[])=>any):void{
+		once(event:string,listener:Function):void{
 			this.event.once(event,listener);
 		}
-		removeListener(event:string,listener:(...args:any[])=>any){
+		removeListener(event:string,listener:Function){
 			this.event.removeListener(event,listener);
 		}
 		removeAllListeners(event?:string){

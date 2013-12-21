@@ -2724,7 +2724,7 @@ module Chat{
 	//コマンドラインみたいなUI
 	export class ChatCmdUI extends ChatUI{
 		private console:ChatUICollection.Console;
-		private userinfoHandle:(...args:any[])=>any;
+		private userinfoHandle:Function;
 		constructor(userData:ChatUserData,receiver:ChatReceiver,process:ChatProcess,view:ChatView,dis:ChatLogDisManager){
 			super(userData,receiver,process,view);
 			this.console=new ChatUICollection.Console(userData,receiver,process,this);

@@ -1,3 +1,7 @@
+/// <reference path="definition.ts"/>
+/// <reference path="connection.ts"/>
+/// <reference path="process.ts"/>
+/// <reference path="view.ts"/>
 var Chat;
 (function (Chat) {
     //枠的な?
@@ -26,8 +30,6 @@ var Chat;
             this.domReady = false;
             //子かどうかの判定入れる
             this.child = !!sessionStorage.getItem("independent_flag");
-            if (channel)
-                document.title = "#" + channel + " - " + document.title;
 
             //ready?
             document.addEventListener("DOMContentLoaded", function (e) {
@@ -37,6 +39,7 @@ var Chat;
         ChatClientFactory.prototype.getChat = function (callback) {
             var _this = this;
             if (this.chat) {
+                //既にチャットを作ったならそれをあげる
                 if (callback) {
                     callback(this.chat);
                 }
@@ -49,6 +52,7 @@ var Chat;
                 //connection作る
                 var connection = _this.makeConnection(userData);
                 connection.onConnection(function (sessionid) {
+                    //reg
                     if (sessionid) {
                         userData.lastid = sessionid;
                         userData.save();
@@ -81,18 +85,18 @@ var Chat;
             }
         };
         ChatClientFactory.prototype.makeUserData = function () {
-            var ud = new Chat.ChatUserData();
+            var ud = new Chat.ChatUserData;
             ud.load();
             return ud;
         };
         ChatClientFactory.prototype.makeConnection = function (userData) {
             var connection;
             if (this.child) {
-                connection = new Chat.ChildConnection();
+                connection = new Chat.ChildConnection;
             } else if (this.connection === "socket") {
-                connection = new Chat.SocketConnection();
+                connection = new Chat.SocketConnection;
             } else {
-                connection = new Chat.ChatConnection();
+                connection = new Chat.ChatConnection; //実体ないよ！
             }
             connection.initConnection(settings);
             connection.register(userData.lastid, this.channel);
@@ -153,7 +157,7 @@ var Chat;
         ChatClientAPI.prototype.say = function (comment, response, channel) {
             if (!channel)
                 channel = null;
-else if ("string" === typeof channel) {
+            else if ("string" === typeof channel) {
                 channel = [channel];
             } else if (!Array.isArray(channel)) {
                 throw null;

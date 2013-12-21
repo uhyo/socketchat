@@ -24,8 +24,7 @@ var Chat;
             this.dischannel = disc ? JSON.parse(disc) : [];
             var cmd = localStorage.getItem("cmd");
             this.cmd = cmd ? JSON.parse(cmd) : {
-                height: "30em",
-                syschar: "\\"
+                height: "30em", syschar: "\\"
             };
 
             //autoin
@@ -91,6 +90,7 @@ var Chat;
             //サーバーに送る
             this.connection.send("inout", data);
 
+            //名前保存
             if (data.name) {
                 this.userData.name = data.name;
                 this.userData.save();
@@ -100,6 +100,7 @@ var Chat;
 
         //コメントする
         ChatProcess.prototype.comment = function (data) {
+            //チャネル追加
             if (this.channel) {
                 var ch = data.channel ? data.channel : [];
                 if (ch.indexOf(this.channel) < 0) {
@@ -119,7 +120,7 @@ var Chat;
         //チャネルウィンドウを開く
         ChatProcess.prototype.openChannel = function (channelname, closecallback) {
             var _this = this;
-            sessionStorage.setItem("independent_flag", "true");
+            sessionStorage.setItem("independent_flag", "true"); //子ウィンドウに大して子であると伝える
             var win = window.open(location.pathname + "#" + channelname);
 
             //まず通信を確立する

@@ -4,11 +4,12 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
+/// <reference path="definition.ts"/>
 var Chat;
 (function (Chat) {
     //EventEmitter constructor
     function getEventEmitter() {
-        return new io.EventEmitter();
+        return new io.EventEmitter;
     }
     Chat.getEventEmitter = getEventEmitter;
     var ChatConnection = (function () {
@@ -97,7 +98,7 @@ var Chat;
             //connectionはSocket.ioのコネクション
             this.connection = io.connect(settings.SOCKET_HOST_NAME || (location.protocol + "//" + location.host));
             this.connection.once("connect", function () {
-                _this.event.emit("connect", (_this.connection).socket.sessionid);
+                _this.event.emit("connect", _this.connection.socket.sessionid);
             });
         };
         SocketConnection.prototype.register = function (lastid, channel, mode) {
@@ -142,6 +143,7 @@ var Chat;
             window.addEventListener("message", function (ev) {
                 var d = ev.data;
 
+                //通信を確立する（MessagePortをもらう）
                 if (d.name === "init") {
                     //portsに通信用のMessagePortが入っている
                     _this.port = ev.ports[0];
@@ -233,7 +235,7 @@ var Chat;
         //ポートを初期化する
         ChildConnection.prototype.initPort = function (port) {
             var _this = this;
-            port.start();
+            port.start(); //通信開始
             port.addEventListener("message", function (ev) {
                 var d = ev.data.args[0];
                 if (ev.data.name === "handle") {
@@ -263,7 +265,7 @@ var Chat;
 
         //サーバーから
         ChildConnection.prototype.on = function (event, listener) {
-            this.requestId++;
+            this.requestId++; //新しいID
             var id = this.requestId;
 
             //WeakMapが欲しいけど放置
@@ -271,7 +273,7 @@ var Chat;
             this.connection.on(event, listener);
         };
         ChildConnection.prototype.once = function (event, listener) {
-            this.requestId++;
+            this.requestId++; //新しいID
             var id = this.requestId;
 
             //WeakMapが欲しいけど放置
@@ -371,11 +373,9 @@ var Chat;
                 connection.findLog({
                     channel: channel
                 }, function (logs) {
-                    _this.sendEvent("init", null, [
-                        {
+                    _this.sendEvent("init", null, [{
                             logs: logs
-                        }
-                    ]);
+                        }]);
                 });
 
                 //ユーザー一覧をとってくる
@@ -412,6 +412,7 @@ var Chat;
                     }
                 }
 
+                //data.name:イベント名
                 if (event === "unload") {
                     //実体が閉じられた（役目終了）
                     this.port.close();
@@ -422,6 +423,7 @@ var Chat;
                     return;
                 }
 
+                //子どもからハンドル要求
                 if (event === "request") {
                     //event(string),requestid(number) そのイベントのID
                     var e = this.event, evname = args[0], requestid = args[1];
@@ -442,6 +444,7 @@ var Chat;
                     return;
                 }
 
+                //ハンドルしたリクエストを取り消す
                 if (event === "norequest") {
                     var evname = args[0], requestid = args[1];
                     var func = this.requestMap[requestid];
@@ -453,6 +456,7 @@ var Chat;
                     return;
                 }
 
+                //サーバーへ送りたい
                 if (event === "message") {
                     this.hub.send.apply(this.hub, args);
                     return;
@@ -574,6 +578,7 @@ var Chat;
 
         //最初のログを送ってきた
         ChatReceiver.prototype.loginit = function (data) {
+            //一番古いログをとる
             if (data.logs) {
                 this.oldest_time = new Date(data.logs[data.logs.length - 1].time);
             }

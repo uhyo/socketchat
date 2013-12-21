@@ -102,15 +102,15 @@ module Chat{
 		constructor(private userData:ChatUserData,private connection:ChatConnection,private receiver:ChatReceiver,private process:ChatProcess,private view:ChatView){
 		}
 		//イベント操作用
-		on(event:string,listener:(...args:any[])=>any):void{
+		on(event:string,listener:Function):void{
 			if(this.acceptedEvents.indexOf(event)===-1)return;
 			this.receiver.on(event,listener);
 		}
-		once(event:string,listener:(...args:any[])=>any):void{
+		once(event:string,listener:Function):void{
 			if(this.acceptedEvents.indexOf(event)===-1)return;
 			this.receiver.once(event,listener);
 		}
-		removeListener(event:string,listener:(...args:any[])=>any){
+		removeListener(event:string,listener:Function){
 			if(this.acceptedEvents.indexOf(event)===-1)return;
 			this.receiver.removeListener(event,listener);
 		}
