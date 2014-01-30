@@ -1133,7 +1133,7 @@ module Chat{
 						continue;
 					}
 					//チャネルリンク
-					res=node.nodeValue.match(/^(\s*)#(\S+)/);
+					res=node.nodeValue.match(/^(\s*\.?)#(\S+)/);
 					if(res){
 						if(res[1]){
 							//前の空白はいらないのでそのまま流す
@@ -1148,19 +1148,14 @@ module Chat{
 								return a.length-b.length;
 							});
 						}
-						while(i--){
-							var c=chs[i];
-							if(res[2].slice(0,c.length)===c){
-								//前方一致;この部分がチャネル
-								var span=this.makeChannelSpan(c);
-								//チャネル部分を分離
-								node=node.splitText(c.length+1);
-								node.parentNode.replaceChild(span,node.previousSibling);
-								//残りは何もない。流す
-								node=node.splitText(res[2].length-c.length);
-								break;
-							}
-						}
+						//属していないチャネルに対してもリンクできるようにした
+						//前方一致;この部分がチャネル
+						var span=this.makeChannelSpan(res[2]);
+						//チャネル部分を分離
+						node=node.splitText(res[2].length+1);
+						node.parentNode.replaceChild(span,node.previousSibling);
+						//残りは何もない。流す
+						node=node.splitText(0);
 						if(i<0){
 							//見つからなかった
 							node=node.splitText(res[2].length+1);
@@ -1168,7 +1163,7 @@ module Chat{
 						continue;
 					}
 					//その他　上のマークアップが車で通常の文字列
-					res=node.nodeValue.match(/^(.+?)(?=\[\/?\w+?\]|https?:\/\/|\s+#\S+)/);
+					res=node.nodeValue.match(/^(.+?)(?=\[\/?\w+?\]|https?:\/\/|\s*[ .]#\S+)/);
 					if(res){
 						node=node.splitText(res[0].length);
 						continue;
