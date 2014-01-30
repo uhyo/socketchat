@@ -442,6 +442,14 @@ User.prototype.says=function(data){
 	if(channel.length===0){
 		channel=null;
 	}
+	//レスポンス記法抽出
+	if(!data.response){
+		var firstAtMark = /(?:^|\s+)@([0-9a-z]{24})/;
+		if(result=comment.match(firstAtMark)){
+			data.response = result[1];
+			comment = comment.replace(firstAtMark, "");
+		}
+	}
 
 	var logobj={"name":this.name,
 		    "comment":comment,
