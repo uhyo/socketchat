@@ -3,7 +3,7 @@
 	src: url("/fonts/font.woff") format("woff");
 }
 body{
-	font-family:'Arial','MS Sans Serif', sans-serif;
+	font-family:'Arial','MS Sans Serif', 'Segoe UI Symbol', sans-serif;
 }
 body.discon{
 	background-color:#f4f4f4;
