@@ -55,9 +55,6 @@ app.use('/css',express.static(__dirname+"/css"));
 app.get(/^\/(index\.html)?$/, function(req, res){
 	res.sendfile(__dirname + '/clients/index.html');
 });
-/*app.get(/^\/(log|list|apiclient|com|smp|ts|smpjump)(\.js)?$/, function(req, res){
-	res.sendfile(__dirname + "/"+req.params[0]+'.'+(req.params[1]?'js':'html'));
-});*/
 app.get(/^\/((?:line|connection|client|firefoxapp)\.js|(sound|jihou)\.(mp3|wav|ogg)|manifest\.webapp)$/, function(req, res){
 	res.sendfile(__dirname + "/"+req.params[0]);
 });
