@@ -837,6 +837,15 @@ var Chat;
     })();
     Chat.ChatLogDisManager = ChatLogDisManager;
 
+    function toKanji(hoge) {
+        function isN(str) {
+            return "0" <= str && str <= "9";
+        }
+        return hoge.split("").map(function (c) {
+            return isN(c) ? "〇一二三四五六七八九"[parseInt(c)] : c;
+        }).join("");
+    }
+
     //ログからDOMを生成するやつ
     var ChatLineMaker = (function () {
         function ChatLineMaker(userData) {
@@ -958,10 +967,10 @@ var Chat;
             var date = new Date(obj.time);
 
             //日付
-            var datestring = date.getFullYear() + "-" + zero2(date.getMonth() + 1) + "-" + zero2(date.getDate());
+            var datestring = toKanji(date.getFullYear().toString()) + "年" + toKanji((date.getMonth() + 1).toString()) + "月" + toKanji(date.getDate().toString()) + "日";
 
             //時刻
-            var timestring = zero2(date.getHours()) + ":" + zero2(date.getMinutes()) + ":" + zero2(date.getSeconds());
+            var timestring = toKanji(date.getHours().toString()) + "時" + toKanji(date.getMinutes().toString()) + "分" + toKanji(date.getSeconds().toString()) + "秒";
 
             //時間表示
             var time = document.createElement("time");
@@ -981,6 +990,7 @@ var Chat;
 
             //IPアドレス情報
             var ipstring = obj.ip + (obj.ipff ? " (forwarded for: " + obj.ipff + ")" : "");
+            ipstring = toKanji(ipstring).replace(/\./g, "・");
             var ipelement = el("span", ipstring + ";");
             ipelement.classList.add("ip");
             info.appendChild(ipelement);
