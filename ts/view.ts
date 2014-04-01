@@ -120,7 +120,7 @@ module Chat{
 				document.body.classList.remove("discon");
 			});
 			//下までスクロールしたら自動mottoする
-			window.addEventListener("scroll",(e:UIEvent)=>{
+/*			window.addEventListener("scroll",(e:UIEvent)=>{
 				var st=document.body.scrollTop || document.documentElement.scrollTop || 0;
     			var cl=(<HTMLElement>document.documentElement).offsetHeight;
 				var i=window.innerHeight;
@@ -128,7 +128,7 @@ module Chat{
 					//下までスクロールした
 					receiver.motto({});
 				}
-			},false);
+			},false);*/
 			if(channel){
 				document.title="#"+channel+" - "+document.title;
 
