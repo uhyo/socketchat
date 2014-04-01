@@ -1293,7 +1293,7 @@ module Chat{
 			var dataset=this.userNumber.dataset;
 			dataset.actives=String(parseInt(dataset.actives)+actives);
 			dataset.roms=String(parseInt(dataset.roms)+roms);
-			this.userNumber.textContent="入室"+dataset.actives+(dataset.roms!=="0"? " (ROM"+dataset.roms+")":"");
+			this.userNumber.textContent="入室"+toKanji(dataset.actives)+(dataset.roms!=="0"? " (ロム"+toKanji(dataset.roms)+")":"");
 		}
 		newuser(user:UserObj):void{
 			if(user.rom){
