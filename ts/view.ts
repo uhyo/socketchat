@@ -827,7 +827,7 @@ module Chat{
 				url: {
 					image: "http://gyazo.com/",
 					thumb: "http://gyazo.com/thumb/",
-					ext: true,
+					ext: false,
 				},
 				text: {
 					normal: "[Gyazo]",
