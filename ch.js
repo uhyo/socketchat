@@ -491,6 +491,10 @@ User.prototype.inout=function(data){
 		    "comment":"「"+this.name+"」さんが"+(this.rom?"退室":"入室"),
 		    "syslog":true
 	};
+	//???
+	if(this.name==="うひょ" && Math.random()<0.001){
+		syslog.comment="「うさ」ひょんが"+(this.rom?"退室":"入室");
+	}
 	makelog(this,syslog);
 	if(this.rom)this.name=null;
 	
