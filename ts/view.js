@@ -883,6 +883,7 @@ var Chat;
                     }
                 }
             ];
+            this.mimetexUrl = "http://81.la/cgi-bin/mimetex.cgi";
         }
         ChatLineMaker.prototype.make = function (obj) {
             var p = document.createElement("p");
@@ -1074,7 +1075,7 @@ var Chat;
         //ログを解析して追加する
         ChatLineMaker.prototype.parse = function (rawnode, obj) {
             var _this = this;
-            var allowed_tag = ["s", "small", "code"];
+            var allowed_tag = ["s", "small", "code", "math"];
             if (rawnode.nodeType === Node.TEXT_NODE) {
                 var node = rawnode;
 
@@ -1094,20 +1095,20 @@ var Chat;
                         }
 
                         //タグが適用される部分をspanで囲む
-                        var span = document.createElement("span");
-                        span.classList.add(res[1]);
+                        var elem = document.createElement(res[1] == "math" ? "a" : "span");
+                        elem.classList.add(res[1]);
 
                         //後ろを一旦全部突っ込む
-                        span.textContent = node.nodeValue.slice(res[0].length);
-                        if (!span.textContent) {
+                        elem.textContent = node.nodeValue.slice(res[0].length);
+                        if (!elem.textContent) {
                             //空だったのでキャンセル.タダのテキストとして分離して次へ
                             node = node.splitText(res[0].length);
                             continue;
                         }
 
                         //処理対象をspanに置き換え
-                        node.parentNode.replaceChild(span, node);
-                        node = span.firstChild;
+                        node.parentNode.replaceChild(elem, node);
+                        node = elem.firstChild;
                         continue;
                     }
 
@@ -1131,9 +1132,18 @@ var Chat;
 
                         //タグを閉じる
                         if (p) {
+                            var elem = p;
+
                             //終了タグを取り除いて、nodeの中には終了タグより右側が残る
                             node.nodeValue = node.nodeValue.slice(res[0].length);
-                            p.parentNode.insertBefore(node, p.nextSibling);
+                            elem.parentNode.insertBefore(node, p.nextSibling);
+                            if (elem.classList.contains("math")) {
+                                var img = new Image();
+                                elem.href = img.src = this.mimetexUrl + "?" + elem.textContent;
+                                console.log(elem, img);
+                                elem.textContent = "";
+                                elem.appendChild(img);
+                            }
                         } else {
                             //そのタグはなかった。ただのテキストとして処理
                             node = node.splitText(res[0].length);
