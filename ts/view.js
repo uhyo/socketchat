@@ -1139,8 +1139,9 @@ var Chat;
                             elem.parentNode.insertBefore(node, p.nextSibling);
                             if (elem.classList.contains("math")) {
                                 var img = new Image();
-                                elem.href = img.src = this.mimetexUrl + "?" + elem.textContent;
-                                console.log(elem, img);
+                                var a = elem;
+                                a.href = img.src = this.mimetexUrl + "?" + elem.textContent;
+                                a.target = "_blank";
                                 elem.textContent = "";
                                 elem.appendChild(img);
                             }

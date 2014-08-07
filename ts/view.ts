@@ -1088,7 +1088,9 @@ module Chat{
 							elem.parentNode.insertBefore(node,p.nextSibling);
 							if(elem.classList.contains("math")){
 								var img=new Image();
-								(<HTMLAnchorElement>elem).href = img.src = this.mimetexUrl+"?"+elem.textContent;
+								var a = (<HTMLAnchorElement>elem);
+								a.href = img.src = this.mimetexUrl+"?"+elem.textContent;
+								a.target="_blank";
 								elem.textContent="";
 								elem.appendChild(img);
 							}
