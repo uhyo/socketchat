@@ -13,27 +13,27 @@ module Chat{
 				p.appendChild(this.makeinput(input=>{
 					input.type="button";
 					input.value="設定";
-					input.dataset.open="setting";
+					input.dataset["open"]="setting";
 				}));
 				p.appendChild(this.makeinput(input=>{
 					input.type="button";
 					input.value="入室者";
-					input.dataset.open="userlist";
+					input.dataset["open"]="userlist";
 				}));
 				p.appendChild(this.makeinput(input=>{
 					input.type="button";
 					input.value="その他";
-					input.dataset.open="others";
+					input.dataset["open"]="others";
 				}));
 				p.appendChild(this.makeinput(input=>{
 					input.type="button";
 					input.value="戻る";
-					input.dataset.open="";
+					input.dataset["open"]="";
 				}));
 				this.container.addEventListener("click",(e:Event)=>{
 					var t=<HTMLInputElement>e.target;
 					if(/^input$/i.test(t.tagName)){
-						var tar=t.dataset.open;
+						var tar=t.dataset["open"];
 						this.open(tar);
 					}
 				},false);
@@ -43,10 +43,10 @@ module Chat{
 				var inputs=this.container.getElementsByTagName("input");
 				for(var i=0,l=inputs.length;i<l;i++){
 					var input=<HTMLInputElement>inputs.item(i);
-					if(w==="" && input.dataset.open===""){
+					if(w==="" && input.dataset["open"]===""){
 						//戻るボタンはいらない
 						input.style.display="none";
-					}else if(w!=="" && input.dataset.open!==""){
+					}else if(w!=="" && input.dataset["open"]!==""){
 						//戻る以外はいらない
 						input.style.display="none";
 					}else{
@@ -69,7 +69,7 @@ module Chat{
 		//--
 		private switchView:ChatUICollection.SwitchViewForm;
 		constructor(userData:ChatUserData,connection:ChatConnection,receiver:ChatReceiver,process:ChatProcess){
-			super(userData,connection,receiver,process,false);
+			super(userData,connection,receiver,process,false,null);
 			//切り替えボタンをつくる
 			this.switchView=new ChatUICollection.SwitchViewForm();
 			this.container.insertBefore(this.switchView.getContainer(),this.container.firstChild);

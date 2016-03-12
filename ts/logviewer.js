@@ -1,8 +1,7 @@
-var __extends = this.__extends || function (d, b) {
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /// <reference path="client.ts"/>
 var Chat;
@@ -23,7 +22,7 @@ var Chat;
             }
         };
         LogViewerFactory.prototype.makeConnection = function (userData) {
-            var connection = new Chat.SocketConnection();
+            var connection = new Chat.SocketConnection;
             connection.initConnection(settings);
             connection.register(null, null, "chalog");
             return connection;
@@ -38,7 +37,7 @@ var Chat;
             return null;
         };
         return LogViewerFactory;
-    })(Chat.ChatClientFactory);
+    }(Chat.ChatClientFactory));
     Chat.LogViewerFactory = LogViewerFactory;
     var LogViewer = (function () {
         function LogViewer(userData, connection, receiver, view) {
@@ -48,40 +47,34 @@ var Chat;
             this.view = view;
         }
         return LogViewer;
-    })();
+    }());
     Chat.LogViewer = LogViewer;
-
     //ビュー
     var LogViewerView = (function (_super) {
         __extends(LogViewerView, _super);
         function LogViewerView(userData, connection, receiver) {
-            _super.call(this, userData, connection, receiver, null, false);
+            _super.call(this, userData, connection, receiver, null, false, null);
         }
         LogViewerView.prototype.initView = function (userData, connection, receiver, process, com) {
             var _this = this;
             this.container = document.createElement("div");
-
             //bodyへ
             document.body.appendChild(this.container);
             this.container.appendChild((function (h1) {
                 h1.textContent = "Chalog Viewer";
                 return h1;
             })(document.createElement("h1")));
-
             //
             this.qf = new FindQueryForm();
             this.container.appendChild(this.qf.getContainer());
-
             //クエリが発行されたら・・・?
             this.qf.onQuery(function (query) {
                 _this.connection.send("query", query);
             });
-
             //ログ表示部分
             this.logFlow = new Chat.ChatLogFlow(userData, receiver);
             this.container.appendChild(this.logFlow.getContainer());
             this.logFlow.refreshSettings();
-
             //チャネルをクリックしたら?
             this.logFlow.event.on("focusChannel", function (channel) {
                 //チャットを開く
@@ -92,9 +85,8 @@ var Chat;
             });
         };
         return LogViewerView;
-    })(Chat.ChatView);
+    }(Chat.ChatView));
     Chat.LogViewerView = LogViewerView;
-
     //検索条件フォーム
     var FindQueryForm = (function (_super) {
         __extends(FindQueryForm, _super);
@@ -103,7 +95,7 @@ var Chat;
             _super.call(this);
             //private event:EventEmitter;
             //private container:HTMLFormElement;
-            this.query = null;
+            this.query = null; //現在のクエリ
             this.container = document.createElement("form");
             this.container.appendChild(this.makeRangePart());
             this.container.appendChild(this.makeQueryPart());
@@ -111,7 +103,6 @@ var Chat;
             this.container.addEventListener("submit", function (e) {
                 var form = e.target;
                 e.preventDefault();
-
                 //クエリつくる
                 var query = {};
                 query.value = Number(formValue("page_number"));
@@ -119,7 +110,7 @@ var Chat;
                 var range = getRadioValue(form, "range");
                 if (range === "time") {
                     //時間
-                    var of = (new Date()).getTimezoneOffset() * 60000;
+                    var of = (new Date).getTimezoneOffset() * 60000; //ミリ秒
                     query.starttime = new Date((new Date(formValue("starttime"))).getTime() + of);
                     query.endtime = new Date((new Date(formValue("endtime"))).getTime() + of);
                 }
@@ -128,7 +119,8 @@ var Chat;
                     if (noi === "name") {
                         //名前
                         query.name = formValue("name_or_ip_value");
-                    } else if (noi === "ip") {
+                    }
+                    else if (noi === "ip") {
                         query.ip = formValue("name_or_ip_value");
                     }
                 }
@@ -138,18 +130,15 @@ var Chat;
                 if (formChecked("use_channel")) {
                     query.channel = formValue("channel_value");
                 }
-
                 //現在のクエリとして保存
                 _this.query = query;
-
                 //クエリ発行
                 _this.event.emit("query", query);
-
                 function formValue(name) {
-                    return (form.elements[name]).value;
+                    return form.elements[name].value;
                 }
                 function formChecked(name) {
-                    return (form.elements[name]).checked;
+                    return form.elements[name].checked;
                 }
             }, false);
         }
@@ -182,9 +171,9 @@ var Chat;
                     }));
                     label.appendChild(document.createTextNode("発言時間で検索:"));
                 }));
-                var now = (new Date()).toISOString();
+                var now = (new Date).toISOString();
                 now = now.replace(/(?:Z|[-+]\d\d(?::?\d\d)?)$/, "");
-
+                //ミリ秒は取り除く
                 if (/^.+?T\d\d:\d\d:\d\d[\.,]\d+$/.test(now)) {
                     now = now.replace(/[\.,]\d+$/, "");
                 }
@@ -221,18 +210,16 @@ var Chat;
                     label.appendChild(document.createTextNode("新しいほうから検索"));
                 }));
             }));
-
             //変更されたらラジオボックスを入れたりする処理
             fs.addEventListener("change", function (e) {
                 //先取りinput
                 var inp = e.target;
                 if (!/^input$/i.test(inp.tagName))
-                    return;
+                    return; //違う
                 if (inp.type === "radio")
-                    return;
-
+                    return; //チェックボックス自身は気にしない
                 //ラジオボックスを探す
-                var radio = (document).evaluate('ancestor-or-self::p/descendant::input[@type="radio"]', inp, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
+                var radio = document.evaluate('ancestor-or-self::p/descendant::input[@type="radio"]', inp, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
                 if (radio) {
                     radio.checked = true;
                 }
@@ -290,18 +277,16 @@ var Chat;
                         input.size = 25;
                     }));
                 }));
-
                 //変更されたらチェックボックスを入れたりする処理
                 fs.addEventListener("change", function (e) {
                     //先取りinput
                     var inp = e.target;
                     if (!/^input$/i.test(inp.tagName))
-                        return;
+                        return; //違う
                     if (inp.type === "checkbox")
-                        return;
-
+                        return; //チェックボックス自身は気にしない
                     //チェックボックスを探す
-                    var checkbox = (document).evaluate('ancestor-or-self::p/descendant::input[@type="checkbox"]', inp, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
+                    var checkbox = document.evaluate('ancestor-or-self::p/descendant::input[@type="checkbox"]', inp, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
                     if (checkbox) {
                         checkbox.checked = inp.value !== "";
                     }
@@ -342,7 +327,6 @@ var Chat;
                         var output = el;
                         output.name = "thispage";
                         output.value = "";
-
                         //イベント
                         _this.event.on("query", function (q) {
                             output.value = q.page + "ページ目";
@@ -359,16 +343,14 @@ var Chat;
             });
         };
         return FindQueryForm;
-    })(Chat.ChatUICollection.UIObject);
+    }(Chat.ChatUICollection.UIObject));
     Chat.FindQueryForm = FindQueryForm;
-
     //拡張Receiver（resultをうけとれる）
     var FindReceiver = (function (_super) {
         __extends(FindReceiver, _super);
         //private event:EventEmitter;
         function FindReceiver(connection) {
             _super.call(this, connection, null);
-
             //追加
             connection.on("result", this.result.bind(this));
         }
@@ -377,20 +359,18 @@ var Chat;
             this.event.emit("loginit", data.logs);
         };
         return FindReceiver;
-    })(Chat.ChatReceiver);
+    }(Chat.ChatReceiver));
     Chat.FindReceiver = FindReceiver;
-
     function makeInput(callback) {
-        return Chat.makeEl("input", function (el) {
-            return callback(el);
-        });
+        return Chat.makeEl("input", function (el) { return callback(el); });
     }
     function makeInputAndLabel(text, follow, callback) {
         return Chat.makeEl("label", function (label) {
             if (follow) {
                 label.appendChild(makeInput(callback));
                 label.appendChild(document.createTextNode(text));
-            } else {
+            }
+            else {
                 label.appendChild(document.createTextNode(text));
                 label.appendChild(makeInput(callback));
             }
@@ -403,7 +383,8 @@ var Chat;
                 if (t[i].checked)
                     return t[i].value;
             }
-        } else if (t) {
+        }
+        else if (t) {
             return t.checked ? t.value : null;
         }
         return null;

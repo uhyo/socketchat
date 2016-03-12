@@ -1,15 +1,10 @@
-var __extends = this.__extends || function (d, b) {
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /// <reference path="connection.ts"/>
 /// <reference path="process.ts"/>
-
-
-
-
 var Chat;
 (function (Chat) {
     //チャット外観の全体
@@ -25,43 +20,37 @@ var Chat;
         //表示部分的な?
         ChatView.prototype.initView = function (userData, connection, receiver, process, com, channel) {
             this.container = document.createElement("div");
-
             //コンテナはbodyに入れる
             document.body.setAttribute('role', 'application');
             document.body.appendChild(this.container);
-
             //disマネージャ
             this.dis = new ChatLogDisManager(userData);
-
             //設定・リンク部分を初期化
             if (com) {
                 this.linksView = null;
                 this.settingView = null;
-            } else {
+            }
+            else {
                 this.linksView = new ChatLinksView();
                 this.settingView = new ChatSettingView(userData, this);
             }
-
             //ログ表示部分を初期化
             this.logView = new ChatLogView(userData, receiver, process, this, this.dis);
-
             //ユーザー一覧部分を初期化
             this.userView = new ChatUserView(receiver, this, this.dis);
-
             //ユーザー操作部分を初期化
             //UIを選ぶ
             if (com) {
                 this.ui = new ChatCmdUI(userData, receiver, process, this, this.dis);
-            } else {
+            }
+            else {
                 this.ui = new ChatNormalUI(userData, receiver, process, this, this.dis, channel);
             }
-
             //HottoMottoボタンを初期化
             this.motto = new ChatUICollection.MottoForm();
             this.motto.onMotto(function (data) {
                 receiver.motto(data);
             });
-
             //disマネージャ初期化
             //UIを組もう!
             if (this.linksView)
@@ -72,7 +61,6 @@ var Chat;
             this.container.appendChild(this.logView.getContainer());
             this.container.appendChild(this.userView.getContainer());
             this.container.appendChild(this.motto.getContainer());
-
             //接続関係
             receiver.on("disconnect", function () {
                 document.body.classList.add("discon");
@@ -80,7 +68,6 @@ var Chat;
             receiver.on("reconnect", function () {
                 document.body.classList.remove("discon");
             });
-
             //下までスクロールしたら自動mottoする
             window.addEventListener("scroll", function (e) {
                 var st = document.body.scrollTop || document.documentElement.scrollTop || 0;
@@ -95,19 +82,16 @@ var Chat;
                 document.title = "#" + channel + " - " + document.title;
             }
         };
-
         //設定がされたので反映させる
         ChatView.prototype.refreshSettings = function () {
             this.settingView.refreshSettings();
             this.logView.refreshSettings();
             this.ui.refreshSettings();
         };
-
         //発言欄にフォーカスする
         ChatView.prototype.focusComment = function (focus, channel) {
             this.ui.focusComment(focus, channel);
         };
-
         //仕様を表示してあげる
         ChatView.prototype.showSiyou = function () {
             alert("\
@@ -133,7 +117,6 @@ var Chat;
 　灰色クリックで矢印を消す\n\
 ");
         };
-
         //強制的にコンソールを開く
         ChatView.prototype.openConsole = function () {
             var cons = new ChatCmdUI(this.userData, this.receiver, this.process, this, this.dis);
@@ -148,9 +131,8 @@ var Chat;
             return this.container;
         };
         return ChatView;
-    })();
+    }());
     Chat.ChatView = ChatView;
-
     //リンク一覧
     var ChatLinksView = (function () {
         function ChatLinksView() {
@@ -168,7 +150,7 @@ var Chat;
                     {
                         url: "http://81.la/cgi-bin/up/",
                         name: "up"
-                    }
+                    },
                 ], [
                     {
                         url: "/list",
@@ -185,8 +167,8 @@ var Chat;
                     {
                         url: "/smp",
                         name: "SMP"
-                    }
-                ]
+                    },
+                ],
             ];
             this.container = document.createElement("div");
             this.container.classList.add("links");
@@ -197,13 +179,11 @@ var Chat;
         };
         ChatLinksView.prototype.makeLinks = function () {
             var df = document.createDocumentFragment();
-
             for (var i = 0, l = this.links.length; i < l; i++) {
                 var ls = this.links[i];
                 var ul = document.createElement("ul");
                 for (var j = 0, m = ls.length; j < m; j++) {
                     var o = ls[j];
-
                     var a = document.createElement("a");
                     a.href = o.url;
                     a.target = "_blank";
@@ -217,9 +197,8 @@ var Chat;
             return df;
         };
         return ChatLinksView;
-    })();
+    }());
     Chat.ChatLinksView = ChatLinksView;
-
     //設定
     var ChatSettingView = (function () {
         function ChatSettingView(userData, view) {
@@ -231,16 +210,12 @@ var Chat;
             this.channelSettings = ["欄#", "窓#"];
             this.container = document.createElement("form");
             this.container.classList.add("infobar");
-
             //餃子ボタン生成
             this.container.appendChild(this.makeGyozaButton());
-
             //ボリューム操作生成
             this.container.appendChild(this.makeVolumeRange());
-
             //チャネル開き方
             this.container.appendChild(this.makeChannelModeButton());
-
             //仕様ボタン
             this.container.appendChild(this.makeSiyouButton());
         }
@@ -254,10 +229,8 @@ var Chat;
             button.addEventListener("click", function (e) {
                 //クリックされたら変更
                 ud.gyoza = (ud.gyoza + 1) % _this.gyozaSettings.length;
-
                 //button.value=this.gyozaSettings[ud.gyoza];
                 ud.save();
-
                 //ビューに変更を知らせる
                 _this.view.refreshSettings();
             }, false);
@@ -265,10 +238,9 @@ var Chat;
         };
         ChatSettingView.prototype.makeVolumeRange = function () {
             var df = document.createDocumentFragment();
-
             /*df.appendChild(makeEl("span",(span)=>{
-            span.className="icon volumeicon";
-            span.textContent="\ue003";
+                span.className="icon volumeicon";
+                span.textContent="\ue003";
             }));*/
             var range = document.createElement("input");
             var ud = this.userData;
@@ -276,7 +248,6 @@ var Chat;
             range.type = "range";
             range.min = "0", range.max = "100", range.step = "10";
             range.value = String(ud.volume);
-
             //変更時
             var timerid = null;
             range.addEventListener("change", function (e) {
@@ -318,18 +289,15 @@ var Chat;
             }, false);
             return button;
         };
-
         ChatSettingView.prototype.getContainer = function () {
             return this.container;
         };
         ChatSettingView.prototype.refreshSettings = function () {
             //設定変更
             var form = this.container, ud = this.userData;
-
             //餃子
             var gyozabutton = form.elements["gyozabutton"];
             gyozabutton.value = this.gyozaSettings[ud.gyoza];
-
             //ボリューム
             var volumeRange = form.elements["volume"];
             volumeRange.value = String(ud.volume);
@@ -337,9 +305,8 @@ var Chat;
             channelbutton.value = this.channelSettings[ud.channelMode];
         };
         return ChatSettingView;
-    })();
+    }());
     Chat.ChatSettingView = ChatSettingView;
-
     //ログ表示部分
     var ChatLogView = (function () {
         function ChatLogView(userData, receiver, process, view, dis) {
@@ -354,10 +321,8 @@ var Chat;
             dis.registerLogContainer(this.flow.getContainer());
             this.container.appendChild(this.flow.getContainer());
             this.refreshSettings(); //初期設定
-
             //オーディオ準備
             this.audio = this.getAudio("/sound");
-
             //フローにイベント登録する
             var fe = this.flow.event;
             fe.on("logaudio", function () {
@@ -371,7 +336,8 @@ var Chat;
                     //欄#
                     var focusedChannel = _this.dis.setFocusChannel(channel);
                     _this.view.focusComment(false, focusedChannel);
-                } else {
+                }
+                else {
                     //窓#
                     //もとのほうは薄くする
                     _this.dis.addDischannel(channel, true, false);
@@ -386,9 +352,8 @@ var Chat;
                     //すでに返信フォームが開いている
                     return;
                 }
-                var comForm = new ChatUICollection.CommentForm(receiver, true, null);
+                var comForm = new ChatUICollection.CommentForm(receiver, true, null); //子窓で返信時どうするか
                 var cont = comForm.getContainer();
-
                 //最初にマークつける
                 var p = cont.getElementsByTagName("p")[0];
                 if (p) {
@@ -412,13 +377,13 @@ var Chat;
                 });
                 appearAnimation(cont, "vertical", true, true);
                 var ch = log.dataset.channel || "";
-
                 //返信先チャネル決定
                 var result = ch.match(/^#([^#]+)\/(?:#|$)/);
                 console.log(result);
                 if (result) {
                     comForm.setChannel(result[1]);
-                } else {
+                }
+                else {
                     comForm.setChannel(null);
                 }
                 comForm.focus();
@@ -427,16 +392,14 @@ var Chat;
         ChatLogView.prototype.getContainer = function () {
             return this.container;
         };
-
         //設定変更された
         ChatLogView.prototype.refreshSettings = function () {
             this.flow.refreshSettings();
         };
-
         //オーディオ初期化
         ChatLogView.prototype.getAudio = function (filename) {
             var audio;
-            try  {
+            try {
                 audio = new Audio();
                 audio.removeAttribute("src");
                 ["ogg", "mp3", "wav"].forEach(function (ext) {
@@ -445,17 +408,16 @@ var Chat;
                     source.type = "audio/" + ext;
                     audio.appendChild(source);
                 });
-            } catch (e) {
+            }
+            catch (e) {
                 //オーディオなんてなかった
-                audio = { play: function () {
-                    } };
+                audio = { play: function () { } };
             }
             return audio;
         };
         return ChatLogView;
-    })();
+    }());
     Chat.ChatLogView = ChatLogView;
-
     //ログ表示本体
     var ChatLogFlow = (function () {
         function ChatLogFlow(userData, receiver) {
@@ -468,7 +430,6 @@ var Chat;
             this.container.classList.add("logbox");
             setUniqueId(this.container, "log");
             this.lineMaker = new ChatLineMaker(userData);
-
             //流れてきたログをキャッチ!!
             //ログたくさんきた
             receiver.on("loginit", function (logs) {
@@ -477,18 +438,15 @@ var Chat;
                 range.selectNodeContents(_this.container);
                 range.deleteContents();
                 range.detach();
-
                 //逆にしてアレする
                 logs.reverse().forEach(function (log) {
                     _this.getLog(log, true);
                 });
             });
-
             //ログひとつきた
             receiver.on("log", function (log) {
                 _this.getLog(log, false);
             });
-
             //Mottoのログがきた
             receiver.on("mottoLog", function (logs) {
                 logs.forEach(function (log) {
@@ -496,27 +454,22 @@ var Chat;
                     _this.container.appendChild(line);
                 });
             });
-
             //餃子オンマウス用の処理入れる
             this.gyozaOnmouseListener = (function (e) {
-                var t = e.target;
+                var t = e.target; //先取り
                 if (!t.classList.contains("gyoza")) {
-                    return;
+                    return; //違う
                 }
-
                 //既に展開されている場合はとばす
                 if (t.classList.contains("gyozaloaded")) {
                     return;
                 }
                 _this.lineMaker.checkGyoza(t);
             }).bind(this);
-
             //クリックに対応する
             this.container.addEventListener("click", this.clickHandler.bind(this), false);
-
             //ツールボックスの準備をする
             this.toolbox = this.makeToolbox();
-
             //アイコンをコピーされると困る
             var clistener = function (e) {
                 var selection = window.getSelection();
@@ -524,13 +477,13 @@ var Chat;
                 for (var i = 0, l = selection.rangeCount; i < l; i++) {
                     var range = selection.getRangeAt(i);
                     var an = range.commonAncestorContainer;
-
                     //TreeWalkerでアイコンを探す
                     var tw = document.createTreeWalker(an, NodeFilter.SHOW_ELEMENT, function (node) {
                         if (node.classList.contains("icon")) {
                             //アイコン
                             return NodeFilter.FILTER_ACCEPT;
-                        } else {
+                        }
+                        else {
                             return NodeFilter.FILTER_SKIP;
                         }
                     }, false);
@@ -540,16 +493,14 @@ var Chat;
                     while (node = tw.nextNode()) {
                         if (!range2)
                             range2 = document.createRange();
-
                         //範囲を通りすぎてないかチェック
                         range2.selectNode(node);
                         if (range.compareBoundaryPoints(Range.START_TO_END, range2) <= 0) {
+                            //通り過ぎた。終了
                             break;
                         }
-
                         //TreeWalkerが見失わないようにとりあえず親
                         tw.currentNode = node.parentNode;
-
                         //アイコンである。消去する
                         var df = range2.extractContents();
                         box.push({
@@ -557,12 +508,10 @@ var Chat;
                             df: df
                         });
                         console.log(df);
-
                         //このrange2は使用済。参照を断つ
                         range2 = null;
                     }
                 }
-
                 //一瞬後（コピー後）に復旧する
                 //setImmediateが欲しい事例
                 setTimeout(function () {
@@ -578,13 +527,11 @@ var Chat;
         ChatLogFlow.prototype.getContainer = function () {
             return this.container;
         };
-
         //ログを一つ追加
         ChatLogFlow.prototype.getLog = function (obj, initmode) {
             //initmode: それがログ初期化段階かどうか
             var line = this.lineMaker.make(obj);
             this.container.insertBefore(line, this.container.firstChild);
-
             //音を鳴らす
             if (!initmode && this.userData.volume > 0) {
                 //音鳴らす判定を入れる
@@ -611,12 +558,14 @@ var Chat;
             if (cl.contains("channel") && t.dataset.channel) {
                 //チャンネルだ
                 this.event.emit("focusChannel", t.dataset.channel);
-            } else if (cl.contains("respin")) {
+            }
+            else if (cl.contains("respin")) {
                 if (cl.contains("opened")) {
                     //ログを戻す
                     var bq = document.evaluate('ancestor::p/following-sibling::blockquote', t, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
                     appearAnimation(bq, "vertical", false, true);
-                } else if (!cl.contains("processing")) {
+                }
+                else if (!cl.contains("processing")) {
                     //親のログを得る
                     var log = t.parentNode.parentNode;
                     this.receiver.find({
@@ -639,7 +588,6 @@ var Chat;
                 cl.toggle("opened");
                 return;
             }
-
             //ログクリックを検出
             var logp = document.evaluate('ancestor-or-self::p', t, null, XPathResult.ANY_UNORDERED_NODE_TYPE, null).singleNodeValue;
             if (logp && logp.classList.contains("log")) {
@@ -649,7 +597,8 @@ var Chat;
                     logp.appendChild(this.toolbox);
                     appearAnimation(this.toolbox, "fade", true, true);
                 }
-            } else {
+            }
+            else {
                 //ログをクリックしていない
                 //ツールボックス消去
                 if (this.toolbox.parentNode) {
@@ -658,7 +607,6 @@ var Chat;
                 this.selectedLog = null;
             }
         };
-
         //ツールボックス
         ChatLogFlow.prototype.makeToolbox = function () {
             var _this = this;
@@ -691,7 +639,7 @@ var Chat;
             return toolbox;
         };
         return ChatLogFlow;
-    })();
+    }());
     Chat.ChatLogFlow = ChatLogFlow;
     var ChatLogDisManager = (function () {
         function ChatLogDisManager(userData) {
@@ -699,8 +647,8 @@ var Chat;
             this.userData = userData;
             //今フォーカスしているチャネル
             this.focusedChannel = null;
-            this.disip = [];
-            this.logContainer = null;
+            this.disip = []; //disipリスト
+            this.logContainer = null; //logノード
             //disの初期化をする
             userData.disip.forEach(function (ip) {
                 _this.setDisipStyle(ip);
@@ -713,7 +661,7 @@ var Chat;
             this.logContainer = c;
         };
         ChatLogDisManager.prototype.addDisip = function (ip, temporal) {
-            if (typeof temporal === "undefined") { temporal = false; }
+            if (temporal === void 0) { temporal = false; }
             var ud = this.userData;
             if (ud.disip.indexOf(ip) >= 0)
                 return false;
@@ -727,23 +675,20 @@ var Chat;
         ChatLogDisManager.prototype.setDisipStyle = function (ip) {
             this.addCSSRules([
                 '.logbox > p.log[data-ip="' + ip + '"]{display:none}',
-                '.users li[data-ip="' + ip + '"]{text-decoration:line-through}'
+                '.users li[data-ip="' + ip + '"]{text-decoration:line-through}',
             ]);
         };
         ChatLogDisManager.prototype.removeDisip = function (ip, temporal) {
             var ud = this.userData;
             if (!temporal) {
-                ud.disip = ud.disip.filter(function (x) {
-                    return x !== ip;
-                });
+                ud.disip = ud.disip.filter(function (x) { return x !== ip; });
                 ud.save();
             }
             this.removeCSSRules([
                 '.logbox > p.log[data-ip="' + ip + '"]',
-                '.users li[data-ip="' + ip + '"]'
+                '.users li[data-ip="' + ip + '"]',
             ]);
         };
-
         //-------------- DisChannel API
         //チャネルにフォーカスする（現在のチャネルを返す）
         ChatLogDisManager.prototype.setFocusChannel = function (channel) {
@@ -759,7 +704,6 @@ var Chat;
             }
             return channel;
         };
-
         //disChannel用のcssルールを作る
         //attribute=要素セレクタにつける属性
         ChatLogDisManager.prototype.createDisCSSSelector = function (attribute, temporal, anti) {
@@ -767,7 +711,6 @@ var Chat;
                 //逆
                 attribute = ":not(" + attribute + ")";
             }
-
             return ".logbox > p.log" + attribute;
         };
         ChatLogDisManager.prototype.createDisCSSRule = function (attribute, temporal, anti) {
@@ -775,7 +718,6 @@ var Chat;
             var body = temporal ? "opacity:0.3;" : "display:none;";
             return selector + "{" + body + "}";
         };
-
         //CSSルールを追加する
         ChatLogDisManager.prototype.addCSSRules = function (cssTexts) {
             if (document.styleSheets.length === 0) {
@@ -796,7 +738,6 @@ var Chat;
                 }
             }
         };
-
         //disChannelを追加する
         //temporal: 一時的（保存しない） anti:逆（特定のやつ以外dis）
         ChatLogDisManager.prototype.addDischannel = function (channel, temporal, anti) {
@@ -812,35 +753,32 @@ var Chat;
         };
         ChatLogDisManager.prototype.setDischannelStyle = function (channel, temporal, anti) {
             this.addCSSRules([
-                this.createDisCSSRule('[data-channel*="#' + channel + '/"]', temporal, anti)
+                this.createDisCSSRule('[data-channel*="#' + channel + '/"]', temporal, anti),
             ]);
         };
         ChatLogDisManager.prototype.removeDischannel = function (channel, temporal, anti) {
             var ud = this.userData;
             if (!temporal) {
-                ud.dischannel = ud.dischannel.filter(function (x) {
-                    return x !== channel;
-                });
+                ud.dischannel = ud.dischannel.filter(function (x) { return x !== channel; });
                 ud.save();
             }
             this.removeCSSRules([
-                this.createDisCSSSelector('[data-channel*="#' + channel + '/"]', temporal, anti)
+                this.createDisCSSSelector('[data-channel*="#' + channel + '/"]', temporal, anti),
             ]);
         };
         ChatLogDisManager.prototype.addFocusOutlaw = function (temporal) {
             this.addCSSRules([
-                this.createDisCSSRule('[data-channel]', temporal, false)
+                this.createDisCSSRule('[data-channel]', temporal, false),
             ]);
         };
         ChatLogDisManager.prototype.removeFocusOutlaw = function (temporal) {
             this.removeCSSRules([
-                this.createDisCSSSelector('[data-channel]', temporal, false)
+                this.createDisCSSSelector('[data-channel]', temporal, false),
             ]);
         };
         return ChatLogDisManager;
-    })();
+    }());
     Chat.ChatLogDisManager = ChatLogDisManager;
-
     //ログからDOMを生成するやつ
     var ChatLineMaker = (function () {
         function ChatLineMaker(userData) {
@@ -896,25 +834,21 @@ var Chat;
                 //システムログ
                 p.classList.add("syslog");
             }
-            var color = this.getColorByIP(obj.ip);
-
+            var color = this.getColorByIP(obj.ip); //ログの色
             //名前部分の生成
             var name = el("bdi", obj.name);
             name.classList.add("name");
             name.style.color = color;
             p.appendChild(name);
-
             //アレ
             p.appendChild(makeEl("span", function (span) {
                 span.classList.add("nameseparator");
                 span.style.color = color;
                 span.textContent = "> ";
             }));
-
             //名前以外の部分の生成
             var main = document.createElement("span");
             main.classList.add("main");
-
             //返信チップ
             if (obj.response) {
                 var resptip = document.createElement("span");
@@ -922,22 +856,18 @@ var Chat;
                 resptip.textContent = "\ue000";
                 main.appendChild(resptip);
             }
-
             //コメント部分の生成
             var comment = document.createElement("bdi");
             comment.appendChild(this.commentHTMLify(obj.commentObject || obj.comment));
             this.parse(comment, obj); //解析（URLとか）
             comment.normalize();
             main.appendChild(comment);
-
             //チャネル
             if (obj.channel) {
                 //コメントにも情報付加
                 p.dataset.channel = "#" + (Array.isArray(obj.channel) ? obj.channel.join("/#") : obj.channel) + "/";
-
                 //配列か
                 var c = Array.isArray(obj.channel) ? obj.channel : [obj.channel];
-
                 //ログ中のチャネルリンクを抽出
                 var sps = comment.getElementsByClassName("channels");
                 var chhs = Array.prototype.map.call(sps, function (x) {
@@ -950,24 +880,19 @@ var Chat;
                     }
                 }
             }
-
             //返信先あり
             if (obj.response) {
                 p.dataset.respto = obj.response;
                 p.classList.add("respto");
             }
-
             //時間などの情報
             var info = document.createElement("span");
             info.classList.add("info");
             var date = new Date(obj.time);
-
             //日付
             var datestring = date.getFullYear() + "-" + zero2(date.getMonth() + 1) + "-" + zero2(date.getDate());
-
             //時刻
             var timestring = zero2(date.getHours()) + ":" + zero2(date.getMinutes()) + ":" + zero2(date.getSeconds());
-
             //時間表示
             var time = document.createElement("time");
             var dateelement = el("span", datestring);
@@ -979,64 +904,60 @@ var Chat;
             time.appendChild(document.createTextNode("; "));
             time.dateTime = datestring + "T" + timestring;
             info.appendChild(time);
-
             //コメントに付加情報
             p.dataset.id = obj._id;
             p.dataset.ip = obj.ip;
-
             //IPアドレス情報
             var ipstring = obj.ip + (obj.ipff ? " (forwarded for: " + obj.ipff + ")" : "");
             var ipelement = el("span", ipstring + ";");
             ipelement.classList.add("ip");
             info.appendChild(ipelement);
-
             //なぜか名前にも
             name.title = datestring + " " + timestring + ", " + ipstring;
-
             //まとめる
             main.appendChild(info);
             main.style.color = color;
             p.appendChild(main);
-
             return p;
-
             //補助：中身をきめて作る
             function el(name, content) {
                 var result = document.createElement(name);
                 result.textContent = content;
                 return result;
             }
-
             //補助: 2桁に0で埋める
             function zero2(num) {
                 return ("00" + num).slice(-2);
             }
         };
-
         // IPアドレスから色を決める
         ChatLineMaker.prototype.getColorByIP = function (ip) {
             if ("string" === typeof ip) {
                 var arr = ip.split(/\./);
-                return "rgb(" + Math.floor(parseInt(arr[0]) * 0.75) + "," + Math.floor(parseInt(arr[1]) * 0.75) + "," + Math.floor(parseInt(arr[2]) * 0.75) + ")";
-            } else {
+                return "rgb(" + Math.floor(parseInt(arr[0]) * 0.75) + "," +
+                    Math.floor(parseInt(arr[1]) * 0.75) + "," +
+                    Math.floor(parseInt(arr[2]) * 0.75) + ")";
+            }
+            else {
                 return "black";
             }
         };
-
         //コメントがオブジェクトのときはHTMLにする
         ChatLineMaker.prototype.commentHTMLify = function (comment) {
             var _this = this;
             if ("string" === typeof comment) {
                 //テキストならテキストノード
                 return document.createTextNode(comment);
-            } else if (Array.isArray(comment)) {
+            }
+            else if (Array.isArray(comment)) {
                 //配列のとき：全部つなげる
                 var df = document.createDocumentFragment();
                 comment.forEach(function (x) {
                     df.appendChild(_this.commentHTMLify(x));
                 });
                 return df;
-            } else {
+            }
+            else {
                 //オブジェクトの場合
                 //name:要素名 attributes: key-valueのオブジェクト style:key-valueのCSSスタイル
                 //child: 中身(CommentObject)
@@ -1051,7 +972,6 @@ var Chat;
                 return elm;
             }
         };
-
         //チャネル表示
         ChatLineMaker.prototype.makeChannelSpan = function (channel) {
             var span = document.createElement("span");
@@ -1065,7 +985,8 @@ var Chat;
                     if (i === 0) {
                         wholeChannel = ch;
                         span.textContent = "#" + ch;
-                    } else {
+                    }
+                    else {
                         wholeChannel += "/" + ch;
                         span.textContent = "/" + ch;
                     }
@@ -1075,21 +996,18 @@ var Chat;
             }
             return span;
         };
-
         //ログを解析して追加する
         ChatLineMaker.prototype.parse = function (rawnode, obj) {
             var _this = this;
             var allowed_tag = ["s", "small", "code", "math"];
             if (rawnode.nodeType === Node.TEXT_NODE) {
                 var node = rawnode;
-
                 //テキストノード
                 if (!node.parentNode)
                     return;
-
+                //先頭から順番に処理
                 while (node.nodeValue) {
                     var res = node.nodeValue.match(/^\[(\w+?)\]/);
-
                     //先頭が開始タグ
                     if (res) {
                         if (allowed_tag.indexOf(res[1]) < 0) {
@@ -1097,11 +1015,9 @@ var Chat;
                             node = node.splitText(res[0].length);
                             continue;
                         }
-
                         //タグが適用される部分をspanで囲む
                         var elem = document.createElement(res[1] == "math" ? "a" : "span");
                         elem.classList.add(res[1]);
-
                         //後ろを一旦全部突っ込む
                         elem.textContent = node.nodeValue.slice(res[0].length);
                         if (!elem.textContent) {
@@ -1109,13 +1025,11 @@ var Chat;
                             node = node.splitText(res[0].length);
                             continue;
                         }
-
                         //処理対象をspanに置き換え
                         node.parentNode.replaceChild(elem, node);
                         node = elem.firstChild;
                         continue;
                     }
-
                     //終了タグ
                     res = node.nodeValue.match(/^\[\/(\w+?)\]/);
                     if (res) {
@@ -1123,21 +1037,19 @@ var Chat;
                             node = node.splitText(res[0].length);
                             continue;
                         }
-
                         //閉じるべきタグを探す
                         var p = node;
                         while (p = p.parentNode) {
                             //nodeはテキストノードなので親からスターと
                             var cl = p.classList;
                             if (cl && cl.contains(res[1])) {
+                                //問題のタグである
                                 break;
                             }
                         }
-
                         //タグを閉じる
                         if (p) {
                             var elem = p;
-
                             //終了タグを取り除いて、nodeの中には終了タグより右側が残る
                             node.nodeValue = node.nodeValue.slice(res[0].length);
                             elem.parentNode.insertBefore(node, p.nextSibling);
@@ -1149,24 +1061,23 @@ var Chat;
                                 elem.textContent = "";
                                 elem.appendChild(img);
                             }
-                        } else {
+                        }
+                        else {
                             //そのタグはなかった。ただのテキストとして処理
                             node = node.splitText(res[0].length);
                         }
                         continue;
                     }
-
                     //リンク
                     res = node.nodeValue.match(/^https?:\/\/\S+/);
                     if (res) {
                         var matched = false;
-
+                        //URLがgyazo系かどうか調べる
                         for (var i = 0, l = this.gyazoSetting.length; i < l; i++) {
                             var settingObj = this.gyazoSetting[i];
                             var res2 = res[0].match(new RegExp("^" + settingObj.url.image.replace(".", "\\.") + "([0-9a-f]{32})(?:\\.png)?"));
                             if (!res2)
                                 continue;
-
                             //Gyazo
                             var a = document.createElement("a");
                             a.target = "_blank";
@@ -1175,13 +1086,12 @@ var Chat;
                             if (settingObj.thumb && this.userData.gyoza === 2) {
                                 //餃子常時展開
                                 this.openGyoza(settingObj, a, res2[1]);
-                            } else {
+                            }
+                            else {
                                 a.textContent = settingObj.text.normal;
                             }
-
                             //これは処理終了
                             node = node.splitText(res2[0].length);
-
                             //node.previousSiblingは、 splitTextで切断されたurl部分のテキストノード
                             node.parentNode.replaceChild(a, node.previousSibling);
                             matched = true;
@@ -1189,21 +1099,20 @@ var Chat;
                         }
                         if (matched)
                             continue;
-
                         //通常のリンクだった
                         var a = document.createElement("a");
                         a.href = res[0];
                         a.target = "_blank";
-                        try  {
+                        try {
                             a.textContent = decodeURIComponent(res[0]);
-                        } catch (e) {
+                        }
+                        catch (e) {
                             a.textContent = res[0];
                         }
                         node = node.splitText(res[0].length);
                         node.parentNode.replaceChild(a, node.previousSibling);
                         continue;
                     }
-
                     //チャネルリンク
                     res = node.nodeValue.match(/^(\s*\.?)#(\S+)/);
                     if (res) {
@@ -1211,7 +1120,6 @@ var Chat;
                             //前の空白はいらないのでそのまま流す
                             node = node.splitText(res[1].length);
                         }
-
                         //ログが所属するチャネルと一致する?
                         var chs = Array.isArray(obj.channel) ? obj.channel.concat([]) : [];
                         var i = chs.length;
@@ -1221,15 +1129,12 @@ var Chat;
                                 return a.length - b.length;
                             });
                         }
-
                         //属していないチャネルに対してもリンクできるようにした
                         //前方一致;この部分がチャネル
                         var span = this.makeChannelSpan(res[2]);
-
                         //チャネル部分を分離
                         node = node.splitText(res[2].length + 1);
                         node.parentNode.replaceChild(span, node.previousSibling);
-
                         //残りは何もない。流す
                         node = node.splitText(0);
                         if (i < 0) {
@@ -1238,21 +1143,20 @@ var Chat;
                         }
                         continue;
                     }
-
                     //その他　上のマークアップが車で通常の文字列
                     res = node.nodeValue.match(/^(.+?)(?=\[\/?\w+?\]|https?:\/\/|\s*[ .]#\S+)/);
                     if (res) {
                         node = node.splitText(res[0].length);
                         continue;
                     }
-
                     //名にもないただのテキスト nodeを空にする
                     node = node.splitText(node.nodeValue.length);
                 }
-            } else if (rawnode.childNodes) {
+            }
+            else if (rawnode.childNodes) {
                 //elementノード
                 var nodes = [];
-
+                //途中でchildNodesが変化するので、処理対象のノードをリストアップ
                 for (var i = 0, l = rawnode.childNodes.length; i < l; i++) {
                     nodes.push(rawnode.childNodes[i]);
                 }
@@ -1262,45 +1166,39 @@ var Chat;
                 });
             }
         };
-
         //餃子サムネイルを展開する
         ChatLineMaker.prototype.openGyoza = function (settingObj, a, imageid) {
+            //a: [Gyazo]リンク	imageid:32桁のやつ
+            //まず中を削る
             while (a.hasChildNodes())
                 a.removeChild(a.firstChild);
-
             //Loading
             //Textをとっておく（あとで取り除くので）
             var text = document.createTextNode(settingObj.text.opening);
             a.appendChild(text);
-
             //画像設置
             var img = document.createElement("img");
             img.classList.add("thumbnail");
             img.hidden = true;
             a.appendChild(img);
-
             //読み込みをまつ
             img.addEventListener("load", function (e) {
                 //文字列を消して画像を表示
                 a.removeChild(text);
                 img.hidden = false;
             }, false);
-
             //失敗時
             img.addEventListener("error", function (e) {
                 //文字列変更
                 text.data = settingObj.text.error;
-
                 //画像除去
                 a.removeChild(img);
             }, false);
             img.src = settingObj.url.thumb + imageid + ".png";
             img.alt = settingObj.url.image + imageid + ".png";
-
             //開いた印
             a.classList.add("gyozaloaded");
         };
-
         //餃子を判別した上で展開する
         ChatLineMaker.prototype.checkGyoza = function (a) {
             for (var i = 0, l = this.gyazoSetting.length; i < l; i++) {
@@ -1315,9 +1213,8 @@ var Chat;
             }
         };
         return ChatLineMaker;
-    })();
+    }());
     Chat.ChatLineMaker = ChatLineMaker;
-
     //チャットのユーザー一覧を表示するやつ
     var ChatUserView = (function () {
         function ChatUserView(receiver, view, dis) {
@@ -1326,22 +1223,18 @@ var Chat;
             this.dis = dis;
             this.container = document.createElement("div");
             this.container.classList.add("userinfo");
-
             //ユーザー数表示部分
             this.userNumber = document.createElement("div");
             this.userNumber.classList.add("usernumber");
             this.userNumber.dataset.roms = "0";
             this.userNumber.dataset.actives = "0";
             this.container.appendChild(this.userNumber);
-
             //リスト部分
             this.userList = document.createElement("ul");
             this.userList.classList.add("users");
             this.container.appendChild(this.userList);
-
             //リストのクリック
             this.userList.addEventListener("click", this.clickHandler.bind(this), false);
-
             //ユーザー情報を監視
             receiver.on("userinit", this.userinit.bind(this));
             receiver.on("newuser", this.newuser.bind(this));
@@ -1361,7 +1254,6 @@ var Chat;
                 }
             }
         };
-
         //処理用
         ChatUserView.prototype.userinit = function (data) {
             //リストの中を初期化
@@ -1369,13 +1261,11 @@ var Chat;
             r.selectNodeContents(this.userList);
             r.deleteContents();
             r.detach();
-
             //数の情報を更新
             this.userNumber.dataset.actives = "0";
             this.userNumber.dataset.roms = "0";
             data.users.forEach(this.newuser, this);
         };
-
         //人数をセットして反映
         ChatUserView.prototype.setusernumber = function (actives, roms) {
             var dataset = this.userNumber.dataset;
@@ -1390,7 +1280,6 @@ var Chat;
                 this.setusernumber(0, 1);
                 return;
             }
-
             //activeユーザー追加
             this.setusernumber(1, 0);
             this.newuserinfo(user);
@@ -1405,7 +1294,6 @@ var Chat;
             li.appendChild(sp);
             this.userList.appendChild(li);
         };
-
         //誰かがお亡くなりに
         ChatUserView.prototype.deluser = function (userid) {
             var elem = this.getUserElement(userid);
@@ -1414,12 +1302,10 @@ var Chat;
                 this.setusernumber(0, -1);
                 return;
             }
-
             //アクティブユーザーだ
             this.setusernumber(-1, 0);
             this.userList.removeChild(elem);
         };
-
         //そのユーザーを表すやつを手に入れる
         ChatUserView.prototype.getUserElement = function (id) {
             var lis = this.userList.childNodes;
@@ -1431,7 +1317,6 @@ var Chat;
             }
             return null;
         };
-
         //誰かが入退室した
         ChatUserView.prototype.inout = function (user) {
             var elem = this.getUserElement(user.id);
@@ -1442,18 +1327,17 @@ var Chat;
             if (user.rom) {
                 //activeからromになった
                 this.setusernumber(-1, 1);
-            } else {
+            }
+            else {
                 //romからactiveになった
                 this.setusernumber(1, -1);
-
                 //用意してあげる
                 this.newuserinfo(user);
             }
         };
         return ChatUserView;
-    })();
+    }());
     Chat.ChatUserView = ChatUserView;
-
     //UI
     var ChatUI = (function () {
         //protected
@@ -1477,9 +1361,8 @@ var Chat;
         ChatUI.prototype.refreshSettings = function () {
         };
         return ChatUI;
-    })();
+    }());
     Chat.ChatUI = ChatUI;
-
     //発言などのUI部分
     var ChatNormalUI = (function (_super) {
         __extends(ChatNormalUI, _super);
@@ -1488,16 +1371,13 @@ var Chat;
             _super.call(this, userData, receiver, process, view);
             this.container = document.createElement("div");
             this.container.classList.add("ui");
-
             //フォーム用意
             //まず入退室フォーム
             this.inoutForm = new ChatUICollection.InoutForm(this.userData, this.receiver);
             this.container.appendChild(this.inoutForm.getContainer());
-
             //次に発言フォーム
             this.commentForm = new ChatUICollection.CommentForm(receiver, false, channel);
             this.container.appendChild(this.commentForm.getContainer());
-
             //操作に対応する
             this.inoutForm.onInout(function (data) {
                 _this.process.inout(data);
@@ -1510,9 +1390,10 @@ var Chat;
                 _this.commentForm.event.emit("afterChangeChannel", false);
             });
             this.commentForm.event.on("afterChangeChannel", function (on) {
-                if (on) {
+                if (on /* && this.userData.channelMode==0*/) {
                     dis.addFocusOutlaw(true);
-                } else {
+                }
+                else {
                     dis.removeFocusOutlaw(true);
                 }
             });
@@ -1520,7 +1401,6 @@ var Chat;
         ChatNormalUI.prototype.getContainer = function () {
             return this.container;
         };
-
         //発言欄にフォーカスする
         ChatNormalUI.prototype.focusComment = function (focus, channel) {
             if (focus)
@@ -1529,10 +1409,10 @@ var Chat;
             this.commentForm.event.emit("afterChangeChannel", false);
         };
         return ChatNormalUI;
-    })(ChatUI);
+    }(ChatUI));
     Chat.ChatNormalUI = ChatNormalUI;
-
     //UIパーツ
+    var ChatUICollection;
     (function (ChatUICollection) {
         var UIObject = (function () {
             function UIObject() {
@@ -1541,7 +1421,6 @@ var Chat;
             UIObject.prototype.getContainer = function () {
                 return this.container;
             };
-
             //inputを作る
             UIObject.prototype.makeinput = function (callback) {
                 var result = document.createElement("input");
@@ -1549,9 +1428,8 @@ var Chat;
                 return result;
             };
             return UIObject;
-        })();
+        }());
         ChatUICollection.UIObject = UIObject;
-
         //入退室フォーム
         var InoutForm = (function (_super) {
             __extends(InoutForm, _super);
@@ -1565,10 +1443,8 @@ var Chat;
                 this.container = document.createElement("form");
                 var cont = this.container;
                 var p;
-
                 p = document.createElement("p");
                 this.container.appendChild(p);
-
                 //まず名前フォーム
                 p.appendChild(this.makeinput(function (input) {
                     input.name = "uname";
@@ -1576,18 +1452,15 @@ var Chat;
                     input.maxLength = 25;
                     input.required = true;
                     input.placeholder = "名前";
-
                     //最初
                     input.value = _this.userData.name || "";
                 }));
-
                 //入退室ボタン
                 p.appendChild(this.makeinput(function (input) {
                     input.name = "inoutbutton";
                     input.type = "submit";
                     input.value = "入室";
                 }));
-
                 //入退室時にフォームがかわる
                 this.receiver.on("userinfo", function (data) {
                     cont.elements["uname"].disabled = !data.rom;
@@ -1610,9 +1483,8 @@ var Chat;
                 this.event.on("inout", func);
             };
             return InoutForm;
-        })(UIObject);
+        }(UIObject));
         ChatUICollection.InoutForm = InoutForm;
-
         //入退室フォーム
         var CommentForm = (function (_super) {
             __extends(CommentForm, _super);
@@ -1626,12 +1498,9 @@ var Chat;
                 this.container = document.createElement("form");
                 this.container.classList.add("commentform");
                 var p;
-
                 p = document.createElement("p");
                 this.container.appendChild(p);
-
                 var us = receiver.getUserinfo();
-
                 //発言欄
                 p.appendChild(this.makeinput(function (input) {
                     input.name = "comment";
@@ -1640,12 +1509,9 @@ var Chat;
                     input.autocomplete = "off";
                     input.required = true;
                     input.disabled = us.rom;
-                    input.addEventListener("input", function (e) {
-                        return _this.emitInput();
-                    });
+                    input.addEventListener("input", function (e) { return _this.emitInput(); });
                 }));
                 p.appendChild(document.createTextNode("#"));
-
                 //チャネル欄
                 p.appendChild(this.makeinput(function (input) {
                     input.name = "channel";
@@ -1657,17 +1523,16 @@ var Chat;
                     input.addEventListener("change", function (e) {
                         _this.event.emit("changeChannel", input.value);
                     }, false);
-
                     //validate
                     input.addEventListener("input", function (e) {
                         if (!input.value || validateHashtag(input.value)) {
                             input.setCustomValidity("");
-                        } else {
+                        }
+                        else {
                             input.setCustomValidity("不正なチャネル名です");
                         }
                     }, false);
                 }));
-
                 //発言ボタン
                 p.appendChild(this.makeinput(function (input) {
                     input.name = "commentbutton";
@@ -1701,23 +1566,18 @@ var Chat;
                         return false;
                     if (channel === "")
                         return false;
-
                     //スペースや#を含んではいけない
                     if (/\s|#/.test(channel))
                         return false;
-
                     //スラッシュで始まらない
                     if (/^\//.test(channel))
                         return false;
-
                     //スラッシュで終わらない
                     if (/\/$/.test(channel))
                         return false;
-
                     //スラッシュが連続しない
                     if (/\/\//.test(channel))
                         return false;
-
                     //OK!
                     return true;
                 }
@@ -1725,7 +1585,6 @@ var Chat;
             //入退室ボタンが押されたときの処理
             CommentForm.prototype.emitComment = function (e) {
                 var form = this.container;
-
                 //チャネル
                 var channel = null;
                 var channelvalue = form.elements["channel"].value;
@@ -1738,11 +1597,9 @@ var Chat;
                     channel: channel
                 };
                 this.event.emit("comment", data);
-
                 //フォームを消す
                 form.elements["comment"].value = "";
             };
-
             //コメント欄が変わった時の処理
             //outlaw(タグがない発言)への注目処理
             CommentForm.prototype.emitInput = function () {
@@ -1761,7 +1618,6 @@ var Chat;
                 }
                 this.flagFocusOutlaw = !nowCommentEmpty;
             };
-
             //フォーカスする(チャネル指定可能）
             CommentForm.prototype.focus = function () {
                 this.container.elements["comment"].focus();
@@ -1773,7 +1629,7 @@ var Chat;
                 return this.container.elements["channel"].value;
             };
             return CommentForm;
-        })(UIObject);
+        }(UIObject));
         ChatUICollection.CommentForm = CommentForm;
         var MottoForm = (function (_super) {
             __extends(MottoForm, _super);
@@ -1784,16 +1640,13 @@ var Chat;
                 _super.call(this);
                 this.container = document.createElement("form");
                 var p;
-
                 p = document.createElement("p");
                 this.container.appendChild(p);
-
                 //HottoMottoButton
                 p.appendChild(this.makeinput(function (input) {
                     input.type = "submit";
                     input.value = "HottoMotto";
                 }));
-
                 this.container.addEventListener("submit", function (e) {
                     e.preventDefault();
                     _this.emitMotto(e);
@@ -1808,9 +1661,8 @@ var Chat;
                 this.event.on("motto", func);
             };
             return MottoForm;
-        })(UIObject);
+        }(UIObject));
         ChatUICollection.MottoForm = MottoForm;
-
         //コマンドライン用コンソール
         var Console = (function (_super) {
             __extends(Console, _super);
@@ -1839,7 +1691,6 @@ var Chat;
                 this.consoleo = document.createElement("pre");
                 this.consoleo.classList.add("consoleoutput");
                 this.container.appendChild(this.consoleo);
-
                 //入力部分を作る
                 var p = document.createElement("p");
                 this.command = document.createElement("input");
@@ -1849,25 +1700,22 @@ var Chat;
                 p.appendChild(this.command);
                 if (this.cmode === "up") {
                     this.container.insertBefore(p, this.consoleo);
-                } else {
+                }
+                else {
                     this.container.appendChild(p);
                 }
-
                 //クリックされると入力フォーカス
                 this.container.addEventListener("click", function (e) {
                     _this.focusConsole();
                 }, false);
-
                 //キーを捕捉する
                 var handler = this.keydown.bind(this);
                 document.addEventListener("keydown", handler, false);
-
                 //後始末
                 this.event.on("exit", function () {
                     document.removeEventListener("keydown", handler, false);
                 });
             };
-
             //自分も始末する
             Console.prototype.cleanup = function () {
                 var _this = this;
@@ -1877,7 +1725,6 @@ var Chat;
                         _this.container.parentNode.removeChild(_this.container);
                 }, 350);
             };
-
             //キーを・・・
             Console.prototype.keydown = function (e) {
                 //プロセスに送る
@@ -1899,7 +1746,8 @@ var Chat;
                         this.openConsole();
                         e.preventDefault();
                         return;
-                    } else if (this.command.value === "") {
+                    }
+                    else if (this.command.value === "") {
                         //閉じる
                         this.closeConsole();
                         e.preventDefault();
@@ -1914,17 +1762,18 @@ var Chat;
                     e.preventDefault();
                     return;
                 }
-
                 //コマンド履歴をスクロールする
                 if ((e.keyCode === 38 || e.keyCode === 40) && this.command === document.activeElement && this.container.classList.contains("open")) {
                     //上下
                     if (this.commandlogindex == null) {
                         this.commandlogindex = this.commandlog.length - 1;
-                    } else if (e.keyCode === 38) {
+                    }
+                    else if (e.keyCode === 38) {
                         this.commandlogindex--;
                         if (this.commandlogindex < 0)
                             this.commandlogindex = 0;
-                    } else {
+                    }
+                    else {
                         this.commandlogindex++;
                         if (this.commandlogindex >= this.commandlog.length)
                             this.commandlogindex = this.commandlog.length - 1;
@@ -1951,7 +1800,6 @@ var Chat;
                 //コマンドにフォーカスするとスクロールしてしまうので一時的にスクロール位置保存
                 var sc = document.documentElement.scrollTop || document.body.scrollTop;
                 this.command.focus();
-
                 //戻す
                 document.documentElement.scrollTop && (document.documentElement.scrollTop = sc);
                 document.body.scrollTop && (document.body.scrollTop = sc);
@@ -1979,7 +1827,6 @@ var Chat;
             Console.prototype.getInput = function () {
                 return this.command.value;
             };
-
             //一番下を見せる
             Console.prototype.scrollDown = function () {
                 this.container.scrollTop = this.container.scrollHeight - this.container.clientHeight;
@@ -1997,11 +1844,9 @@ var Chat;
                     this.process.comment(data);
                     return;
                 }
-
                 //履歴にコマンドを追加する
                 this.addCommandLog(line);
                 this.print("> " + line);
-
                 //命令・スペースを除去する
                 line = line.slice(result[0].length);
                 var errorMessage = this.runCommand(result[1], line);
@@ -2009,48 +1854,56 @@ var Chat;
                     this.print(errorMessage, { color: "red" });
                 }
             };
-
             //返り値: error message
             Console.prototype.runCommand = function (name, args) {
                 var c = null;
-
                 //選択
                 if (name === "in") {
                     c = ChatCmdProcessCollection.In;
-                } else if (name === "out") {
+                }
+                else if (name === "out") {
                     c = ChatCmdProcessCollection.Out;
-                } else if (name === "motto") {
+                }
+                else if (name === "motto") {
                     c = ChatCmdProcessCollection.Motto;
-                } else if (name === "volume") {
+                }
+                else if (name === "volume") {
                     c = ChatCmdProcessCollection.Volume;
-                } else if (name === "gyoza" || name === "gyazo") {
+                }
+                else if (name === "gyoza" || name === "gyazo") {
                     c = ChatCmdProcessCollection.Gyoza;
-                } else if (name === "set") {
+                }
+                else if (name === "set") {
                     c = ChatCmdProcessCollection.Set;
-                } else if (name === "clear" || name === "clean") {
+                }
+                else if (name === "clear" || name === "clean") {
                     c = ChatCmdProcessCollection.Clean;
-                } else if (name === "help") {
+                }
+                else if (name === "help") {
                     c = ChatCmdProcessCollection.Help;
-                } else if (name === "go") {
+                }
+                else if (name === "go") {
                     c = ChatCmdProcessCollection.Go;
-                } else if (name === "disip") {
+                }
+                else if (name === "disip") {
                     c = ChatCmdProcessCollection.Disip;
-                } else if (name === "dischannel") {
+                }
+                else if (name === "dischannel") {
                     c = ChatCmdProcessCollection.Dischannel;
-                } else if (name === "sl") {
+                }
+                else if (name === "sl") {
                     c = ChatCmdProcessCollection.Sl;
                 }
-
                 if (c) {
                     var p = new c(this.ui, this, this.process, this.userData, args);
                     this.cmdprocess = p;
                     p.run();
                     return null;
-                } else {
+                }
+                else {
                     return "Unknown command: " + name;
                 }
             };
-
             //コマンド終了
             Console.prototype.endProcess = function () {
                 this.cmdprocess = null;
@@ -2058,20 +1911,17 @@ var Chat;
             };
             Console.prototype.addCommandLog = function (line) {
                 this.commandlog.push(line);
-
                 //古いほうを消す
                 if (this.commandlog.length > 50) {
                     this.commandlog.shift();
                 }
                 this.commandlogindex = null;
             };
-
             //コンソールに文字出力
             Console.prototype.print = function (str, option) {
                 //改行付き
                 this.put(str + "\n", option);
             };
-
             //生
             Console.prototype.put = function (str, option) {
                 var _this = this;
@@ -2080,7 +1930,6 @@ var Chat;
                     str = str.split("\n").map(function (x, i) {
                         return i > 0 && x ? _this.indentSpace + x : x;
                     }).join("\n");
-
                     //行頭インデント
                     if (this.cmode === "up") {
                         var con = this.consoleo.textContent;
@@ -2088,7 +1937,8 @@ var Chat;
                             //最初にもインデント必要
                             str = this.indentSpace + str;
                         }
-                    } else {
+                    }
+                    else {
                         if (con.length === 0 || con.charAt(con.length - 1) === "\n") {
                             str = this.indentSpace + str;
                         }
@@ -2097,16 +1947,14 @@ var Chat;
                 if (this.cmode === "up") {
                     //改行で分ける
                     var lines = str.split("\n");
-                    var df = document.createDocumentFragment();
+                    var df = document.createDocumentFragment(); //2行め以降をまとめておく
                     var first = lines.shift();
-
                     //逆順か
                     lines.reverse();
                     var remains = lines.join("\n");
                     if (remains) {
                         df.appendChild(makeNode(remains, option));
                     }
-
                     //いい位置を探す
                     var tw = document.createTreeWalker(this.consoleo, NodeFilter.SHOW_TEXT, function (node) {
                         return NodeFilter.FILTER_ACCEPT;
@@ -2115,20 +1963,17 @@ var Chat;
                     while (node = tw.nextNode()) {
                         var idx = node.data.lastIndexOf("\n");
                         if (idx < 0) {
+                            //改行がない
                             continue;
                         }
-
                         //改行があった!改行の後ろに追加する
                         var range = document.createRange();
                         range.setStart(this.consoleo, 0); //出力の一番最初
                         range.setEnd(node, idx); //改行の直前まで
-
                         //改行の前までを抜き出す
                         var c = range.extractContents();
-
                         //間にはさんで追加する
                         this.consoleo.insertBefore(makeNode(first, option), this.consoleo.firstChild);
-
                         //戻す
                         this.consoleo.insertBefore(c, this.consoleo.firstChild);
                         range.detach();
@@ -2138,26 +1983,26 @@ var Chat;
                         //入れられなかった
                         this.consoleo.appendChild(node);
                     }
-
                     //残り
                     this.consoleo.insertBefore(df, this.consoleo.firstChild);
                     this.consoleo.normalize();
-                } else {
+                }
+                else {
                     //下に追加するだけじゃん!
                     this.consoleo.appendChild(makeNode(str, option));
                     this.consoleo.normalize();
                     this.scrollDown();
                 }
-
                 //テキストをラップする
                 function makeNode(text, option) {
                     var ins;
                     if (!option) {
                         ins = document.createTextNode(text);
-                    } else {
+                    }
+                    else {
                         ins = document.createElement("span");
                         ins.textContent = text;
-
+                        //cssプロパティ
                         for (var key in option) {
                             if (option[key] != null) {
                                 ins.style.setProperty(key, option[key], null);
@@ -2173,18 +2018,17 @@ var Chat;
                 setindent(num);
                 callback();
                 setindent(-num);
-
                 function setindent(n) {
                     if (n > 0) {
                         for (var i = 0; i < n; i++) {
                             t.indentSpace += " ";
                         }
-                    } else if (n < 0) {
+                    }
+                    else if (n < 0) {
                         t.indentSpace = t.indentSpace.slice(-n);
                     }
                 }
             };
-
             //行削除(num: 後ろから何行消すか）
             Console.prototype.deletelines = function (num) {
                 if (num == null) {
@@ -2204,9 +2048,7 @@ var Chat;
                     if (this.consoleo.textContent.charAt(0) === "\n") {
                         count++;
                     }
-
-                    big:
-                    while (node = tw.nextNode()) {
+                    big: while (node = tw.nextNode()) {
                         var idx = 0;
                         while ((idx = node.data.indexOf("\n", idx)) >= 0) {
                             //改行 みつけた
@@ -2217,15 +2059,14 @@ var Chat;
                             }
                         }
                     }
-                    //breakしなかったら最後まで消すのだ
-                } else {
+                }
+                else {
                     //後ろから
                     var cono = this.consoleo.textContent;
                     if (cono.charAt(cono.length - 1) === "\n") {
                         count++;
                     }
-                    big:
-                    while (node = tw.previousNode()) {
+                    big: while (node = tw.previousNode()) {
                         var idx = 0;
                         while ((idx = node.data.lastIndexOf("\n", idx)) >= 0) {
                             //改行
@@ -2237,7 +2078,6 @@ var Chat;
                         }
                     }
                 }
-
                 //中身を抜く
                 range.deleteContents();
                 range.detach();
@@ -2257,12 +2097,11 @@ var Chat;
                 range.detach();
             };
             return Console;
-        })(UIObject);
+        }(UIObject));
         ChatUICollection.Console = Console;
-    })(Chat.ChatUICollection || (Chat.ChatUICollection = {}));
-    var ChatUICollection = Chat.ChatUICollection;
-
+    })(ChatUICollection = Chat.ChatUICollection || (Chat.ChatUICollection = {}));
     //コマンドライン用プロセス
+    var ChatCmdProcessCollection;
     (function (ChatCmdProcessCollection) {
         var Process = (function () {
             //protectedが欲しい事例
@@ -2278,12 +2117,11 @@ var Chat;
             //引数を配列に分けて返す
             Process.prototype.parseArg = function () {
                 var reqs = [];
-                for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                    reqs[_i] = arguments[_i + 0];
+                for (var _i = 0; _i < arguments.length; _i++) {
+                    reqs[_i - 0] = arguments[_i];
                 }
                 var a = this.arg;
                 var result = [];
-
                 //まず単語に分解
                 var words = [];
                 while (a = a.replace(/^\s+/, "")) {
@@ -2297,7 +2135,8 @@ var Chat;
                             a = a.slice(r[0].length);
                             continue;
                         }
-                    } else if (a.charAt(0) === "'") {
+                    }
+                    else if (a.charAt(0) === "'") {
                         r = a.match(/^\'(?:[^\"]|\\')*\'(?=\s+|$)/);
                         if (r) {
                             //囲まれた
@@ -2306,7 +2145,6 @@ var Chat;
                             continue;
                         }
                     }
-
                     //ダメだったら空白まで
                     r = a.match(/^\S+/);
                     if (r) {
@@ -2314,12 +2152,12 @@ var Chat;
                         a = a.slice(r[0].length);
                     }
                 }
-
                 //wordsと引数をてらしあわす
                 var addto = null, addremain = null;
                 for (var i = 0, l = words.length; i < l; i++) {
                     var word = words[i];
-
+                    //対応する引数探す
+                    //まずoptionの
                     for (var j = 0, m = reqs.length; j < m; j++) {
                         var req = reqs[j];
                         if (!result[j] && req.option) {
@@ -2334,7 +2172,8 @@ var Chat;
                                 if (addremain) {
                                     //追加モード
                                     addto = result[j];
-                                } else {
+                                }
+                                else {
                                     //通常通り
                                     addto = null;
                                 }
@@ -2355,10 +2194,10 @@ var Chat;
                         }
                     }
                 }
-
+                //一周目終了。残りを埋める
                 for (var j = 0, m = reqs.length; j < m; j++) {
                     if (result[j])
-                        continue;
+                        continue; //処理終了した
                     var req = reqs[j];
                     if (!req.option) {
                         for (i = 0; i < l; i++) {
@@ -2372,7 +2211,8 @@ var Chat;
                             i--, l--;
                             break;
                         }
-                    } else {
+                    }
+                    else {
                         result[j] = {
                             active: false,
                             option: true,
@@ -2381,7 +2221,7 @@ var Chat;
                         };
                     }
                 }
-
+                //最後に省略引数の処理
                 for (var j = 0, m = reqs.length; j < m; j++) {
                     if (!result[j]) {
                         var req = reqs[j];
@@ -2407,10 +2247,9 @@ var Chat;
             };
             Process.prototype.gotKey = function (e) {
                 if (!this.key)
-                    return true;
+                    return true; //妨げない
                 return this.key(e);
             };
-
             //コンソール操作系
             Process.prototype.print = function (str, option) {
                 this.console.print(str, option);
@@ -2418,17 +2257,15 @@ var Chat;
             Process.prototype.put = function (str, option) {
                 this.console.put(str, option);
             };
-
             //エラー表示
             Process.prototype.error = function (str, option) {
-                if (typeof option === "undefined") { option = {}; }
+                if (option === void 0) { option = {}; }
                 option.color = "#ff6666";
                 this.print(str, option);
             };
             Process.prototype.indent = function (num, callback) {
                 this.console.indent(num, callback);
             };
-
             //行単位入力
             Process.prototype.input = function (multiline, callback) {
                 var _this = this;
@@ -2454,7 +2291,6 @@ var Chat;
                     return true;
                 };
             };
-
             //キー単位入力
             Process.prototype.inputKey = function (callback) {
                 var _this = this;
@@ -2467,24 +2303,20 @@ var Chat;
                     return false;
                 };
             };
-
             //走る
             Process.prototype.run = function () {
             };
-
             //終了
             Process.prototype.die = function () {
                 this.console.endProcess();
             };
-
             //末尾の改行をけす
             Process.prototype.chomp = function (str) {
                 return str.replace(/\n+$/, "");
             };
             return Process;
-        })();
+        }());
         ChatCmdProcessCollection.Process = Process;
-
         //コマンドの実装
         var In = (function (_super) {
             __extends(In, _super);
@@ -2508,12 +2340,12 @@ var Chat;
                     this.userData.autoin = true;
                     this.userData.save();
                     this.print("autoin set.");
-                } else if (args[2].active) {
+                }
+                else if (args[2].active) {
                     this.userData.autoin = false;
                     this.userData.save();
                     this.print("autoin unset.");
                 }
-
                 //入室
                 var data = {
                     name: null
@@ -2521,9 +2353,11 @@ var Chat;
                 if (args[0].active) {
                     //名前がある
                     data.name = args[0].value;
-                } else if (this.userData.name) {
+                }
+                else if (this.userData.name) {
                     data.name = this.userData.name;
-                } else {
+                }
+                else {
                     //名前がない
                     this.error("Name required.");
                     this.die();
@@ -2537,7 +2371,7 @@ var Chat;
                 this.die();
             };
             return In;
-        })(Process);
+        }(Process));
         ChatCmdProcessCollection.In = In;
         var Out = (function (_super) {
             __extends(Out, _super);
@@ -2557,7 +2391,7 @@ var Chat;
                 this.die();
             };
             return Out;
-        })(Process);
+        }(Process));
         ChatCmdProcessCollection.Out = Out;
         var Motto = (function (_super) {
             __extends(Motto, _super);
@@ -2573,7 +2407,6 @@ var Chat;
                     name: ["--gmt", "--utc"],
                     num: 0
                 });
-
                 //リクエストを作る
                 var untiltime = null;
                 if (args[0].active) {
@@ -2594,7 +2427,7 @@ var Chat;
                 this.die();
             };
             return Motto;
-        })(Process);
+        }(Process));
         ChatCmdProcessCollection.Motto = Motto;
         var Volume = (function (_super) {
             __extends(Volume, _super);
@@ -2605,7 +2438,6 @@ var Chat;
                 var args = this.parseArg({
                     option: false
                 });
-
                 //ボリューム変更
                 if (!args[0].active) {
                     //教えるだけ
@@ -2616,7 +2448,8 @@ var Chat;
                 var vo = parseInt(args[0].value);
                 if (isNaN(vo) || vo < 0 || 100 < vo) {
                     this.error("Invalid volume " + args[0].value);
-                } else {
+                }
+                else {
                     this.userData.volume = vo;
                     this.userData.save();
                     this.ui.getView().refreshSettings();
@@ -2624,7 +2457,7 @@ var Chat;
                 this.die();
             };
             return Volume;
-        })(Process);
+        }(Process));
         ChatCmdProcessCollection.Volume = Volume;
         var Gyoza = (function (_super) {
             __extends(Gyoza, _super);
@@ -2636,24 +2469,24 @@ var Chat;
                 var args = this.parseArg({
                     option: false
                 });
-
                 //餃子モード変更
                 if (args[0].active) {
                     var mo = parseInt(args[0].value);
                     if (isNaN(mo) || mo < 0 || 2 < mo) {
                         this.error("Invalid gyoza: " + args[0].value);
-                    } else {
+                    }
+                    else {
                         this.userData.gyoza = mo;
                         this.userData.save();
                         this.ui.getView().refreshSettings();
                     }
                 }
-
                 //餃子状態を表示してあげる
                 ["餃子無展開", "餃子オンマウス", "餃子常時"].forEach(function (x, i) {
                     if (_this.userData.gyoza === i) {
                         _this.put("*" + i, { color: "#00ffff" });
-                    } else {
+                    }
+                    else {
                         _this.put(" " + i);
                     }
                     _this.print(": " + x);
@@ -2661,7 +2494,7 @@ var Chat;
                 this.die();
             };
             return Gyoza;
-        })(Process);
+        }(Process));
         ChatCmdProcessCollection.Gyoza = Gyoza;
         var Set = (function (_super) {
             __extends(Set, _super);
@@ -2682,7 +2515,7 @@ var Chat;
                 }
                 var key = args[0].active ? args[0].value : null;
                 var value = args[1].value;
-
+                //複数の設定を変更できる
                 switch (key) {
                     case "syschar":
                     case "systemchar":
@@ -2712,7 +2545,7 @@ var Chat;
                 this.die();
             };
             return Set;
-        })(Process);
+        }(Process));
         ChatCmdProcessCollection.Set = Set;
         var Clean = (function (_super) {
             __extends(Clean, _super);
@@ -2725,7 +2558,7 @@ var Chat;
                 this.die();
             };
             return Clean;
-        })(Process);
+        }(Process));
         ChatCmdProcessCollection.Clean = Clean;
         var Help = (function (_super) {
             __extends(Help, _super);
@@ -2759,12 +2592,12 @@ var Chat;
                     "dischannel [-d] [channel]",
                     "	 set/remove channel into/from dischannel list",
                     "go [URL|alias|#channelname]",
-                    "	 alias: 'wiki'"
+                    "	 alias: 'wiki'",
                 ].join("\n"));
                 this.die();
             };
             return Help;
-        })(Process);
+        }(Process));
         ChatCmdProcessCollection.Help = Help;
         var Go = (function (_super) {
             __extends(Go, _super);
@@ -2780,11 +2613,11 @@ var Chat;
                     return;
                 }
                 var dest = args[0].value;
-
                 //alias
                 if (dest === "wiki") {
                     dest = "http://showigiki.81.la/shogiwiki/";
-                } else {
+                }
+                else {
                     //チャネル
                     var result = dest.match(/^#(\S+)$/);
                     if (result) {
@@ -2793,7 +2626,6 @@ var Chat;
                         return;
                     }
                 }
-
                 //URLへ
                 var a = document.createElement("a");
                 a.href = dest;
@@ -2802,7 +2634,7 @@ var Chat;
                 this.die();
             };
             return Go;
-        })(Process);
+        }(Process));
         ChatCmdProcessCollection.Go = Go;
         var Disip = (function (_super) {
             __extends(Disip, _super);
@@ -2829,7 +2661,8 @@ var Chat;
                     if (args[1].active) {
                         //やっぱり削除
                         dis.removeDisip(ip);
-                    } else {
+                    }
+                    else {
                         if (!dis.addDisip(ip)) {
                             //失敗=すでにある
                             this.error("Already exists: " + ip);
@@ -2843,7 +2676,6 @@ var Chat;
                         dis.removeDisip(ip);
                     });
                 }
-
                 //disip一覧を表示
                 this.userData.disip.forEach(function (ip) {
                     _this.print(ip);
@@ -2851,7 +2683,7 @@ var Chat;
                 this.die();
             };
             return Disip;
-        })(Process);
+        }(Process));
         ChatCmdProcessCollection.Disip = Disip;
         var Dischannel = (function (_super) {
             __extends(Dischannel, _super);
@@ -2882,7 +2714,8 @@ var Chat;
                     if (args[1].active) {
                         //やっぱり削除
                         dis.removeDischannel(channel, false, false);
-                    } else {
+                    }
+                    else {
                         if (!dis.addDischannel(channel, false, false)) {
                             //失敗=すでにある
                             this.error("Already exists: " + channel);
@@ -2896,7 +2729,6 @@ var Chat;
                         dis.removeDischannel(channel, false, false);
                     });
                 }
-
                 //dischannel一覧を表示
                 this.userData.dischannel.forEach(function (channel) {
                     _this.print(channel);
@@ -2904,7 +2736,7 @@ var Chat;
                 this.die();
             };
             return Dischannel;
-        })(Process);
+        }(Process));
         ChatCmdProcessCollection.Dischannel = Dischannel;
         var Sl = (function (_super) {
             __extends(Sl, _super);
@@ -2913,13 +2745,12 @@ var Chat;
             }
             Sl.prototype.run = function () {
                 var sl_steam = [
-                    [
-                        "						(@@) (	) (@)  ( )	@@	  ()	@	  O		@	  O		 @",
+                    ["						(@@) (	) (@)  ( )	@@	  ()	@	  O		@	  O		 @",
                         "				  (   )",
                         "			  (@@@@)",
                         "		   (	)",
                         "",
-                        "		 (@@@)"
+                        "		 (@@@)",
                     ],
                     [
                         "					   (  ) (@@) ( )  (@)  ()	 @@    O	 @	   O	 @		O",
@@ -2927,7 +2758,7 @@ var Chat;
                         "			  (    )",
                         "		   (@@@@)",
                         "",
-                        "		 (	 )"
+                        "		 (	 )",
                     ]
                 ], sl_body = [
                     "	   ====		   ________				   ___________ ",
@@ -2936,69 +2767,66 @@ var Chat;
                     "	/	  |  |	 H	|  |	 |	 |		   ||_| |_||	 _|				   \\_____A  ",
                     "  |	  |  |	 H	|__--------------------| [___] |   =|						 |	",
                     "  | ________|___H__/__|_____/[][]~\\_______|		|	-|						  |  ",
-                    "  |/ |   |-----------I_____I [][] []  D   |=======|____|________________________|_ "
+                    "  |/ |   |-----------I_____I [][] []  D   |=======|____|________________________|_ ",
                 ], sl_wheels = [
                     [
                         "__/ =| o |=-O=====O=====O=====O \\ ____Y___________|__|__________________________|_ ",
                         " |/-=|___|=	||	  ||	||	  |_____/~\\___/		  |_D__D__D_|  |_D__D__D_|	 ",
-                        "  \\_/		 \\__/	\\__/  \\__/  \\__/		 \\_/				\\_/   \\_/    \\_/   \\_/	  "
+                        "  \\_/		 \\__/	\\__/  \\__/  \\__/		 \\_/				\\_/   \\_/    \\_/   \\_/	  ",
                     ], [
                         "__/ =| o |=-~~\\  /~~\\  /~~\\  /~~\\ ____Y___________|__|__________________________|_ ",
                         " |/-=|___|=O=====O=====O=====O   |_____/~\\___/		  |_D__D__D_|  |_D__D__D_|	 ",
-                        "  \\_/		 \\__/	\\__/  \\__/  \\__/		 \\_/				\\_/   \\_/    \\_/   \\_/	  "
+                        "  \\_/		 \\__/	\\__/  \\__/  \\__/		 \\_/				\\_/   \\_/    \\_/   \\_/	  ",
                     ], [
                         "__/ =| o |=-~~\\  /~~\\  /~~\\  /~~\\ ____Y___________|__|__________________________|_ ",
                         " |/-=|___|=	||	  ||	||	  |_____/~\\___/		  |_D__D__D_|  |_D__D__D_|	 ",
-                        "  \\_/		 \\O=====O=====O=====O_/	  \\_/				 \\_/	\\_/	\\_/   \\_/    "
+                        "  \\_/		 \\O=====O=====O=====O_/	  \\_/				 \\_/	\\_/	\\_/   \\_/    ",
                     ], [
                         "__/ =| o |=-~~\\  /~~\\  /~~\\  /~~\\ ____Y___________|__|__________________________|_ ",
                         " |/-=|___|=	||	  ||	||	  |_____/~\\___/		  |_D__D__D_|  |_D__D__D_|	 ",
-                        "  \\_/		 \\_O=====O=====O=====O/	  \\_/				 \\_/	\\_/	\\_/   \\_/    "
+                        "  \\_/		 \\_O=====O=====O=====O/	  \\_/				 \\_/	\\_/	\\_/   \\_/    ",
                     ], [
                         "__/ =| o |=-~~\\  /~~\\  /~~\\  /~~\\ ____Y___________|__|__________________________|_ ",
                         " |/-=|___|=   O=====O=====O=====O|_____/~\\___/		  |_D__D__D_|  |_D__D__D_|	 ",
-                        "  \\_/		 \\__/	\\__/  \\__/  \\__/		 \\_/				\\_/   \\_/    \\_/   \\_/	  "
+                        "  \\_/		 \\__/	\\__/  \\__/  \\__/		 \\_/				\\_/   \\_/    \\_/   \\_/	  ",
                     ], [
                         "__/ =| o |=-~O=====O=====O=====O\\ ____Y___________|__|__________________________|_ ",
                         " |/-=|___|=	||	  ||	||	  |_____/~\\___/		  |_D__D__D_|  |_D__D__D_|	 ",
-                        "  \\_/		 \\__/	\\__/  \\__/  \\__/		 \\_/				\\_/   \\_/    \\_/   \\_/	  "
-                    ]
+                        "  \\_/		 \\__/	\\__/  \\__/  \\__/		 \\_/				\\_/   \\_/    \\_/   \\_/	  ",
+                    ],
                 ];
-
                 var counter = 0, position = 0, sl_length = 90, sp_length = 30;
-                var sl_speed = 90;
+                var sl_speed = 90; //wait長さ
                 var spaces = "";
                 for (var i = 0; i < sp_length; i++) {
                     spaces += " "; //スペースを作る
                 }
-                var le = 0;
+                var le = 0; //減った
                 var console = this.console, t = this;
                 console.newContext();
                 console.hideInput();
-                this.key = function (e) {
-                    return false;
-                };
+                this.key = function (e) { return false; };
                 sl_move();
                 function sl_move() {
                     if (counter) {
                         //2かいめ以降
                         console.deletelines(16); //16行
                     }
-                    var wheel = counter % 6;
+                    var wheel = counter % 6; //6 patterns
                     var steam = Math.floor(counter / 3) % 2;
-                    var cut = function (x) {
-                        return spaces + x.slice(le);
-                    };
+                    var cut = function (x) { return spaces + x.slice(le); };
                     console.print(sl_steam[steam].concat(sl_body, sl_wheels[wheel]).map(cut).join("\n"));
                     counter++;
                     if (spaces.length > 0) {
                         spaces = spaces.slice(1);
-                    } else {
+                    }
+                    else {
                         le++;
                     }
                     if (le < sl_length) {
                         setTimeout(sl_move, sl_speed);
-                    } else {
+                    }
+                    else {
                         //process.deletelines(16);
                         console.restoreContext();
                         t.key = null;
@@ -3007,11 +2835,9 @@ var Chat;
                 }
             };
             return Sl;
-        })(Process);
+        }(Process));
         ChatCmdProcessCollection.Sl = Sl;
-    })(Chat.ChatCmdProcessCollection || (Chat.ChatCmdProcessCollection = {}));
-    var ChatCmdProcessCollection = Chat.ChatCmdProcessCollection;
-
+    })(ChatCmdProcessCollection = Chat.ChatCmdProcessCollection || (Chat.ChatCmdProcessCollection = {}));
     //コマンドラインみたいなUI
     var ChatCmdUI = (function (_super) {
         __extends(ChatCmdUI, _super);
@@ -3036,9 +2862,8 @@ var Chat;
             return this.console.getContainer();
         };
         return ChatCmdUI;
-    })(ChatUI);
+    }(ChatUI));
     Chat.ChatCmdUI = ChatCmdUI;
-
     //その他util
     function setUniqueId(element, base) {
         if (!document.getElementById(base)) {
@@ -3052,8 +2877,7 @@ var Chat;
         return;
     }
     function appearAnimation(el, mode, appear, finish, callback) {
-        if (typeof callback === "undefined") { callback = function () {
-        }; }
+        if (callback === void 0) { callback = function () { }; }
         //transition heightが設定してあることが前提
         //mode:"vertical","horizontal","fade"
         //appear: true->出現 false->消滅
@@ -3069,9 +2893,8 @@ var Chat;
                 }
             }
             callback();
-            return;
+            return; //未対応
         }
-
         //クラス付加
         var inb1, inb2;
         var h;
@@ -3081,37 +2904,43 @@ var Chat;
             h = el.clientHeight;
             if (appear) {
                 el.style.height = "0";
-            } else {
+            }
+            else {
                 el.style.height = h + "px";
             }
-        } else if (mode === "horizontal") {
+        }
+        else if (mode === "horizontal") {
             inb1 = el.classList.contains("horizontalanime1");
             el.classList.add("horizontalanime1");
             h = el.clientWidth;
             if (appear) {
                 el.style.width = "0";
-            } else {
+            }
+            else {
                 el.style.width = h + "px";
             }
-        } else if (mode === "fade") {
+        }
+        else if (mode === "fade") {
             inb1 = el.classList.contains("fadeanime1");
             el.classList.add("fadeanime1");
             if (appear) {
                 el.style.opacity = "0";
-            } else {
+            }
+            else {
                 el.style.opacity = "1";
             }
         }
-
         //setImmediateがほしい
         setTimeout(function () {
             if (mode === "vertical") {
                 inb2 = el.classList.contains("verticalanime2");
                 el.classList.add("verticalanime2");
-            } else if (mode === "horizontal") {
+            }
+            else if (mode === "horizontal") {
                 inb2 = el.classList.contains("horizontalanime2");
                 el.classList.add("horizontalanime2");
-            } else if (mode === "fade") {
+            }
+            else if (mode === "fade") {
                 inb2 = el.classList.contains("fadeanime2");
                 el.classList.add("fadeanime2");
             }
@@ -3120,19 +2949,24 @@ var Chat;
                 if (mode === "vertical") {
                     if (appear) {
                         el.style.height = h + "px";
-                    } else {
+                    }
+                    else {
                         el.style.height = "0";
                     }
-                } else if (mode === "horizontal") {
+                }
+                else if (mode === "horizontal") {
                     if (appear) {
                         el.style.width = h + "px";
-                    } else {
+                    }
+                    else {
                         el.style.width = "0";
                     }
-                } else if (mode === "fade") {
+                }
+                else if (mode === "fade") {
                     if (appear) {
                         el.style.opacity = "1";
-                    } else {
+                    }
+                    else {
                         el.style.opacity = "0";
                     }
                 }
@@ -3141,27 +2975,33 @@ var Chat;
                     if (!inb1) {
                         if (mode === "vertical") {
                             el.classList.remove("verticalanime1");
-                        } else if (mode === "horizontal") {
+                        }
+                        else if (mode === "horizontal") {
                             el.classList.remove("horizontalanime1");
-                        } else if (mode === "fade") {
+                        }
+                        else if (mode === "fade") {
                             el.classList.remove("fadeanime1");
                         }
                     }
                     if (!inb2) {
                         if (mode === "vertical") {
                             el.classList.remove("verticalanime2");
-                        } else if (mode === "horizontal") {
+                        }
+                        else if (mode === "horizontal") {
                             el.classList.remove("horizontalanime2");
-                        } else if (mode === "fade") {
+                        }
+                        else if (mode === "fade") {
                             el.classList.remove("fadeanime2");
                         }
                     }
                     if (finish) {
                         if (mode === "vertical") {
                             el.style.removeProperty("height");
-                        } else if (mode === "horizontal") {
+                        }
+                        else if (mode === "horizontal") {
                             el.style.removeProperty("width");
-                        } else if (mode === "fade") {
+                        }
+                        else if (mode === "fade") {
                             el.style.removeProperty("opacity");
                         }
                         if (!appear) {
@@ -3176,7 +3016,6 @@ var Chat;
             }, 0);
         }, 0);
     }
-
     //要素作る
     function makeEl(name, callback) {
         var el = document.createElement(name);

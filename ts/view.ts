@@ -27,22 +27,6 @@ interface Document{
 interface XPathNSResolver{
 	lookupNamespaceURI(prefix:string):string;
 }
-//Clipboard API
-interface ClipboardEvent extends Event{
-	clipboardData:DataTransfer;
-}
-declare var XPathResult:{
-	ANY_TYPE:number;
-	NUMBER_TYPE:number;
-	STRING_TYPE:number;
-	BOOLEAN_TYPE:number;
-	UNORDERED_NODE_ITERATOR_TYPE:number;
-	ORDERED_NODE_ITERATOR_TYPE:number;
-	UNORDERED_NODE_SNAPSHOT_TYPE:number;
-	ORDERED_NODE_SNAPSHOT_TYPE:number;
-	ANY_UNORDERED_NODE_TYPE:number;
-	FIRST_ORDERED_NODE_TYPE:number;
-}
 
 interface XPathEvaluator{
 	evaluate(expression:string,contextNode:Node,resolver:XPathNSResolver,type:number,result:any):any;

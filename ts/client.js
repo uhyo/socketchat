@@ -16,9 +16,8 @@ var Chat;
             this.channel = channel;
         }
         return ChatClient;
-    })();
+    }());
     Chat.ChatClient = ChatClient;
-
     //Factory
     var ChatClientFactory = (function () {
         //protected
@@ -30,7 +29,6 @@ var Chat;
             this.domReady = false;
             //子かどうかの判定入れる
             this.child = !!sessionStorage.getItem("independent_flag");
-
             //ready?
             document.addEventListener("DOMContentLoaded", function (e) {
                 _this.domReady = true;
@@ -45,7 +43,6 @@ var Chat;
                 }
                 return;
             }
-
             //userData取得
             var userData = this.makeUserData();
             var listener = function (e) {
@@ -57,19 +54,14 @@ var Chat;
                         userData.lastid = sessionid;
                         userData.save();
                     }
-
                     //receiver
                     var receiver = _this.makeReceiver(connection);
-
                     //process作る
                     var process = _this.makeProcess(connection, receiver, userData);
-
                     //view
                     var view = _this.makeView(connection, receiver, userData, process, _this.channel);
-
                     //api
                     var api = _this.makeAPI(connection, receiver, userData, process, view);
-
                     //作る
                     var chat = new ChatClient(userData, connection, receiver, process, view, api, _this.channel);
                     _this.chat = chat;
@@ -80,7 +72,8 @@ var Chat;
             };
             if (this.domReady) {
                 listener(null);
-            } else {
+            }
+            else {
                 document.addEventListener("DOMContentLoaded", listener, false);
             }
         };
@@ -93,9 +86,11 @@ var Chat;
             var connection;
             if (this.child) {
                 connection = new Chat.ChildConnection;
-            } else if (this.connection === "socket") {
+            }
+            else if (this.connection === "socket") {
                 connection = new Chat.SocketConnection;
-            } else {
+            }
+            else {
                 connection = new Chat.ChatConnection; //実体ないよ！
             }
             connection.initConnection(settings);
@@ -115,9 +110,8 @@ var Chat;
             return new ChatClientAPI(userData, connection, receiver, process, view);
         };
         return ChatClientFactory;
-    })();
+    }());
     Chat.ChatClientFactory = ChatClientFactory;
-
     //API
     var ChatClientAPI = (function () {
         function ChatClientAPI(userData, connection, receiver, process, view) {
@@ -144,7 +138,6 @@ var Chat;
                 return;
             this.receiver.removeListener(event, listener);
         };
-
         //入退室
         ChatClientAPI.prototype.inout = function (name) {
             var data = {
@@ -152,14 +145,14 @@ var Chat;
             };
             this.process.inout(data);
         };
-
         //発言
         ChatClientAPI.prototype.say = function (comment, response, channel) {
             if (!channel)
                 channel = null;
             else if ("string" === typeof channel) {
                 channel = [channel];
-            } else if (!Array.isArray(channel)) {
+            }
+            else if (!Array.isArray(channel)) {
                 throw null;
             }
             var data = {
@@ -170,6 +163,6 @@ var Chat;
             this.process.comment(data);
         };
         return ChatClientAPI;
-    })();
+    }());
     Chat.ChatClientAPI = ChatClientAPI;
 })(Chat || (Chat = {}));

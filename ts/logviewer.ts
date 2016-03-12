@@ -39,16 +39,16 @@ module Chat{
 		private qf:FindQueryForm;
 		private logFlow:ChatLogFlow;
 		constructor(userData:ChatUserData,connection:ChatConnection,receiver:ChatReceiver){
-			super(userData,connection,receiver,null,false);
+			super(userData,connection,receiver,null,false,null);
 		}
 		initView(userData:ChatUserData,connection:ChatConnection,receiver:ChatReceiver,process:ChatProcess,com:boolean):void{
 			this.container=document.createElement("div");
 			//bodyへ
 			document.body.appendChild(this.container);
-			this.container.appendChild((h1)=>{
+			this.container.appendChild(((h1)=>{
 				h1.textContent="Chalog Viewer";
 				return h1;
-			}(document.createElement("h1")));
+			})(document.createElement("h1")));
 			//
 			this.qf=new FindQueryForm();
 			this.container.appendChild(this.qf.getContainer());
