@@ -168,6 +168,10 @@ var Chat;
                         url: "/smp",
                         name: "SMP"
                     },
+                    {
+                        url: "https://github.com/uhyo/socketchat/issues",
+                        name: "issues"
+                    },
                 ],
             ];
             this.container = document.createElement("div");

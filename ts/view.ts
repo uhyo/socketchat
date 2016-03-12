@@ -202,6 +202,10 @@ module Chat{
 					url:"/smp",
 					name:"SMP",
 				},
+				{
+					url:"https://github.com/uhyo/socketchat/issues",
+					name:"issues",
+				},
 			],
 		];
 		constructor(){
