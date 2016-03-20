@@ -832,6 +832,7 @@ var Chat;
             this.mimetexUrl = "http://81.la/cgi-bin/mimetex.cgi";
         }
         ChatLineMaker.prototype.make = function (obj) {
+            var _this = this;
             var p = document.createElement("p");
             p.classList.add("log");
             if (obj.syslog) {
@@ -851,77 +852,85 @@ var Chat;
                 span.textContent = "> ";
             }));
             //名前以外の部分の生成
-            var main = document.createElement("span");
-            main.classList.add("main");
-            //返信チップ
-            if (obj.response) {
-                var resptip = document.createElement("span");
-                resptip.className = "icon respin";
-                resptip.textContent = "\ue000";
-                main.appendChild(resptip);
-            }
-            //コメント部分の生成
-            var comment = document.createElement("bdi");
-            comment.appendChild(this.commentHTMLify(obj.commentObject || obj.comment));
-            this.parse(comment, obj); //解析（URLとか）
-            comment.normalize();
-            main.appendChild(comment);
-            //チャネル
-            if (obj.channel) {
-                //コメントにも情報付加
-                p.dataset.channel = "#" + (Array.isArray(obj.channel) ? obj.channel.join("/#") : obj.channel) + "/";
-                //配列か
-                var c = Array.isArray(obj.channel) ? obj.channel : [obj.channel];
-                //ログ中のチャネルリンクを抽出
-                var sps = comment.getElementsByClassName("channels");
-                var chhs = Array.prototype.map.call(sps, function (x) {
-                    return x.textContent;
-                });
-                for (var i = 0, l = c.length; i < l; i++) {
-                    //ログのチャンネル名と、本文中のハッシュタグがかぶる場合は本文を優先
-                    if (chhs.indexOf("#" + c[i]) === -1) {
-                        main.appendChild(this.makeChannelSpan(c[i]));
+            p.appendChild(makeEl("span", function (main) {
+                main.classList.add("main");
+                //返信チップ
+                if (obj.response) {
+                    var resptip = document.createElement("span");
+                    resptip.className = "icon respin";
+                    resptip.textContent = "\ue000";
+                    main.appendChild(resptip);
+                }
+                //コメント部分の生成
+                var comment;
+                main.appendChild(makeEl("bdi", function (bdi) {
+                    comment = bdi;
+                    bdi.appendChild(_this.commentHTMLify(obj.commentObject || obj.comment));
+                    _this.parse(bdi, obj); //解析（URLとか）
+                    bdi.normalize();
+                }));
+                //チャネル
+                if (obj.channel) {
+                    //コメントにも情報付加
+                    p.dataset.channel = "#" + (Array.isArray(obj.channel) ? obj.channel.join("/#") : obj.channel) + "/";
+                    //配列か
+                    var c = Array.isArray(obj.channel) ? obj.channel : [obj.channel];
+                    //ログ中のチャネルリンクを抽出
+                    var sps = comment.getElementsByClassName("channels");
+                    var chhs = Array.prototype.map.call(sps, function (x) {
+                        return x.textContent;
+                    });
+                    for (var i = 0, l = c.length; i < l; i++) {
+                        //ログのチャンネル名と、本文中のハッシュタグがかぶる場合は本文を優先
+                        if (chhs.indexOf("#" + c[i]) === -1) {
+                            main.appendChild(_this.makeChannelSpan(c[i]));
+                        }
                     }
                 }
-            }
-            //返信先あり
-            if (obj.response) {
-                p.dataset.respto = obj.response;
-                p.classList.add("respto");
-            }
-            //時間などの情報
-            var info = document.createElement("span");
-            info.classList.add("info");
-            var date = new Date(obj.time);
-            //日付
-            var datestring = date.getFullYear() + "-" + zero2(date.getMonth() + 1) + "-" + zero2(date.getDate());
-            //時刻
-            var timestring = zero2(date.getHours()) + ":" + zero2(date.getMinutes()) + ":" + zero2(date.getSeconds());
-            //時間表示
-            var time = document.createElement("time");
-            var dateelement = el("span", datestring);
-            dateelement.classList.add("date");
-            var timeelement = el("span", " " + timestring);
-            timeelement.classList.add("time");
-            time.appendChild(dateelement);
-            time.appendChild(timeelement);
-            time.appendChild(document.createTextNode("; "));
-            time.dateTime = datestring + "T" + timestring;
-            info.appendChild(time);
-            //コメントに付加情報
-            p.dataset.id = obj._id;
-            p.dataset.ip = obj.ip;
-            //IPアドレス情報
-            var ipstring = obj.ip + (obj.ipff ? " (forwarded for: " + obj.ipff + ")" : "");
-            var ipelement = el("span", ipstring + ";");
-            ipelement.classList.add("ip");
-            info.appendChild(ipelement);
-            //なぜか名前にも
-            name.title = datestring + " " + timestring + ", " + ipstring;
-            //まとめる
-            main.appendChild(info);
-            main.style.color = color;
-            p.appendChild(main);
+                //返信先あり
+                if (obj.response) {
+                    p.dataset.respto = obj.response;
+                    p.classList.add("respto");
+                }
+                //まとめる
+                main.appendChild(makeEl("span", function (info) {
+                    info.classList.add("info");
+                    var date = new Date(obj.time);
+                    //日付
+                    var datestring = date.getFullYear() + "-" + zero2(date.getMonth() + 1) + "-" + zero2(date.getDate());
+                    //時刻
+                    var timestring = zero2(date.getHours()) + ":" + zero2(date.getMinutes()) + ":" + zero2(date.getSeconds());
+                    //時間表示
+                    info.appendChild(makeEl("time", function (time) {
+                        time.appendChild(makeEl("span", function (dateelement) {
+                            dateelement.textContent = datestring;
+                            dateelement.classList.add("date");
+                        }));
+                        time.appendChild(makeEl("span", function (timeelement) {
+                            timeelement.textContent = " " + timestring;
+                            timeelement.classList.add("time");
+                        }));
+                        time.appendChild(document.createTextNode("; "));
+                        time.dateTime = datestring + "T" + timestring;
+                    }));
+                    //コメントに付加情報
+                    p.dataset.id = obj._id;
+                    p.dataset.ip = obj.ip;
+                    //IPアドレス情報
+                    var ipstring = obj.ip + (obj.ipff ? " (forwarded for: " + obj.ipff + ")" : "");
+                    info.appendChild(makeEl("span", function (ipelement) {
+                        ipelement.textContent = ipstring + "; ";
+                        ipelement.classList.add("ip");
+                    }));
+                    //なぜか名前にも
+                    name.title = datestring + " " + timestring + ", " + ipstring;
+                    info.appendChild(makeEl("span", function (ipelement) {
+                        ipelement.textContent = obj._id + "; ";
+                        ipelement.classList.add("id");
+                    }));
+                }));
+                main.style.color = color;
+            }));
             return p;
             //補助：中身をきめて作る
             function el(name, content) {

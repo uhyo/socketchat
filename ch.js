@@ -458,13 +458,14 @@ User.prototype.says=function(data){
 	var say=makelog.bind(null,this,logobj);
 	if(data.response){
 		try{
-			log.findOne(db.bson_serializer.ObjectID.createFromHexString(data.response),function(err,obj){
+			log.findOne(mongodb.ObjectID(data.response),function(err,obj){
 				if(obj){
 					logobj.response=data.response;
 					say();
 				}
 			}.bind(this));
 		}catch(e){
+			console.error("Error while getting response", e);
 		}
 	}else{
 		say();
@@ -551,7 +552,7 @@ function findlog(query,callback){
 			callback([]);
 			return;
 		}
-		q=db.bson_serializer.ObjectID.createFromHexString(query.id);
+		q=mongodb.ObjectID(query.id);
 	}
 
 	if(one_flag){
