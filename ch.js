@@ -257,14 +257,7 @@ User.prototype.says=function(data){
 	if(this.rom)return;
 	if(!data || !data.comment)return;
 	//連続発言
-	if(settings.CHAT_LIMIT_TIME>0){
-		var d=Date.now()-1000*settings.CHAT_LIMIT_TIME;
-		if((this.ss=this.ss.filter(function(x){return x>=d})).length>=settings.CHAT_LIMIT_NUMBER){
-			//喋りすぎ
-			return;
-		}
-		this.ss.push(Date.now());
-	}
+	if(this.isOverLimit()) return;
 
 	if("string"!==typeof data.comment && !Array.isArray(data.comment))return;
 	//console.log(data);
@@ -476,6 +469,7 @@ User.prototype.says=function(data){
 	//makelog(this,logobj);
 };
 User.prototype.inout=function(data){
+	if(this.isOverLimit()) return;
 	this.rom = !this.rom;
 	if(!this.rom){
 		if(!data.name || data.name.length>settings.CHAT_NAME_MAX_LENGTH){
@@ -501,6 +495,18 @@ User.prototype.inout=function(data){
 	
 	this.inoutSplash();
 
+};
+User.prototype.isOverLimit=function(){
+	if(settings.CHAT_LIMIT_TIME>0){
+		var now = Date.now();
+		var d=now-1000*settings.CHAT_LIMIT_TIME;
+		if((this.ss=this.ss.filter(function(x){return x>=d})).length>=settings.CHAT_LIMIT_NUMBER){
+			//喋りすぎ
+			return true;
+		}
+		this.ss.push(now);
+	}
+	return false;
 };
 User.prototype.inoutSplash=function(){
 /*	var socket = this.socket || getAvailableSocket(), obj={"rom":this.rom, id: this.id, name: this.name};
