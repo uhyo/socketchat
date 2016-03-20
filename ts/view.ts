@@ -801,7 +801,7 @@ module Chat{
 		thumb:boolean;  //サムネイル機能ありかどうか
 		url:{
 			image:string;	//画像のURL（あとにid付加）
-			thumb:string;	//サムネイルURL
+			thumbnailUrlGenerator:(string)=>string;	//サムネイルURL生成関数
 			ext:boolean;	//?
 		};
 		text:{
@@ -817,8 +817,8 @@ module Chat{
 			{
 				thumb: true,
 				url: {
-					image: "http://gyazo.com/",
-					thumb: "http://gyazo.com/thumb/",
+					image: "https://gyazo.com/",
+					thumbnailUrlGenerator: (hash)=>"https://gyazo.com/"+hash+"/raw",
 					ext: false,
 				},
 				text: {
@@ -831,7 +831,7 @@ module Chat{
 				thumb: false,
 				url: {
 					image: "http://myazo.net/",
-					thumb: "http://myazo.net/s/",
+					thumbnailUrlGenerator: ChatLineMaker.getRegularUrlGenerator("http://myazo.net/s/"),
 					ext:true,
 				},
 				text: {
@@ -844,7 +844,7 @@ module Chat{
 				thumb: true,
 				url: {
 					image: "http://g.81.la/",
-					thumb: "http://g.81.la/thumb/",
+					thumbnailUrlGenerator: ChatLineMaker.getRegularUrlGenerator("http://g.81.la/thumb/"),
 					ext: false,
 				},
 				text: {
@@ -854,6 +854,7 @@ module Chat{
 				}
 			}
 		];
+		private static getRegularUrlGenerator = (url)=>(hash)=>url+hash+".png";
 		private mimetexUrl = "http://81.la/cgi-bin/mimetex.cgi";
 		constructor(private userData:ChatUserData){
 		}
@@ -1214,7 +1215,7 @@ module Chat{
 				//画像除去
 				a.removeChild(img);
 			},false);
-			img.src=settingObj.url.thumb+imageid+".png";
+			img.src=settingObj.url.thumbnailUrlGenerator(imageid);
 			img.alt=settingObj.url.image+imageid+".png";
 			//開いた印
 			a.classList.add("gyozaloaded");

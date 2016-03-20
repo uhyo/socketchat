@@ -792,8 +792,8 @@ var Chat;
                 {
                     thumb: true,
                     url: {
-                        image: "http://gyazo.com/",
-                        thumb: "http://gyazo.com/thumb/",
+                        image: "https://gyazo.com/",
+                        thumbnailUrlGenerator: function (hash) { return "https://gyazo.com/" + hash + "/raw"; },
                         ext: false
                     },
                     text: {
@@ -806,7 +806,7 @@ var Chat;
                     thumb: false,
                     url: {
                         image: "http://myazo.net/",
-                        thumb: "http://myazo.net/s/",
+                        thumbnailUrlGenerator: ChatLineMaker.getRegularUrlGenerator("http://myazo.net/s/"),
                         ext: true
                     },
                     text: {
@@ -819,7 +819,7 @@ var Chat;
                     thumb: true,
                     url: {
                         image: "http://g.81.la/",
-                        thumb: "http://g.81.la/thumb/",
+                        thumbnailUrlGenerator: ChatLineMaker.getRegularUrlGenerator("http://g.81.la/thumb/"),
                         ext: false
                     },
                     text: {
@@ -1198,7 +1198,7 @@ var Chat;
                 //画像除去
                 a.removeChild(img);
             }, false);
-            img.src = settingObj.url.thumb + imageid + ".png";
+            img.src = settingObj.url.thumbnailUrlGenerator(imageid);
             img.alt = settingObj.url.image + imageid + ".png";
             //開いた印
             a.classList.add("gyozaloaded");
@@ -1216,6 +1216,7 @@ var Chat;
                 }
             }
         };
+        ChatLineMaker.getRegularUrlGenerator = function (url) { return function (hash) { return url + hash + ".png"; }; };
         return ChatLineMaker;
     }());
     Chat.ChatLineMaker = ChatLineMaker;
