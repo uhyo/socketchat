@@ -338,7 +338,7 @@ var Chat;
                 //チャネルに注目した
                 if (userData.channelMode === 0) {
                     //欄#
-                    var focusedChannel = _this.dis.setFocusChannel(channel);
+                    var focusedChannel = _this.dis.setFocusChannel(channel, true);
                     _this.view.focusComment(false, focusedChannel);
                 }
                 else {
@@ -695,9 +695,9 @@ var Chat;
         };
         //-------------- DisChannel API
         //チャネルにフォーカスする（現在のチャネルを返す）
-        ChatLogDisManager.prototype.setFocusChannel = function (channel) {
+        ChatLogDisManager.prototype.setFocusChannel = function (channel, toggle) {
             var lastChannel = this.focusedChannel;
-            if (lastChannel === channel)
+            if (toggle && lastChannel === channel)
                 channel = null;
             this.focusedChannel = channel;
             if (lastChannel !== null) {
@@ -1400,7 +1400,7 @@ var Chat;
                 _this.process.comment(data);
             });
             this.commentForm.event.on("changeChannel", function (channel) {
-                dis.setFocusChannel(channel || null);
+                dis.setFocusChannel(channel || null, false);
                 _this.commentForm.event.emit("afterChangeChannel", false);
             });
             this.commentForm.event.on("afterChangeChannel", function (on) {
@@ -1527,14 +1527,16 @@ var Chat;
                 }));
                 p.appendChild(document.createTextNode("#"));
                 //チャネル欄
+                var channelInput;
                 p.appendChild(this.makeinput(function (input) {
+                    channelInput = input;
                     input.name = "channel";
                     input.type = "text";
                     input.size = 10;
                     input.disabled = us.rom;
                     if (channel)
                         input.value = channel;
-                    input.addEventListener("change", function (e) {
+                    input.addEventListener("blur", function (e) {
                         _this.event.emit("changeChannel", input.value);
                     }, false);
                     //validate
@@ -1546,6 +1548,7 @@ var Chat;
                             input.setCustomValidity("不正なチャネル名です");
                         }
                     }, false);
+                    input.dataset.autocomplete = "/channels";
                 }));
                 //発言ボタン
                 p.appendChild(this.makeinput(function (input) {
@@ -1563,6 +1566,7 @@ var Chat;
                     e.preventDefault();
                     _this.emitComment(e);
                     _this.emitInput();
+                    _this.event.emit("changeChannel", channelInput.value); // hack
                 }, false);
                 if (canselable) {
                     //キャンセルボタン
@@ -1575,6 +1579,10 @@ var Chat;
                         }, false);
                     }));
                 }
+                // inputが描画されてから起動
+                setTimeout(function () {
+                    new AutoComplete({}, channelInput);
+                }, 0);
                 function validateHashtag(channel) {
                     if ("string" !== typeof channel)
                         return false;

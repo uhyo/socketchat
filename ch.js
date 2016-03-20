@@ -51,6 +51,8 @@ var app=express();
 app.use('/fonts',express.static(__dirname+"/fonts"));
 //css
 app.use('/css',express.static(__dirname+"/css"));
+//library
+app.use('/lib',express.static(__dirname+"/lib"));
 
 app.get(/^\/(index\.html)?$/, function(req, res){
 	res.sendfile(__dirname + '/clients/index.html');
@@ -80,12 +82,10 @@ app.get(/^\/api\/(.*)$/, function(req,res){
 	api(req.params[0],req,res);
 });
 */
-app.get('/show', function(req, res){
-	res.send({
-		users: users,
-		users_next: users_next,
-		users_s: users_s
-	},{"Content-Type":"text/javascript; charset=UTF-8"});
+app.get('/channels', function(req, res){
+	getTopChannels(req.query.q, function(channels){
+		res.json(channels);
+	})
 });
 //クライアントを探す
 app.get(/^\/([^\/]+)$/,function(req,res){
@@ -1017,4 +1017,15 @@ function validateHashtag(channel){
 	if(/\/\//.test(channel))return false;
 	//OK!
 	return true;
+}
+
+function getTopChannels(str, cb){
+	var regexp = new RegExp(str.replace(/(\W)/g,"\\$1"));
+	chcoll.find({_id: regexp}, {"sort":[["count","desc"]],"limit":20}).toArray(function(err,docs){
+		if(err){
+			console.error("error while getting channel list")
+		} else{
+			cb(docs.map(function(doc){return doc._id}));
+		}
+	});
 }

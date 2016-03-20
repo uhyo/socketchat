@@ -19,6 +19,7 @@ interface DOMStringMap{
 	roms:string;
 	id:string;
 	respto:string;
+	autocomplete:string;
 }
 interface Document{
 	createTreeWalker(root:Node,type:number,func:Function,flag:boolean):TreeWalker;
@@ -33,6 +34,10 @@ interface XPathEvaluator{
 }
 //ちょっと違うけど・・・
 interface Document extends XPathEvaluator{}
+
+declare class AutoComplete{
+	constructor(obj: any, obj2: any);
+}
 
 module Chat{
 
@@ -366,7 +371,7 @@ module Chat{
 				//チャネルに注目した
 				if(userData.channelMode===0){
 					//欄#
-					var focusedChannel=this.dis.setFocusChannel(channel);
+					var focusedChannel=this.dis.setFocusChannel(channel, true);
 					this.view.focusComment(false,focusedChannel);
 				}else{
 					//窓#
@@ -711,9 +716,9 @@ module Chat{
 		}
 		//-------------- DisChannel API
 		//チャネルにフォーカスする（現在のチャネルを返す）
-		setFocusChannel(channel:string):string{
+		setFocusChannel(channel:string, toggle:boolean):string{
 			var lastChannel:string=this.focusedChannel;
-			if(lastChannel===channel)channel=null;
+			if(toggle && lastChannel===channel)channel=null;
 			this.focusedChannel=channel;
 			if(lastChannel!==null){
 				this.removeDischannel(lastChannel,true,true);
@@ -1411,7 +1416,7 @@ module Chat{
 				this.process.comment(data);
 			});
 			this.commentForm.event.on("changeChannel",(channel:string)=>{
-				dis.setFocusChannel(channel || null);
+				dis.setFocusChannel(channel || null, false);
 				this.commentForm.event.emit("afterChangeChannel", false);
 			});
 			this.commentForm.event.on("afterChangeChannel",(on:boolean)=>{
@@ -1531,13 +1536,15 @@ module Chat{
 				}));
 				p.appendChild(document.createTextNode("#"));
 				//チャネル欄
+				var channelInput;
 				p.appendChild(this.makeinput(input=>{
+					channelInput = input;
 					input.name="channel";
 					input.type="text";
 					input.size=10;
 					input.disabled=us.rom;
 					if(channel)input.value=channel;
-					input.addEventListener("change",(e:Event)=>{
+					input.addEventListener("blur",(e:Event)=>{
 						this.event.emit("changeChannel",input.value);
 					},false);
 					//validate
@@ -1548,6 +1555,7 @@ module Chat{
 							input.setCustomValidity("不正なチャネル名です");
 						}
 					},false);
+					input.dataset.autocomplete="/channels";
 				}));
 				//発言ボタン
 				p.appendChild(this.makeinput(input=>{
@@ -1565,6 +1573,7 @@ module Chat{
 					e.preventDefault();
 					this.emitComment(e);
 					this.emitInput();
+					this.event.emit("changeChannel",channelInput.value); // hack
 				},false);
 				if(canselable){
 					//キャンセルボタン
@@ -1577,6 +1586,12 @@ module Chat{
 						},false);
 					}));
 				}
+
+				// inputが描画されてから起動
+				setTimeout(function(){
+					new AutoComplete({}, channelInput)
+				}, 0);
+
 				function validateHashtag(channel:string):boolean{
 					if("string"!==typeof channel)return false;
 					if(channel==="")return false;

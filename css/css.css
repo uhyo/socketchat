@@ -228,3 +228,7 @@ pre.consoleoutput{
 button#installButton{
 	display: none;
 }
+
+.commentform input[name=channel]{
+	width: 200px;
+}
