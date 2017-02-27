@@ -326,13 +326,22 @@ var Chat;
             this.container.appendChild(this.flow.getContainer());
             this.refreshSettings(); //初期設定
             //オーディオ準備
-            this.audio = this.getAudio("/sound");
+            // [0]: ログ更新
+            // [1]: 入室
+            // [2]: 退室、失踪
+            this.audio = [];
+            this.audio.push(this.getAudio("/sound"));
+            this.audio.push(this.getAudio("/sound_sys1"));
+            this.audio.push(this.getAudio("/sound_sys2"));
+
             //フローにイベント登録する
             var fe = this.flow.event;
-            fe.on("logaudio", function () {
-                //オーディオを鳴らす指令
-                _this.audio.volume = _this.userData.volume / 100;
-                _this.audio.play();
+            fe.on("logaudio", function (soundId) {
+                if (soundId >= 0 && soundId < _this.audio.length) {
+                    //オーディオを鳴らす指令
+                    _this.audio[soundId].volume = _this.userData.volume / 100;
+                    _this.audio[soundId].play();
+                }
             });
             fe.on("focusChannel", function (channel) {
                 //チャネルに注目した
@@ -542,7 +551,19 @@ var Chat;
                 //この判定でいいの?
                 var style = document.defaultView.getComputedStyle(line, null);
                 if (style.display !== "none") {
-                    this.event.emit("logaudio");
+                    // 音を鳴らし分ける
+                    if (!obj.syslog) {
+                        // 通常ログ
+                        this.event.emit("logaudio", 0);
+                    }
+                    else if (obj.name.indexOf("退室") != -1 || obj.name.indexOf("失踪") != -1) {
+                        // 退室・失踪通知
+                        this.event.emit("logaudio", 2);
+                    }
+                    else {
+                        // その他のシステムログ
+                        this.event.emit("logaudio", 1);
+                    }
                 }
             }
         };

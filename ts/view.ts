@@ -350,7 +350,7 @@ module Chat{
 	export class ChatLogView{
 		private container:HTMLElement;
 		private flow:ChatLogFlow;
-		private audio:HTMLAudioElement;
+		private audio:Array<HTMLAudioElement>;
 
 		constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess,private view:ChatView,private dis:ChatLogDisManager){
 			this.container=document.createElement("div");
@@ -359,13 +359,21 @@ module Chat{
 			this.container.appendChild(this.flow.getContainer());
 			this.refreshSettings(); //初期設定
 			//オーディオ準備
-			this.audio=this.getAudio("/sound");
+			// [0]: ログ更新
+			// [1]: 入室
+			// [2]: 退室、失踪
+			this.audio = [];
+			this.audio.push(this.getAudio("/sound"));
+			this.audio.push(this.getAudio("/sound_sys1"));
+			this.audio.push(this.getAudio("/sound_sys2"));
 			//フローにイベント登録する
 			var fe=this.flow.event;
-			fe.on("logaudio",()=>{
-				//オーディオを鳴らす指令
-				this.audio.volume=this.userData.volume/100;
-				this.audio.play();
+			fe.on("logaudio",(soundId:number)=>{
+				if(soundId >= 0 && soundId < this.audio.length){
+					//オーディオを鳴らす指令
+					this.audio[soundId].volume=this.userData.volume/100;
+					this.audio[soundId].play();
+				}
 			});
 			fe.on("focusChannel",(channel:string)=>{
 				//チャネルに注目した
@@ -572,7 +580,19 @@ module Chat{
 				//この判定でいいの?
 				var style=(<any>document.defaultView).getComputedStyle(line,null);
 				if(style.display!=="none"){
-					this.event.emit("logaudio");
+					// 音を鳴らし分ける
+					if(!obj.syslog){
+						// 通常ログ
+						this.event.emit("logaudio", 0);
+					}
+					else if(obj.name.indexOf("退室") != -1 || obj.name.indexOf("失踪") != -1) {
+						// 退室・失踪通知
+						this.event.emit("logaudio", 2);
+					}
+					else{
+						// その他のシステムログ
+						this.event.emit("logaudio", 1);
+					}
 				}
 			}
 		}
