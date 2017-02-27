@@ -9,6 +9,7 @@ module Chat{
 		public name:string;    //ユーザー名
 		public gyoza:number;	//Gyazo設定(0～2)
 		public volume:number;	//ボリューム(0～100)
+		public audioMode:number;	//鳴らす音の設定(0～2)
 		public channelMode:number;	//チャネル開き方設定(0～1)
 		public disip:string[];
 		public dischannel:string[]; //dischannel対象一覧
@@ -20,23 +21,24 @@ module Chat{
 		};
 		//読み込み
 		load():void{
-			this.lastid = localStorage.getItem("lastid") || null;
-			this.name = localStorage.getItem("socketchat_name") || null;
-			this.gyoza= Number(localStorage.getItem("gyoza") || 2);
+			this.lastid=localStorage.getItem("lastid") || null;
+			this.name=localStorage.getItem("socketchat_name") || null;
+			this.gyoza=Number(localStorage.getItem("gyoza") || 2);
 			this.volume=Number(localStorage.getItem("volume"));
 			if(isNaN(this.volume))this.volume=50;
-			this.channelMode= Number(localStorage.getItem("channelMode")) || 0;
+			this.audioMode=Number(localStorage.getItem("audioMode") || 1);
+			this.channelMode=Number(localStorage.getItem("channelMode")) || 0;
 			//dischannel
 			var disi=localStorage.getItem("disip");
-			this.disip = disi ? JSON.parse(disi) : [];
+			this.disip=disi ? JSON.parse(disi) : [];
 			var disc=localStorage.getItem("dischannel");
-			this.dischannel = disc ? JSON.parse(disc) : [];
+			this.dischannel=disc ? JSON.parse(disc) : [];
 			var cmd=localStorage.getItem("cmd");
-			this.cmd= cmd ? JSON.parse(cmd) : {
+			this.cmd=cmd ? JSON.parse(cmd) : {
 				height:"30em", syschar:"\\",
 			};
 			//autoin
-			this.autoin = !!localStorage.getItem("socketchat_autoin");
+			this.autoin=!!localStorage.getItem("socketchat_autoin");
 		}
 		//保存
 		save():void{
@@ -44,6 +46,7 @@ module Chat{
 			if("string"===typeof this.name)localStorage.setItem("socketchat_name",this.name);
 			localStorage.setItem("gyoza",String(this.gyoza));
 			localStorage.setItem("volume",String(this.volume));
+			localStorage.setItem("audioMode",String(this.audioMode));
 			localStorage.setItem("channelMode",String(this.channelMode));
 			localStorage.setItem("disip",JSON.stringify(this.disip));
 			localStorage.setItem("dischannel",JSON.stringify(this.dischannel));

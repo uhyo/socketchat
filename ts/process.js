@@ -15,6 +15,7 @@ var Chat;
             this.volume = Number(localStorage.getItem("volume"));
             if (isNaN(this.volume))
                 this.volume = 50;
+            this.audioMode = Number(localStorage.getItem("audioMode") || 1);
             this.channelMode = Number(localStorage.getItem("channelMode")) || 0;
             //dischannel
             var disi = localStorage.getItem("disip");
@@ -36,6 +37,7 @@ var Chat;
                 localStorage.setItem("socketchat_name", this.name);
             localStorage.setItem("gyoza", String(this.gyoza));
             localStorage.setItem("volume", String(this.volume));
+            localStorage.setItem("audioMode", String(this.audioMode));
             localStorage.setItem("channelMode", String(this.channelMode));
             localStorage.setItem("disip", JSON.stringify(this.disip));
             localStorage.setItem("dischannel", JSON.stringify(this.dischannel));

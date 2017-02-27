@@ -57,7 +57,7 @@ app.use('/lib',express.static(__dirname+"/lib"));
 app.get(/^\/(index\.html)?$/, function(req, res){
 	res.sendfile(__dirname + '/clients/index.html');
 });
-app.get(/^\/((?:line|connection|client|firefoxapp)\.js|(sound|jihou)\.(mp3|wav|ogg)|manifest\.webapp)$/, function(req, res){
+app.get(/^\/((?:line|connection|client|firefoxapp)\.js|(sound|sound_sys1|sound_sys2|jihou)\.(mp3|wav|ogg)|manifest\.webapp)$/, function(req, res){
 	res.sendfile(__dirname + "/"+req.params[0]);
 });
 //for client ts

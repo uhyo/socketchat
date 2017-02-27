@@ -248,6 +248,8 @@ module Chat{
 		private container:HTMLFormElement;
 		//餃子セッティング一覧
 		private gyozaSettings:string[]=["餃子無展開","餃子オンマウス","餃子常時"];
+		//オーディオセッティング一覧
+		private audioSettings:string[]=["ミュート","システム音ON","システム音OFF"];
 		//チャネルセッティング一覧
 		private channelSettings:string[]=["欄#","窓#"];
 		constructor(private userData:ChatUserData,private view:ChatView){
@@ -257,6 +259,8 @@ module Chat{
 			this.container.appendChild(this.makeGyozaButton());
 			//ボリューム操作生成
 			this.container.appendChild(this.makeVolumeRange());
+			//オーディオ設定ボタン
+			this.container.appendChild(this.makeAudioModeButton());
 			//チャネル開き方
 			this.container.appendChild(this.makeChannelModeButton());
 			//仕様ボタン
@@ -271,7 +275,6 @@ module Chat{
 			button.addEventListener("click",(e:Event)=>{
 				//クリックされたら変更
 				ud.gyoza=(ud.gyoza+1)%this.gyozaSettings.length;
-				//button.value=this.gyozaSettings[ud.gyoza];
 				ud.save();
 				//ビューに変更を知らせる
 				this.view.refreshSettings();
@@ -303,6 +306,21 @@ module Chat{
 			df.appendChild(range);
 			return df;
 		}
+		makeAudioModeButton():HTMLElement{
+			var button:HTMLInputElement=<HTMLInputElement>document.createElement("input");
+			var ud=this.userData;
+			button.name="audiomode";
+			button.type="button";
+			button.value=this.audioSettings[ud.audioMode];
+			button.addEventListener("click",(e:Event)=>{
+				//クリックされたら変更
+				ud.audioMode=(ud.audioMode+1)%this.audioSettings.length;
+				ud.save();
+				//ビューに変更を知らせる
+				this.view.refreshSettings();
+			},false);
+			return button;
+		}
 		makeChannelModeButton():HTMLElement{
 			var button:HTMLInputElement=<HTMLInputElement>document.createElement("input");
 			var ud=this.userData;
@@ -312,8 +330,9 @@ module Chat{
 			button.addEventListener("click",(e:Event)=>{
 				//クリックされたら変更
 				ud.channelMode=(ud.channelMode+1)%this.channelSettings.length;
-				button.value=this.channelSettings[ud.channelMode];
 				ud.save();
+				//ビューに変更を知らせる
+				this.view.refreshSettings();
 			},false);
 			return button;
 		}
@@ -342,6 +361,10 @@ module Chat{
 			//ボリューム
 			var volumeRange=<HTMLInputElement>form.elements["volume"];
 			volumeRange.value=String(ud.volume);
+			//オーディオ設定
+			var audiobutton=<HTMLInputElement>form.elements["audiomode"];
+			audiobutton.value=this.audioSettings[ud.audioMode];
+			//チャンネル
 			var channelbutton=<HTMLInputElement>form.elements["channelmode"];
 			channelbutton.value=this.channelSettings[ud.channelMode];
 		}
@@ -350,7 +373,7 @@ module Chat{
 	export class ChatLogView{
 		private container:HTMLElement;
 		private flow:ChatLogFlow;
-		private audio:HTMLAudioElement;
+		private audio:Array<HTMLAudioElement>;
 
 		constructor(private userData:ChatUserData,private receiver:ChatReceiver,private process:ChatProcess,private view:ChatView,private dis:ChatLogDisManager){
 			this.container=document.createElement("div");
@@ -359,13 +382,21 @@ module Chat{
 			this.container.appendChild(this.flow.getContainer());
 			this.refreshSettings(); //初期設定
 			//オーディオ準備
-			this.audio=this.getAudio("/sound");
+			// [0]: ログ更新
+			// [1]: 入室
+			// [2]: 退室、失踪
+			this.audio = [];
+			this.audio.push(this.getAudio("/sound"));
+			this.audio.push(this.getAudio("/sound_sys1"));
+			this.audio.push(this.getAudio("/sound_sys2"));
 			//フローにイベント登録する
 			var fe=this.flow.event;
-			fe.on("logaudio",()=>{
-				//オーディオを鳴らす指令
-				this.audio.volume=this.userData.volume/100;
-				this.audio.play();
+			fe.on("logaudio",(soundId:number)=>{
+				if(soundId >= 0 && soundId < this.audio.length){
+					//オーディオを鳴らす指令
+					this.audio[soundId].volume=this.userData.volume/100;
+					this.audio[soundId].play();
+				}
 			});
 			fe.on("focusChannel",(channel:string)=>{
 				//チャネルに注目した
@@ -567,12 +598,27 @@ module Chat{
 			var line:HTMLElement=this.lineMaker.make(obj);
 			this.container.insertBefore(line,this.container.firstChild);
 			//音を鳴らす
-			if(!initmode && this.userData.volume>0){
+			if(!initmode && this.userData.volume>0 && this.userData.audioMode != 0){
 				//音鳴らす判定を入れる
 				//この判定でいいの?
 				var style=(<any>document.defaultView).getComputedStyle(line,null);
 				if(style.display!=="none"){
-					this.event.emit("logaudio");
+					// 音を鳴らし分ける
+					if(!obj.syslog){
+						//通常ログ
+						this.event.emit("logaudio", 0);
+					}
+					else if(this.userData.audioMode != 2){
+						//システム音を鳴らす設定の場合のみ鳴らす
+						if(obj.name.indexOf("退室") != -1 || obj.name.indexOf("失踪") != -1) {
+							//退室・失踪通知
+							this.event.emit("logaudio", 2);
+						}
+						else{
+							//その他のシステムログ
+							this.event.emit("logaudio", 1);
+						}
+					}
 				}
 			}
 		}
