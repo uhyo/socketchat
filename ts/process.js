@@ -142,7 +142,7 @@ var Chat;
                             hub.addChild(child);
                             hub.initChild(child, channelname);
                             //ここからかこう!
-                            delete sessionStorage.removeItem("independent_flag");
+                            sessionStorage.removeItem("independent_flag");
                         }
                     });
                     //初期化してあげる

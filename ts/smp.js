@@ -1,8 +1,13 @@
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 /// <reference path="client.ts"/>
 var Chat;
 (function (Chat) {
@@ -13,39 +18,39 @@ var Chat;
             //public event:EventEmitter;
             //private container:HTMLFormElement;
             function SwitchViewForm() {
-                var _this = this;
-                _super.call(this);
-                this.container = document.createElement("form");
+                var _this = _super.call(this) || this;
+                _this.container = document.createElement("form");
                 //フォーム開閉ボタン
                 var p = document.createElement("p");
-                this.container.appendChild(p);
-                p.appendChild(this.makeinput(function (input) {
+                _this.container.appendChild(p);
+                p.appendChild(_this.makeinput(function (input) {
                     input.type = "button";
                     input.value = "設定";
                     input.dataset["open"] = "setting";
                 }));
-                p.appendChild(this.makeinput(function (input) {
+                p.appendChild(_this.makeinput(function (input) {
                     input.type = "button";
                     input.value = "入室者";
                     input.dataset["open"] = "userlist";
                 }));
-                p.appendChild(this.makeinput(function (input) {
+                p.appendChild(_this.makeinput(function (input) {
                     input.type = "button";
                     input.value = "その他";
                     input.dataset["open"] = "others";
                 }));
-                p.appendChild(this.makeinput(function (input) {
+                p.appendChild(_this.makeinput(function (input) {
                     input.type = "button";
                     input.value = "戻る";
                     input.dataset["open"] = "";
                 }));
-                this.container.addEventListener("click", function (e) {
+                _this.container.addEventListener("click", function (e) {
                     var t = e.target;
                     if (/^input$/i.test(t.tagName)) {
                         var tar = t.dataset["open"];
                         _this.open(tar);
                     }
                 }, false);
+                return _this;
             }
             SwitchViewForm.prototype.open = function (w) {
                 //表示を切り替える
@@ -74,17 +79,17 @@ var Chat;
     var ChatSmpView = (function (_super) {
         __extends(ChatSmpView, _super);
         function ChatSmpView(userData, connection, receiver, process) {
-            _super.call(this, userData, connection, receiver, process, false, null);
+            var _this = _super.call(this, userData, connection, receiver, process, false, null) || this;
             //切り替えボタンをつくる
-            this.switchView = new ChatUICollection.SwitchViewForm();
-            this.container.insertBefore(this.switchView.getContainer(), this.container.firstChild);
-            var ev = this.switchView.event;
+            _this.switchView = new ChatUICollection.SwitchViewForm();
+            _this.container.insertBefore(_this.switchView.getContainer(), _this.container.firstChild);
+            var ev = _this.switchView.event;
             //イベントに対応する
             var elss = {
-                "": [this.logView.getContainer(), this.ui.getContainer(), this.motto.getContainer()],
-                "setting": [this.settingView.getContainer()],
-                "userlist": [this.userView.getContainer()],
-                "others": [this.linksView.getContainer()]
+                "": [_this.logView.getContainer(), _this.ui.getContainer(), _this.motto.getContainer()],
+                "setting": [_this.settingView.getContainer()],
+                "userlist": [_this.userView.getContainer()],
+                "others": [_this.linksView.getContainer()]
             };
             ev.on("open", function (w) {
                 for (var key in elss) {
@@ -102,7 +107,8 @@ var Chat;
                 }
             });
             //初期化
-            this.switchView.open("");
+            _this.switchView.open("");
+            return _this;
         }
         return ChatSmpView;
     }(Chat.ChatView));
@@ -110,7 +116,7 @@ var Chat;
     var SmpClientFactory = (function (_super) {
         __extends(SmpClientFactory, _super);
         function SmpClientFactory(channel, connection) {
-            _super.call(this, channel, false, connection);
+            return _super.call(this, channel, false, connection) || this;
         }
         SmpClientFactory.prototype.makeView = function (connection, receiver, userData, process) {
             return new ChatSmpView(userData, connection, receiver, process);

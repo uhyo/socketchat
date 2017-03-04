@@ -322,19 +322,15 @@ module Chat{
 				if("number"===typeof ackId && func_index_array){
 					//ackIdが存在する(or null)・・・コールバックあり
 					//func_array:argsから抜けた関数（コールバック用）
-					for(var i=0,l=func_index_array.length;i<l;i++){
+					for(let i=0,l=func_index_array.length;i<l;i++){
 						//argsに追加してあげる
-						args.splice(func_index_array[i],0,back_handle.bind(this,ackId,i));
-					}
-					//送り返すぞ!
-					function back_handle(ackId:number,funcindex:number,...args:any[]):void{
-						//funcindex:最初の関数が0(func_index_arrayの添字)
-						console.log("back!",ackId,funcindex,args);
-						this.send("ackresponse",{
-							ackId:ackId,
-							funcindex:funcindex,
-							args:args,
-						});
+                        args.splice(func_index_array[i], 0, (...args: Array<any>)=>{
+                            this.send("ackresponse", {
+                                ackId,
+                                funcindex: i,
+                                args,
+                            });
+                        });
 					}
 				}
 				//data.name:イベント名

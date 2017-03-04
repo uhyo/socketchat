@@ -2,12 +2,12 @@
 /// <reference path="process.ts"/>
 //HTML5 additions for TypeScript lib
 interface HTMLTimeElement extends HTMLElement{
-	dateTime?:string;
+	dateTime:string;
 }
 interface HTMLOutputElement extends HTMLElement{
 	name:string;
 	value:string;
-	type:string;
+	readonly type:string;
 }
 interface HTMLElement{
 }
@@ -1135,7 +1135,7 @@ module Chat{
 						}
 						//タグを閉じる
 						if(p){
-							var elem = <HTMLElement>p;
+							let elem = <HTMLElement>p;
 							//終了タグを取り除いて、nodeの中には終了タグより右側が残る
 							node.nodeValue=node.nodeValue.slice(res[0].length);
 							elem.parentNode.insertBefore(node,p.nextSibling);

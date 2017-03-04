@@ -1,8 +1,13 @@
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 /// <reference path="connection.ts"/>
 /// <reference path="process.ts"/>
 var Chat;
@@ -1109,17 +1114,17 @@ var Chat;
                         }
                         //タグを閉じる
                         if (p) {
-                            var elem = p;
+                            var elem_1 = p;
                             //終了タグを取り除いて、nodeの中には終了タグより右側が残る
                             node.nodeValue = node.nodeValue.slice(res[0].length);
-                            elem.parentNode.insertBefore(node, p.nextSibling);
-                            if (elem.classList.contains("math")) {
+                            elem_1.parentNode.insertBefore(node, p.nextSibling);
+                            if (elem_1.classList.contains("math")) {
                                 var img = new Image();
-                                var a = elem;
-                                a.href = img.src = this.mimetexUrl + "?" + elem.textContent;
+                                var a = elem_1;
+                                a.href = img.src = this.mimetexUrl + "?" + elem_1.textContent;
                                 a.target = "_blank";
-                                elem.textContent = "";
-                                elem.appendChild(img);
+                                elem_1.textContent = "";
+                                elem_1.appendChild(img);
                             }
                         }
                         else {
@@ -1272,9 +1277,9 @@ var Chat;
                 }
             }
         };
-        ChatLineMaker.getRegularUrlGenerator = function (url) { return function (hash) { return url + hash + ".png"; }; };
         return ChatLineMaker;
     }());
+    ChatLineMaker.getRegularUrlGenerator = function (url) { return function (hash) { return url + hash + ".png"; }; };
     Chat.ChatLineMaker = ChatLineMaker;
     //チャットのユーザー一覧を表示するやつ
     var ChatUserView = (function () {
@@ -1428,29 +1433,28 @@ var Chat;
     var ChatNormalUI = (function (_super) {
         __extends(ChatNormalUI, _super);
         function ChatNormalUI(userData, receiver, process, view, dis, channel) {
-            var _this = this;
-            _super.call(this, userData, receiver, process, view);
-            this.container = document.createElement("div");
-            this.container.classList.add("ui");
+            var _this = _super.call(this, userData, receiver, process, view) || this;
+            _this.container = document.createElement("div");
+            _this.container.classList.add("ui");
             //フォーム用意
             //まず入退室フォーム
-            this.inoutForm = new ChatUICollection.InoutForm(this.userData, this.receiver);
-            this.container.appendChild(this.inoutForm.getContainer());
+            _this.inoutForm = new ChatUICollection.InoutForm(_this.userData, _this.receiver);
+            _this.container.appendChild(_this.inoutForm.getContainer());
             //次に発言フォーム
-            this.commentForm = new ChatUICollection.CommentForm(receiver, false, channel);
-            this.container.appendChild(this.commentForm.getContainer());
+            _this.commentForm = new ChatUICollection.CommentForm(receiver, false, channel);
+            _this.container.appendChild(_this.commentForm.getContainer());
             //操作に対応する
-            this.inoutForm.onInout(function (data) {
+            _this.inoutForm.onInout(function (data) {
                 _this.process.inout(data);
             });
-            this.commentForm.event.on("comment", function (data) {
+            _this.commentForm.event.on("comment", function (data) {
                 _this.process.comment(data);
             });
-            this.commentForm.event.on("changeChannel", function (channel) {
+            _this.commentForm.event.on("changeChannel", function (channel) {
                 dis.setFocusChannel(channel || null, false);
                 _this.commentForm.event.emit("afterChangeChannel", false);
             });
-            this.commentForm.event.on("afterChangeChannel", function (on) {
+            _this.commentForm.event.on("afterChangeChannel", function (on) {
                 if (on /* && this.userData.channelMode==0*/) {
                     dis.addFocusOutlaw(true);
                 }
@@ -1458,6 +1462,7 @@ var Chat;
                     dis.removeFocusOutlaw(true);
                 }
             });
+            return _this;
         }
         ChatNormalUI.prototype.getContainer = function () {
             return this.container;
@@ -1497,17 +1502,16 @@ var Chat;
             //private event:EventEmitter;
             //private container:HTMLFormElement;
             function InoutForm(userData, receiver) {
-                var _this = this;
-                _super.call(this);
-                this.userData = userData;
-                this.receiver = receiver;
-                this.container = document.createElement("form");
-                var cont = this.container;
+                var _this = _super.call(this) || this;
+                _this.userData = userData;
+                _this.receiver = receiver;
+                _this.container = document.createElement("form");
+                var cont = _this.container;
                 var p;
                 p = document.createElement("p");
-                this.container.appendChild(p);
+                _this.container.appendChild(p);
                 //まず名前フォーム
-                p.appendChild(this.makeinput(function (input) {
+                p.appendChild(_this.makeinput(function (input) {
                     input.name = "uname";
                     input.size = 20;
                     input.maxLength = 25;
@@ -1517,20 +1521,21 @@ var Chat;
                     input.value = _this.userData.name || "";
                 }));
                 //入退室ボタン
-                p.appendChild(this.makeinput(function (input) {
+                p.appendChild(_this.makeinput(function (input) {
                     input.name = "inoutbutton";
                     input.type = "submit";
                     input.value = "入室";
                 }));
                 //入退室時にフォームがかわる
-                this.receiver.on("userinfo", function (data) {
+                _this.receiver.on("userinfo", function (data) {
                     cont.elements["uname"].disabled = !data.rom;
                     cont.elements["inoutbutton"].value = data.rom ? "入室" : "退室";
                 });
-                this.container.addEventListener("submit", function (e) {
+                _this.container.addEventListener("submit", function (e) {
                     e.preventDefault();
                     _this.emitInout(e);
                 }, false);
+                return _this;
             }
             //入退室ボタンが押されたときの処理
             InoutForm.prototype.emitInout = function (e) {
@@ -1550,20 +1555,20 @@ var Chat;
         var CommentForm = (function (_super) {
             __extends(CommentForm, _super);
             function CommentForm(receiver, canselable, channel) {
-                var _this = this;
+                var _this = 
                 //canselable: キャンセルボタンがつく
-                _super.call(this);
-                this.receiver = receiver;
-                this.canselable = canselable;
-                this.flagFocusOutlaw = false;
-                this.container = document.createElement("form");
-                this.container.classList.add("commentform");
+                _super.call(this) || this;
+                _this.receiver = receiver;
+                _this.canselable = canselable;
+                _this.flagFocusOutlaw = false;
+                _this.container = document.createElement("form");
+                _this.container.classList.add("commentform");
                 var p;
                 p = document.createElement("p");
-                this.container.appendChild(p);
+                _this.container.appendChild(p);
                 var us = receiver.getUserinfo();
                 //発言欄
-                p.appendChild(this.makeinput(function (input) {
+                p.appendChild(_this.makeinput(function (input) {
                     input.name = "comment";
                     input.type = "text";
                     input.size = 60;
@@ -1575,7 +1580,7 @@ var Chat;
                 p.appendChild(document.createTextNode("#"));
                 //チャネル欄
                 var channelInput;
-                p.appendChild(this.makeinput(function (input) {
+                p.appendChild(_this.makeinput(function (input) {
                     channelInput = input;
                     input.name = "channel";
                     input.type = "text";
@@ -1598,18 +1603,18 @@ var Chat;
                     input.dataset.autocomplete = "/channels";
                 }));
                 //発言ボタン
-                p.appendChild(this.makeinput(function (input) {
+                p.appendChild(_this.makeinput(function (input) {
                     input.name = "commentbutton";
                     input.type = "submit";
                     input.value = "発言";
                     input.disabled = us.rom;
                 }));
-                this.receiver.on("userinfo", function (data) {
+                _this.receiver.on("userinfo", function (data) {
                     ["comment", "channel", "commentbutton"].forEach(function (x) {
                         _this.container.elements[x].disabled = data.rom;
                     });
                 });
-                this.container.addEventListener("submit", function (e) {
+                _this.container.addEventListener("submit", function (e) {
                     e.preventDefault();
                     _this.emitComment(e);
                     _this.emitInput();
@@ -1617,7 +1622,7 @@ var Chat;
                 }, false);
                 if (canselable) {
                     //キャンセルボタン
-                    p.appendChild(this.makeinput(function (input) {
+                    p.appendChild(_this.makeinput(function (input) {
                         input.name = "canselbutton";
                         input.type = "button";
                         input.value = "キャンセル";
@@ -1650,6 +1655,7 @@ var Chat;
                     //OK!
                     return true;
                 }
+                return _this;
             }
             //入退室ボタンが押されたときの処理
             CommentForm.prototype.emitComment = function (e) {
@@ -1705,21 +1711,21 @@ var Chat;
             //private event:EventEmitter;
             //private container:HTMLFormElement;
             function MottoForm() {
-                var _this = this;
-                _super.call(this);
-                this.container = document.createElement("form");
+                var _this = _super.call(this) || this;
+                _this.container = document.createElement("form");
                 var p;
                 p = document.createElement("p");
-                this.container.appendChild(p);
+                _this.container.appendChild(p);
                 //HottoMottoButton
-                p.appendChild(this.makeinput(function (input) {
+                p.appendChild(_this.makeinput(function (input) {
                     input.type = "submit";
                     input.value = "HottoMotto";
                 }));
-                this.container.addEventListener("submit", function (e) {
+                _this.container.addEventListener("submit", function (e) {
                     e.preventDefault();
                     _this.emitMotto(e);
                 }, false);
+                return _this;
             }
             //入退室ボタンが押されたときの処理
             MottoForm.prototype.emitMotto = function (e) {
@@ -1736,18 +1742,19 @@ var Chat;
         var Console = (function (_super) {
             __extends(Console, _super);
             function Console(userData, receiver, process, ui) {
-                _super.call(this);
-                this.userData = userData;
-                this.receiver = receiver;
-                this.process = process;
-                this.ui = ui;
-                this.commandlog = [];
-                this.commandlogindex = null;
-                this.indentSpace = "";
-                this.saves = [];
-                this.cmode = "down"; //up:新しいログ上へ、down:下へ
-                this.makeConsole();
-                this.cmdprocess = null;
+                var _this = _super.call(this) || this;
+                _this.userData = userData;
+                _this.receiver = receiver;
+                _this.process = process;
+                _this.ui = ui;
+                _this.commandlog = [];
+                _this.commandlogindex = null;
+                _this.indentSpace = "";
+                _this.saves = [];
+                _this.cmode = "down"; //up:新しいログ上へ、down:下へ
+                _this.makeConsole();
+                _this.cmdprocess = null;
+                return _this;
             }
             //コンソール初期化
             Console.prototype.makeConsole = function () {
@@ -2128,6 +2135,7 @@ var Chat;
                             }
                         }
                     }
+                    //breakしなかったら最後まで消すのだ
                 }
                 else {
                     //後ろから
@@ -2187,7 +2195,7 @@ var Chat;
             Process.prototype.parseArg = function () {
                 var reqs = [];
                 for (var _i = 0; _i < arguments.length; _i++) {
-                    reqs[_i - 0] = arguments[_i];
+                    reqs[_i] = arguments[_i];
                 }
                 var a = this.arg;
                 var result = [];
@@ -2390,7 +2398,7 @@ var Chat;
         var In = (function (_super) {
             __extends(In, _super);
             function In() {
-                _super.apply(this, arguments);
+                return _super !== null && _super.apply(this, arguments) || this;
             }
             In.prototype.run = function () {
                 var args = this.parseArg({
@@ -2445,7 +2453,7 @@ var Chat;
         var Out = (function (_super) {
             __extends(Out, _super);
             function Out() {
-                _super.apply(this, arguments);
+                return _super !== null && _super.apply(this, arguments) || this;
             }
             Out.prototype.run = function () {
                 //入室
@@ -2465,7 +2473,7 @@ var Chat;
         var Motto = (function (_super) {
             __extends(Motto, _super);
             function Motto() {
-                _super.apply(this, arguments);
+                return _super !== null && _super.apply(this, arguments) || this;
             }
             Motto.prototype.run = function () {
                 //日時
@@ -2501,7 +2509,7 @@ var Chat;
         var Volume = (function (_super) {
             __extends(Volume, _super);
             function Volume() {
-                _super.apply(this, arguments);
+                return _super !== null && _super.apply(this, arguments) || this;
             }
             Volume.prototype.run = function () {
                 var args = this.parseArg({
@@ -2531,7 +2539,7 @@ var Chat;
         var Gyoza = (function (_super) {
             __extends(Gyoza, _super);
             function Gyoza() {
-                _super.apply(this, arguments);
+                return _super !== null && _super.apply(this, arguments) || this;
             }
             Gyoza.prototype.run = function () {
                 var _this = this;
@@ -2568,7 +2576,7 @@ var Chat;
         var Set = (function (_super) {
             __extends(Set, _super);
             function Set() {
-                _super.apply(this, arguments);
+                return _super !== null && _super.apply(this, arguments) || this;
             }
             Set.prototype.run = function () {
                 var args = this.parseArg({
@@ -2619,7 +2627,7 @@ var Chat;
         var Clean = (function (_super) {
             __extends(Clean, _super);
             function Clean() {
-                _super.apply(this, arguments);
+                return _super !== null && _super.apply(this, arguments) || this;
             }
             Clean.prototype.run = function () {
                 //コンソール掃除
@@ -2632,7 +2640,7 @@ var Chat;
         var Help = (function (_super) {
             __extends(Help, _super);
             function Help() {
-                _super.apply(this, arguments);
+                return _super !== null && _super.apply(this, arguments) || this;
             }
             Help.prototype.run = function () {
                 //ヘルプメッセージ
@@ -2671,7 +2679,7 @@ var Chat;
         var Go = (function (_super) {
             __extends(Go, _super);
             function Go() {
-                _super.apply(this, arguments);
+                return _super !== null && _super.apply(this, arguments) || this;
             }
             Go.prototype.run = function () {
                 var args = this.parseArg({
@@ -2708,7 +2716,7 @@ var Chat;
         var Disip = (function (_super) {
             __extends(Disip, _super);
             function Disip() {
-                _super.apply(this, arguments);
+                return _super !== null && _super.apply(this, arguments) || this;
             }
             Disip.prototype.run = function () {
                 var _this = this;
@@ -2757,7 +2765,7 @@ var Chat;
         var Dischannel = (function (_super) {
             __extends(Dischannel, _super);
             function Dischannel() {
-                _super.apply(this, arguments);
+                return _super !== null && _super.apply(this, arguments) || this;
             }
             Dischannel.prototype.run = function () {
                 var _this = this;
@@ -2810,7 +2818,7 @@ var Chat;
         var Sl = (function (_super) {
             __extends(Sl, _super);
             function Sl() {
-                _super.apply(this, arguments);
+                return _super !== null && _super.apply(this, arguments) || this;
             }
             Sl.prototype.run = function () {
                 var sl_steam = [
@@ -2911,14 +2919,14 @@ var Chat;
     var ChatCmdUI = (function (_super) {
         __extends(ChatCmdUI, _super);
         function ChatCmdUI(userData, receiver, process, view, dis) {
-            var _this = this;
-            _super.call(this, userData, receiver, process, view);
-            this.console = new ChatUICollection.Console(userData, receiver, process, this);
-            receiver.on("userinfo", this.userinfoHandle = function (data) {
+            var _this = _super.call(this, userData, receiver, process, view) || this;
+            _this.console = new ChatUICollection.Console(userData, receiver, process, _this);
+            receiver.on("userinfo", _this.userinfoHandle = function (data) {
                 if (!data.rom && data.name) {
                     _this.console.print("Hello, " + data.name, { color: "#ffff00" });
                 }
             });
+            return _this;
         }
         ChatCmdUI.prototype.cleanup = function () {
             this.receiver.removeListener("userinfo", this.userinfoHandle);

@@ -1,8 +1,13 @@
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 /// <reference path="client.ts"/>
 var Chat;
 (function (Chat) {
@@ -10,7 +15,7 @@ var Chat;
     var LogViewerFactory = (function (_super) {
         __extends(LogViewerFactory, _super);
         function LogViewerFactory() {
-            _super.call(this, null, false, null);
+            return _super.call(this, null, false, null) || this;
         }
         LogViewerFactory.prototype.getLogViewer = function (callback) {
             var userData = this.makeUserData();
@@ -53,7 +58,7 @@ var Chat;
     var LogViewerView = (function (_super) {
         __extends(LogViewerView, _super);
         function LogViewerView(userData, connection, receiver) {
-            _super.call(this, userData, connection, receiver, null, false, null);
+            return _super.call(this, userData, connection, receiver, null, false, null) || this;
         }
         LogViewerView.prototype.initView = function (userData, connection, receiver, process, com) {
             var _this = this;
@@ -91,16 +96,15 @@ var Chat;
     var FindQueryForm = (function (_super) {
         __extends(FindQueryForm, _super);
         function FindQueryForm() {
-            var _this = this;
-            _super.call(this);
+            var _this = _super.call(this) || this;
             //private event:EventEmitter;
             //private container:HTMLFormElement;
-            this.query = null; //現在のクエリ
-            this.container = document.createElement("form");
-            this.container.appendChild(this.makeRangePart());
-            this.container.appendChild(this.makeQueryPart());
-            this.container.appendChild(this.makeOperatePart());
-            this.container.addEventListener("submit", function (e) {
+            _this.query = null; //現在のクエリ
+            _this.container = document.createElement("form");
+            _this.container.appendChild(_this.makeRangePart());
+            _this.container.appendChild(_this.makeQueryPart());
+            _this.container.appendChild(_this.makeOperatePart());
+            _this.container.addEventListener("submit", function (e) {
                 var form = e.target;
                 e.preventDefault();
                 //クエリつくる
@@ -141,6 +145,7 @@ var Chat;
                     return form.elements[name].checked;
                 }
             }, false);
+            return _this;
         }
         //ページ移動してクエリ発行
         FindQueryForm.prototype.movePage = function (inc) {
@@ -350,9 +355,10 @@ var Chat;
         __extends(FindReceiver, _super);
         //private event:EventEmitter;
         function FindReceiver(connection) {
-            _super.call(this, connection, null);
+            var _this = _super.call(this, connection, null) || this;
             //追加
-            connection.on("result", this.result.bind(this));
+            connection.on("result", _this.result.bind(_this));
+            return _this;
         }
         FindReceiver.prototype.result = function (data) {
             //ログを初期化する感じで!

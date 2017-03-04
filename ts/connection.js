@@ -1,8 +1,13 @@
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 /// <reference path="definition.ts"/>
 var Chat;
 (function (Chat) {
@@ -80,7 +85,7 @@ var Chat;
     var SocketConnection = (function (_super) {
         __extends(SocketConnection, _super);
         function SocketConnection() {
-            _super.apply(this, arguments);
+            return _super !== null && _super.apply(this, arguments) || this;
         }
         //private event:EventEmitter;
         //private connection:EventEmitter;
@@ -118,12 +123,13 @@ var Chat;
     var ChildConnection = (function (_super) {
         __extends(ChildConnection, _super);
         function ChildConnection() {
-            _super.apply(this, arguments);
+            var _this = _super !== null && _super.apply(this, arguments) || this;
             //リクエストに一意IDをつける
-            this.requestId = 0;
+            _this.requestId = 0;
             //ack（コールバックつきメッセージ）につけるID
-            this.ackId = 0;
-            this.savedAck = {};
+            _this.ackId = 0;
+            _this.savedAck = {};
+            return _this;
         }
         ChildConnection.prototype.initConnection = function (settings) {
             var _this = this;
@@ -302,7 +308,7 @@ var Chat;
             Hub.prototype.send = function () {
                 var args = [];
                 for (var _i = 0; _i < arguments.length; _i++) {
-                    args[_i - 0] = arguments[_i];
+                    args[_i] = arguments[_i];
                 }
                 this.connection.send.apply(this.connection, args);
             };
@@ -357,25 +363,24 @@ var Chat;
             Child.prototype.handleMessage = function (event, args, ackId, func_index_array) {
                 var _this = this;
                 if ("number" === typeof ackId && func_index_array) {
+                    var _loop_1 = function (i, l) {
+                        //argsに追加してあげる
+                        args.splice(func_index_array[i], 0, function () {
+                            var args = [];
+                            for (var _i = 0; _i < arguments.length; _i++) {
+                                args[_i] = arguments[_i];
+                            }
+                            _this.send("ackresponse", {
+                                ackId: ackId,
+                                funcindex: i,
+                                args: args
+                            });
+                        });
+                    };
                     //ackIdが存在する(or null)・・・コールバックあり
                     //func_array:argsから抜けた関数（コールバック用）
                     for (var i = 0, l = func_index_array.length; i < l; i++) {
-                        //argsに追加してあげる
-                        args.splice(func_index_array[i], 0, back_handle.bind(this, ackId, i));
-                    }
-                    //送り返すぞ!
-                    function back_handle(ackId, funcindex) {
-                        var args = [];
-                        for (var _i = 2; _i < arguments.length; _i++) {
-                            args[_i - 2] = arguments[_i];
-                        }
-                        //funcindex:最初の関数が0(func_index_arrayの添字)
-                        console.log("back!", ackId, funcindex, args);
-                        this.send("ackresponse", {
-                            ackId: ackId,
-                            funcindex: funcindex,
-                            args: args
-                        });
+                        _loop_1(i, l);
                     }
                 }
                 //data.name:イベント名
@@ -396,7 +401,7 @@ var Chat;
                     var handler = function () {
                         var args = [];
                         for (var _i = 0; _i < arguments.length; _i++) {
-                            args[_i - 0] = arguments[_i];
+                            args[_i] = arguments[_i];
                         }
                         _this.sendEvent(evname, requestid, args);
                     };
