@@ -219,6 +219,8 @@ var Chat;
             this.audioSettings = ["ミュート", "システム音ON", "システム音OFF"];
             //チャネルセッティング一覧
             this.channelSettings = ["欄#", "窓#"];
+            //通知設定
+            this.notificationSettings = ["通知OFF", "通知ON"];
             this.container = document.createElement("form");
             this.container.classList.add("infobar");
             //餃子ボタン生成
@@ -227,6 +229,8 @@ var Chat;
             this.container.appendChild(this.makeVolumeRange());
             //オーディオ設定ボタン
             this.container.appendChild(this.makeAudioModeButton());
+            //通知ボタン
+            this.container.appendChild(this.makeNotificationButton());
             //チャネル開き方
             this.container.appendChild(this.makeChannelModeButton());
             //仕様ボタン
@@ -305,6 +309,36 @@ var Chat;
             }, false);
             return button;
         };
+        ChatSettingView.prototype.makeNotificationButton = function () {
+            var _this = this;
+            var button = document.createElement("input");
+            var ud = this.userData;
+            button.name = "notification";
+            button.type = "button";
+            button.value = this.notificationSettings[+ud.notification];
+            button.addEventListener("click", function (e) {
+                //クリックされたら変更
+                ud.notification = !ud.notification;
+                if (ud.notification && Notification.permission !== "granted") {
+                    // ここに書くのは少し違うような気がするけどまあいいか
+                    Notification.requestPermission().then(function (status) {
+                        if (status !== "granted") {
+                            ud.notification = false;
+                            ud.save();
+                            _this.view.refreshSettings();
+                        }
+                    });
+                }
+                ud.save();
+                //ビューに変更を知らせる
+                _this.view.refreshSettings();
+            }, false);
+            if (!("Notification" in window)) {
+                // 通知がない
+                button.disabled = true;
+            }
+            return button;
+        };
         ChatSettingView.prototype.makeSiyouButton = function () {
             var _this = this;
             var button = document.createElement("input");
@@ -333,6 +367,9 @@ var Chat;
             //オーディオ設定
             var audiobutton = form.elements["audiomode"];
             audiobutton.value = this.audioSettings[ud.audioMode];
+            //通知設定
+            var notificationbutton = form.elements["notification"];
+            notificationbutton.value = this.notificationSettings[+ud.notification];
             //チャンネル
             var channelbutton = form.elements["channelmode"];
             channelbutton.value = this.channelSettings[ud.channelMode];
@@ -596,6 +633,15 @@ var Chat;
                         }
                     }
                 }
+            }
+            if (!initmode && document.hidden && this.userData.notification) {
+                // 通知を送る
+                var n = new Notification(obj.name, {
+                    body: obj.comment,
+                    lang: 'ja',
+                    timestamp: new Date(obj.time).getTime()
+                });
+                setTimeout(n.close.bind(n), 10000);
             }
         };
         ChatLogFlow.prototype.refreshSettings = function () {

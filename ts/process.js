@@ -17,6 +17,7 @@ var Chat;
                 this.volume = 50;
             this.audioMode = Number(localStorage.getItem("audioMode") || 1);
             this.channelMode = Number(localStorage.getItem("channelMode")) || 0;
+            this.notification = !!localStorage.getItem("socketchat_notification");
             //dischannel
             var disi = localStorage.getItem("disip");
             this.disip = disi ? JSON.parse(disi) : [];
@@ -39,6 +40,12 @@ var Chat;
             localStorage.setItem("volume", String(this.volume));
             localStorage.setItem("audioMode", String(this.audioMode));
             localStorage.setItem("channelMode", String(this.channelMode));
+            if (this.notification) {
+                localStorage.setItem("socketchat_notification", "true");
+            }
+            else {
+                localStorage.removeItem("socketchat_notification");
+            }
             localStorage.setItem("disip", JSON.stringify(this.disip));
             localStorage.setItem("dischannel", JSON.stringify(this.dischannel));
             localStorage.setItem("cmd", JSON.stringify(this.cmd));
