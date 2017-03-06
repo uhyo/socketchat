@@ -494,6 +494,12 @@ module Chat{
 				}
 				comForm.focus();
 			});
+            fe.on('focus', ()=>{
+                // チャットにフォーカスした
+                parent.focus();
+                window.focus();
+                this.view.focusComment(true);
+            });
 
 		}
 		getContainer():HTMLElement{
@@ -530,6 +536,10 @@ module Chat{
 		private gyozaOnmouseListener:Function;
 		private toolbox:HTMLElement;
 		private selectedLog:HTMLElement;	//現在toolboxが表示しているログ
+
+        // ページがvisibleかどうかを頑張ってトラック
+        private pageVisible: boolean;
+
 		constructor(private userData:ChatUserData,private receiver:ChatReceiver){
 			this.event=getEventEmitter();
 			this.container=document.createElement("div");
@@ -628,6 +638,17 @@ module Chat{
 				},0);
 			};
 			this.container.addEventListener("copy",clistener,false);
+
+            // ページの表示状態をトラック
+            document.addEventListener('visibilitychange', ()=>{
+                this.pageVisible = !document.hidden;
+            });
+            document.addEventListener('focus', ()=>{
+                this.pageVisible = true;
+            });
+            document.addEventListener('blur', ()=>{
+                this.pageVisible = false;
+            });
 		}
 		getContainer():HTMLElement{
 			return this.container;
@@ -661,7 +682,7 @@ module Chat{
 					}
 				}
 			}
-            if(!initmode && document.hidden && this.userData.notification){
+            if(!initmode && this.pageVisible && this.userData.notification){
                 // 通知を送る
                 const n = new Notification(obj.name, {
                     body: obj.comment,
@@ -669,8 +690,7 @@ module Chat{
                     timestamp: new Date(obj.time).getTime(),
                 });
                 n.onclick = ()=>{
-                    parent.focus();
-                    window.focus();
+                    this.event.emit('focus');
                     n.close();
                 };
             }

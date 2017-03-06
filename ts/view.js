@@ -466,6 +466,12 @@ var Chat;
                 }
                 comForm.focus();
             });
+            fe.on('focus', function () {
+                // チャットにフォーカスした
+                parent.focus();
+                window.focus();
+                _this.view.focusComment(true);
+            });
         }
         ChatLogView.prototype.getContainer = function () {
             return this.container;
@@ -601,12 +607,23 @@ var Chat;
                 }, 0);
             };
             this.container.addEventListener("copy", clistener, false);
+            // ページの表示状態をトラック
+            document.addEventListener('visibilitychange', function () {
+                _this.pageVisible = !document.hidden;
+            });
+            document.addEventListener('focus', function () {
+                _this.pageVisible = true;
+            });
+            document.addEventListener('blur', function () {
+                _this.pageVisible = false;
+            });
         }
         ChatLogFlow.prototype.getContainer = function () {
             return this.container;
         };
         //ログを一つ追加
         ChatLogFlow.prototype.getLog = function (obj, initmode) {
+            var _this = this;
             //initmode: それがログ初期化段階かどうか
             var line = this.lineMaker.make(obj);
             this.container.insertBefore(line, this.container.firstChild);
@@ -634,7 +651,7 @@ var Chat;
                     }
                 }
             }
-            if (!initmode && document.hidden && this.userData.notification) {
+            if (!initmode && this.pageVisible && this.userData.notification) {
                 // 通知を送る
                 var n_1 = new Notification(obj.name, {
                     body: obj.comment,
@@ -642,8 +659,7 @@ var Chat;
                     timestamp: new Date(obj.time).getTime()
                 });
                 n_1.onclick = function () {
-                    parent.focus();
-                    window.focus();
+                    _this.event.emit('focus');
                     n_1.close();
                 };
             }
