@@ -636,12 +636,16 @@ var Chat;
             }
             if (!initmode && document.hidden && this.userData.notification) {
                 // 通知を送る
-                var n = new Notification(obj.name, {
+                var n_1 = new Notification(obj.name, {
                     body: obj.comment,
                     lang: 'ja',
                     timestamp: new Date(obj.time).getTime()
                 });
-                setTimeout(n.close.bind(n), 10000);
+                n_1.onclick = function () {
+                    parent.focus();
+                    window.focus();
+                    n_1.close();
+                };
             }
         };
         ChatLogFlow.prototype.refreshSettings = function () {

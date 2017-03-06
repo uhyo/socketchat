@@ -668,7 +668,11 @@ module Chat{
                     lang: 'ja',
                     timestamp: new Date(obj.time).getTime(),
                 });
-                setTimeout(n.close.bind(n), 6000);
+                n.onclick = ()=>{
+                    parent.focus();
+                    window.focus();
+                    n.close();
+                };
             }
 		}
 		refreshSettings():void{
