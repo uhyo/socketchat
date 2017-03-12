@@ -103,8 +103,8 @@ app.get(/^\/([^\/]+)$/,function(req,res){
 var srv=require('http').createServer(app);
 srv.listen(settings.HTTP_PORT);
 
-var io=socketio.listen(srv);
-io.set('log level',1);
+var io=socketio(srv);
+// io.set('log level',1);
 var log, chcoll;
 //データベース使用準備
 db.open(function(err,_db){
@@ -751,7 +751,7 @@ function addSocketUser(socket,lastid){
 	if(zombie){
 		user=zombie;
 		zombie.socket=socket;
-		zombie.setIpXff(socket.handshake.address.address, socket.handshake.headers["x-forwarded-for"]);
+		zombie.setIpXff(socket.handshake.address, socket.handshake.headers["x-forwarded-for"]);
 		zombie.ua=socket.handshake.headers["user-agent"];
 		zombie_rom=zombie.rom;
 		zombie.rom=true;
@@ -762,7 +762,8 @@ function addSocketUser(socket,lastid){
 			socket.handshake.headers["user-agent"],
 			socket
 		);
-		user.setIpXff(socket.handshake.address.address, socket.handshake.headers["x-forwarded-for"]);
+        console.log('HANDSHAKE', socket.handshake);
+		user.setIpXff(socket.handshake.address, socket.handshake.headers["x-forwarded-for"]);
 	}
 	users.push(user);
 	var uob=user.getUserObj();

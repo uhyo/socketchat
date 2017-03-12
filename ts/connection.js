@@ -13,7 +13,7 @@ var Chat;
 (function (Chat) {
     //EventEmitter constructor
     function getEventEmitter() {
-        return new io.EventEmitter;
+        return new window.EventEmitter;
     }
     Chat.getEventEmitter = getEventEmitter;
     var ChatConnection = (function () {
@@ -95,7 +95,7 @@ var Chat;
             //connectionはSocket.ioのコネクション
             this.connection = io.connect(settings.SOCKET_HOST_NAME || (location.protocol + "//" + location.host));
             this.connection.once("connect", function () {
-                _this.event.emit("connect", _this.connection.socket.sessionid);
+                _this.event.emit("connect", _this.connection.id);
             });
         };
         SocketConnection.prototype.register = function (lastid, channel, mode) {
