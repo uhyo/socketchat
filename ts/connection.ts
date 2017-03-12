@@ -13,7 +13,7 @@ module Chat{
 	
 	//EventEmitter constructor
 	export function getEventEmitter():EventEmitter{
-		return new io.EventEmitter;
+		return new (window as any).EventEmitter;
 	}
 	export class ChatConnection{
 		//内部用
@@ -85,7 +85,7 @@ module Chat{
 			//connectionはSocket.ioのコネクション
 			this.connection=io.connect(settings.SOCKET_HOST_NAME||(location.protocol+"//"+location.host));
 			this.connection.once("connect",()=>{
-				this.event.emit("connect",(<any>this.connection).socket.sessionid);
+				this.event.emit("connect",(<any>this.connection).id);
 			});
 
 		}
