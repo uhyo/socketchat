@@ -762,7 +762,6 @@ function addSocketUser(socket,lastid){
 			socket.handshake.headers["user-agent"],
 			socket
 		);
-        console.log('HANDSHAKE', socket.handshake);
 		user.setIpXff(socket.handshake.address, socket.handshake.headers["x-forwarded-for"]);
 	}
 	users.push(user);

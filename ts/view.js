@@ -651,7 +651,7 @@ var Chat;
                     }
                 }
             }
-            if (!initmode && this.pageVisible && this.userData.notification) {
+            if (!initmode && !this.pageVisible && this.userData.notification) {
                 // 通知を送る
                 var n_1 = new Notification(obj.name, {
                     body: obj.comment,
