@@ -508,6 +508,8 @@ var Chat;
             var _this = this;
             this.userData = userData;
             this.receiver = receiver;
+            // ページがvisibleかどうかを頑張ってトラック
+            this.pageVisible = true;
             this.event = Chat.getEventEmitter();
             this.container = document.createElement("div");
             this.container.setAttribute('role', 'log');

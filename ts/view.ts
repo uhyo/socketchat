@@ -538,7 +538,7 @@ module Chat{
 		private selectedLog:HTMLElement;	//現在toolboxが表示しているログ
 
         // ページがvisibleかどうかを頑張ってトラック
-        private pageVisible: boolean;
+        private pageVisible: boolean = true;
 
 		constructor(private userData:ChatUserData,private receiver:ChatReceiver){
 			this.event=getEventEmitter();
