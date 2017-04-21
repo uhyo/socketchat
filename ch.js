@@ -748,22 +748,13 @@ function addSocketUser(socket,lastid){
 		socket.emit("userinfo",obj);
 		return user;
 	}
-	if(zombie){
-		user=zombie;
-		zombie.socket=socket;
-		zombie.setIpXff(socket.handshake.address, socket.handshake.headers["x-forwarded-for"]);
-		zombie.ua=socket.handshake.headers["user-agent"];
-		zombie_rom=zombie.rom;
-		zombie.rom=true;
-	}else{
-		//新規
-		user=new SocketUser(users_next,null,
-			true,
-			socket.handshake.headers["user-agent"],
-			socket
-		);
-		user.setIpXff(socket.handshake.address, socket.handshake.headers["x-forwarded-for"]);
-	}
+    //新規
+    user=new SocketUser(users_next,null,
+        true,
+        socket.handshake.headers["user-agent"],
+        socket
+    );
+    user.setIpXff(socket.handshake.address, socket.handshake.headers["x-forwarded-for"]);
 	users.push(user);
 	var uob=user.getUserObj();
 	socket.broadcast.to("useruser").emit("newuser", uob);
@@ -771,9 +762,9 @@ function addSocketUser(socket,lastid){
 		x.userinfos.push({"name":"newuser",user:uob});
 	});
 	users_next++;
-	if(zombie && !zombie_rom){
+	if(zombie && !zombie.rom){
 		//自動入室
-		zombie.inout({name:zombie.name});
+		user.inout({name:zombie.name});
 	}else{
 		//情報を送ってあげる
 		var obj={"rom":user.rom, id: user.id, name: user.name};
