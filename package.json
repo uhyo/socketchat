@@ -2,12 +2,12 @@
   "name": "socketchat",
   "version": "0.3.0",
   "dependencies": {
-    "express": "~3.0",
+    "express": "~4.16",
     "mongodb": "^2.2.24",
     "socket.io": "^1.7.4"
   },
   "engines": {
-    "node": ">=0.8"
+    "node": ">=0.10"
   },
   "devDependencies": {
     "typescript": "^2.6.2"

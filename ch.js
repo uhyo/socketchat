@@ -55,14 +55,14 @@ app.use('/css',express.static(__dirname+"/css"));
 app.use('/lib',express.static(__dirname+"/lib"));
 
 app.get(/^\/(index\.html)?$/, function(req, res){
-	res.sendfile(__dirname + '/clients/index.html');
+	res.sendFile(__dirname + '/clients/index.html');
 });
 app.get(/^\/((?:line|connection|client|firefoxapp)\.js|(sound|sound_sys1|sound_sys2|jihou)\.(mp3|wav|ogg)|manifest\.webapp)$/, function(req, res){
-	res.sendfile(__dirname + "/"+req.params[0]);
+	res.sendFile(__dirname + "/"+req.params[0]);
 });
 //for client ts
 app.get(/^\/ts\/(.+\.js)$/, function(req,res){
-	res.sendfile(__dirname + "/ts/"+req.params[0]);
+	res.sendFile(__dirname + "/ts/"+req.params[0]);
 });
 
 app.get(/^\/settings.js$/, function(req, res){
@@ -92,7 +92,7 @@ app.get(/^\/([^\/]+)$/,function(req,res){
 	var filename=__dirname+'/clients/'+req.params[0]+'.html';
 	fs.exists(filename,function(result){
 		if(result){
-			res.sendfile(__dirname + '/clients/'+req.params[0]+'.html');
+			res.sendFile(__dirname + '/clients/'+req.params[0]+'.html');
 		}else{
 			res.send(404);
 		}
