@@ -8,5 +8,11 @@
   },
   "engines": {
     "node": ">=0.8"
+  },
+  "devDependencies": {
+    "typescript": "^2.6.2"
+  },
+  "scripts": {
+    "build": "tsc"
   }
 }

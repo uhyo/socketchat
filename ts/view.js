@@ -1,3 +1,4 @@
+"use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
         ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -13,7 +14,7 @@ var __extends = (this && this.__extends) || (function () {
 var Chat;
 (function (Chat) {
     //チャット外観の全体
-    var ChatView = (function () {
+    var ChatView = /** @class */ (function () {
         //protected
         function ChatView(userData, connection, receiver, process, com, channel) {
             this.userData = userData;
@@ -139,43 +140,43 @@ var Chat;
     }());
     Chat.ChatView = ChatView;
     //リンク一覧
-    var ChatLinksView = (function () {
+    var ChatLinksView = /** @class */ (function () {
         function ChatLinksView() {
             //リンク一覧
             this.links = [
                 [
                     {
                         url: "http://shogitter.com/",
-                        name: "将棋"
+                        name: "将棋",
                     },
                     {
                         url: "http://81.la/shogiwiki/",
-                        name: "wiki"
+                        name: "wiki",
                     },
                     {
                         url: "http://81.la/cgi-bin/up/",
-                        name: "up"
+                        name: "up",
                     },
                 ], [
                     {
                         url: "/list",
-                        name: "list"
+                        name: "list",
                     },
                     {
                         url: "/log",
-                        name: "log"
+                        name: "log",
                     },
                     {
                         url: "/com",
-                        name: "com"
+                        name: "com",
                     },
                     {
                         url: "/smp",
-                        name: "SMP"
+                        name: "SMP",
                     },
                     {
                         url: "https://github.com/uhyo/socketchat/issues",
-                        name: "issues"
+                        name: "issues",
                     },
                 ],
             ];
@@ -209,7 +210,7 @@ var Chat;
     }());
     Chat.ChatLinksView = ChatLinksView;
     //設定
-    var ChatSettingView = (function () {
+    var ChatSettingView = /** @class */ (function () {
         function ChatSettingView(userData, view) {
             this.userData = userData;
             this.view = view;
@@ -378,7 +379,7 @@ var Chat;
     }());
     Chat.ChatSettingView = ChatSettingView;
     //ログ表示部分
-    var ChatLogView = (function () {
+    var ChatLogView = /** @class */ (function () {
         function ChatLogView(userData, receiver, process, view, dis) {
             var _this = this;
             this.userData = userData;
@@ -503,7 +504,7 @@ var Chat;
     }());
     Chat.ChatLogView = ChatLogView;
     //ログ表示本体
-    var ChatLogFlow = (function () {
+    var ChatLogFlow = /** @class */ (function () {
         function ChatLogFlow(userData, receiver) {
             var _this = this;
             this.userData = userData;
@@ -591,7 +592,7 @@ var Chat;
                         var df = range2.extractContents();
                         box.push({
                             range: range2,
-                            df: df
+                            df: df,
                         });
                         console.log(df);
                         //このrange2は使用済。参照を断つ
@@ -658,7 +659,7 @@ var Chat;
                 var n_1 = new Notification(obj.name, {
                     body: obj.comment,
                     lang: 'ja',
-                    timestamp: new Date(obj.time).getTime()
+                    timestamp: new Date(obj.time).getTime(),
                 });
                 n_1.onclick = function () {
                     _this.event.emit('focus');
@@ -693,7 +694,7 @@ var Chat;
                     //親のログを得る
                     var log = t.parentNode.parentNode;
                     this.receiver.find({
-                        id: log.dataset.respto
+                        id: log.dataset.respto,
                     }, function (logs) {
                         if (logs.length > 0) {
                             var l = logs[0];
@@ -765,7 +766,7 @@ var Chat;
         return ChatLogFlow;
     }());
     Chat.ChatLogFlow = ChatLogFlow;
-    var ChatLogDisManager = (function () {
+    var ChatLogDisManager = /** @class */ (function () {
         function ChatLogDisManager(userData) {
             var _this = this;
             this.userData = userData;
@@ -904,7 +905,7 @@ var Chat;
     }());
     Chat.ChatLogDisManager = ChatLogDisManager;
     //ログからDOMを生成するやつ
-    var ChatLineMaker = (function () {
+    var ChatLineMaker = /** @class */ (function () {
         function ChatLineMaker(userData) {
             this.userData = userData;
             //餃子設定
@@ -914,12 +915,12 @@ var Chat;
                     url: {
                         image: "https://gyazo.com/",
                         thumbnailUrlGenerator: function (hash) { return "https://gyazo.com/" + hash + "/raw"; },
-                        ext: false
+                        ext: false,
                     },
                     text: {
                         normal: "[Gyazo]",
                         opening: "[Gyoza…]",
-                        error: "[Gyoza?]"
+                        error: "[Gyoza?]",
                     }
                 },
                 {
@@ -927,7 +928,7 @@ var Chat;
                     url: {
                         image: "http://myazo.net/",
                         thumbnailUrlGenerator: ChatLineMaker.getRegularUrlGenerator("http://myazo.net/s/"),
-                        ext: true
+                        ext: true,
                     },
                     text: {
                         normal: "[Myazo]",
@@ -940,12 +941,12 @@ var Chat;
                     url: {
                         image: "http://g.81.la/",
                         thumbnailUrlGenerator: ChatLineMaker.getRegularUrlGenerator("http://g.81.la/thumb/"),
-                        ext: false
+                        ext: false,
                     },
                     text: {
                         normal: "[81g]",
                         opening: "[81kg…]",
-                        error: "[81kg?]"
+                        error: "[81kg?]",
                     }
                 }
             ];
@@ -1345,12 +1346,12 @@ var Chat;
                 }
             }
         };
+        ChatLineMaker.getRegularUrlGenerator = function (url) { return function (hash) { return url + hash + ".png"; }; };
         return ChatLineMaker;
     }());
-    ChatLineMaker.getRegularUrlGenerator = function (url) { return function (hash) { return url + hash + ".png"; }; };
     Chat.ChatLineMaker = ChatLineMaker;
     //チャットのユーザー一覧を表示するやつ
-    var ChatUserView = (function () {
+    var ChatUserView = /** @class */ (function () {
         function ChatUserView(receiver, view, dis) {
             this.receiver = receiver;
             this.view = view;
@@ -1473,7 +1474,7 @@ var Chat;
     }());
     Chat.ChatUserView = ChatUserView;
     //UI
-    var ChatUI = (function () {
+    var ChatUI = /** @class */ (function () {
         //protected
         function ChatUI(userData, receiver, process, view) {
             this.userData = userData;
@@ -1498,7 +1499,7 @@ var Chat;
     }());
     Chat.ChatUI = ChatUI;
     //発言などのUI部分
-    var ChatNormalUI = (function (_super) {
+    var ChatNormalUI = /** @class */ (function (_super) {
         __extends(ChatNormalUI, _super);
         function ChatNormalUI(userData, receiver, process, view, dis, channel) {
             var _this = _super.call(this, userData, receiver, process, view) || this;
@@ -1548,7 +1549,7 @@ var Chat;
     //UIパーツ
     var ChatUICollection;
     (function (ChatUICollection) {
-        var UIObject = (function () {
+        var UIObject = /** @class */ (function () {
             function UIObject() {
                 this.event = Chat.getEventEmitter();
             }
@@ -1565,7 +1566,7 @@ var Chat;
         }());
         ChatUICollection.UIObject = UIObject;
         //入退室フォーム
-        var InoutForm = (function (_super) {
+        var InoutForm = /** @class */ (function (_super) {
             __extends(InoutForm, _super);
             //private event:EventEmitter;
             //private container:HTMLFormElement;
@@ -1609,7 +1610,7 @@ var Chat;
             InoutForm.prototype.emitInout = function (e) {
                 var cont = this.container;
                 var data = {
-                    name: cont.elements["uname"].value
+                    name: cont.elements["uname"].value,
                 };
                 this.event.emit("inout", data);
             };
@@ -1620,7 +1621,7 @@ var Chat;
         }(UIObject));
         ChatUICollection.InoutForm = InoutForm;
         //入退室フォーム
-        var CommentForm = (function (_super) {
+        var CommentForm = /** @class */ (function (_super) {
             __extends(CommentForm, _super);
             function CommentForm(receiver, canselable, channel) {
                 var _this = 
@@ -1737,7 +1738,7 @@ var Chat;
                 var data = {
                     comment: form.elements["comment"].value,
                     response: null,
-                    channel: channel
+                    channel: channel,
                 };
                 this.event.emit("comment", data);
                 //フォームを消す
@@ -1774,7 +1775,7 @@ var Chat;
             return CommentForm;
         }(UIObject));
         ChatUICollection.CommentForm = CommentForm;
-        var MottoForm = (function (_super) {
+        var MottoForm = /** @class */ (function (_super) {
             __extends(MottoForm, _super);
             //private event:EventEmitter;
             //private container:HTMLFormElement;
@@ -1807,7 +1808,7 @@ var Chat;
         }(UIObject));
         ChatUICollection.MottoForm = MottoForm;
         //コマンドライン用コンソール
-        var Console = (function (_super) {
+        var Console = /** @class */ (function (_super) {
             __extends(Console, _super);
             function Console(userData, receiver, process, ui) {
                 var _this = _super.call(this) || this;
@@ -1983,7 +1984,7 @@ var Chat;
                     var data = {
                         comment: line,
                         response: null,
-                        channel: null
+                        channel: null,
                     };
                     this.process.comment(data);
                     return;
@@ -2248,7 +2249,7 @@ var Chat;
     //コマンドライン用プロセス
     var ChatCmdProcessCollection;
     (function (ChatCmdProcessCollection) {
-        var Process = (function () {
+        var Process = /** @class */ (function () {
             //protectedが欲しい事例
             function Process(ui, console, process, userData, arg) {
                 this.ui = ui;
@@ -2350,7 +2351,7 @@ var Chat;
                             result[j] = {
                                 active: true,
                                 option: false,
-                                value: normalize(word)
+                                value: normalize(word),
                             };
                             words.splice(i, 1);
                             i--, l--;
@@ -2362,7 +2363,7 @@ var Chat;
                             active: false,
                             option: true,
                             value: req.name[0],
-                            params: []
+                            params: [],
                         };
                     }
                 }
@@ -2373,7 +2374,7 @@ var Chat;
                         result[j] = {
                             active: false,
                             option: req.option,
-                            value: req.option ? req.name[0] : null
+                            value: req.option ? req.name[0] : null,
                         };
                     }
                 }
@@ -2463,22 +2464,22 @@ var Chat;
         }());
         ChatCmdProcessCollection.Process = Process;
         //コマンドの実装
-        var In = (function (_super) {
+        var In = /** @class */ (function (_super) {
             __extends(In, _super);
             function In() {
                 return _super !== null && _super.apply(this, arguments) || this;
             }
             In.prototype.run = function () {
                 var args = this.parseArg({
-                    option: false
+                    option: false,
                 }, {
                     option: true,
                     name: ["--auto"],
-                    num: 0
+                    num: 0,
                 }, {
                     option: true,
                     name: ["--noauto"],
-                    num: 0
+                    num: 0,
                 });
                 if (args[1].active) {
                     //autoin
@@ -2493,7 +2494,7 @@ var Chat;
                 }
                 //入室
                 var data = {
-                    name: null
+                    name: null,
                 };
                 if (args[0].active) {
                     //名前がある
@@ -2518,7 +2519,7 @@ var Chat;
             return In;
         }(Process));
         ChatCmdProcessCollection.In = In;
-        var Out = (function (_super) {
+        var Out = /** @class */ (function (_super) {
             __extends(Out, _super);
             function Out() {
                 return _super !== null && _super.apply(this, arguments) || this;
@@ -2526,7 +2527,7 @@ var Chat;
             Out.prototype.run = function () {
                 //入室
                 var data = {
-                    name: null
+                    name: null,
                 };
                 var result = this.process.inout(data, "out");
                 if (!result) {
@@ -2538,7 +2539,7 @@ var Chat;
             return Out;
         }(Process));
         ChatCmdProcessCollection.Out = Out;
-        var Motto = (function (_super) {
+        var Motto = /** @class */ (function (_super) {
             __extends(Motto, _super);
             function Motto() {
                 return _super !== null && _super.apply(this, arguments) || this;
@@ -2546,11 +2547,11 @@ var Chat;
             Motto.prototype.run = function () {
                 //日時
                 var args = this.parseArg({
-                    option: false
+                    option: false,
                 }, {
                     option: true,
                     name: ["--gmt", "--utc"],
-                    num: 0
+                    num: 0,
                 });
                 //リクエストを作る
                 var untiltime = null;
@@ -2574,14 +2575,14 @@ var Chat;
             return Motto;
         }(Process));
         ChatCmdProcessCollection.Motto = Motto;
-        var Volume = (function (_super) {
+        var Volume = /** @class */ (function (_super) {
             __extends(Volume, _super);
             function Volume() {
                 return _super !== null && _super.apply(this, arguments) || this;
             }
             Volume.prototype.run = function () {
                 var args = this.parseArg({
-                    option: false
+                    option: false,
                 });
                 //ボリューム変更
                 if (!args[0].active) {
@@ -2604,7 +2605,7 @@ var Chat;
             return Volume;
         }(Process));
         ChatCmdProcessCollection.Volume = Volume;
-        var Gyoza = (function (_super) {
+        var Gyoza = /** @class */ (function (_super) {
             __extends(Gyoza, _super);
             function Gyoza() {
                 return _super !== null && _super.apply(this, arguments) || this;
@@ -2612,7 +2613,7 @@ var Chat;
             Gyoza.prototype.run = function () {
                 var _this = this;
                 var args = this.parseArg({
-                    option: false
+                    option: false,
                 });
                 //餃子モード変更
                 if (args[0].active) {
@@ -2641,16 +2642,16 @@ var Chat;
             return Gyoza;
         }(Process));
         ChatCmdProcessCollection.Gyoza = Gyoza;
-        var Set = (function (_super) {
+        var Set = /** @class */ (function (_super) {
             __extends(Set, _super);
             function Set() {
                 return _super !== null && _super.apply(this, arguments) || this;
             }
             Set.prototype.run = function () {
                 var args = this.parseArg({
-                    option: false
+                    option: false,
                 }, {
-                    option: false
+                    option: false,
                 });
                 if (!args[1].active) {
                     //keyがない
@@ -2692,7 +2693,7 @@ var Chat;
             return Set;
         }(Process));
         ChatCmdProcessCollection.Set = Set;
-        var Clean = (function (_super) {
+        var Clean = /** @class */ (function (_super) {
             __extends(Clean, _super);
             function Clean() {
                 return _super !== null && _super.apply(this, arguments) || this;
@@ -2705,7 +2706,7 @@ var Chat;
             return Clean;
         }(Process));
         ChatCmdProcessCollection.Clean = Clean;
-        var Help = (function (_super) {
+        var Help = /** @class */ (function (_super) {
             __extends(Help, _super);
             function Help() {
                 return _super !== null && _super.apply(this, arguments) || this;
@@ -2744,7 +2745,7 @@ var Chat;
             return Help;
         }(Process));
         ChatCmdProcessCollection.Help = Help;
-        var Go = (function (_super) {
+        var Go = /** @class */ (function (_super) {
             __extends(Go, _super);
             function Go() {
                 return _super !== null && _super.apply(this, arguments) || this;
@@ -2781,7 +2782,7 @@ var Chat;
             return Go;
         }(Process));
         ChatCmdProcessCollection.Go = Go;
-        var Disip = (function (_super) {
+        var Disip = /** @class */ (function (_super) {
             __extends(Disip, _super);
             function Disip() {
                 return _super !== null && _super.apply(this, arguments) || this;
@@ -2789,15 +2790,15 @@ var Chat;
             Disip.prototype.run = function () {
                 var _this = this;
                 var args = this.parseArg({
-                    option: false
+                    option: false,
                 }, {
                     option: true,
                     name: ["-d"],
-                    num: 0
+                    num: 0,
                 }, {
                     option: true,
                     name: ["--clean"],
-                    num: 0
+                    num: 0,
                 });
                 var dis = this.ui.getView().dis;
                 if (args[0].active) {
@@ -2830,7 +2831,7 @@ var Chat;
             return Disip;
         }(Process));
         ChatCmdProcessCollection.Disip = Disip;
-        var Dischannel = (function (_super) {
+        var Dischannel = /** @class */ (function (_super) {
             __extends(Dischannel, _super);
             function Dischannel() {
                 return _super !== null && _super.apply(this, arguments) || this;
@@ -2838,15 +2839,15 @@ var Chat;
             Dischannel.prototype.run = function () {
                 var _this = this;
                 var args = this.parseArg({
-                    option: false
+                    option: false,
                 }, {
                     option: true,
                     name: ["-d"],
-                    num: 0
+                    num: 0,
                 }, {
                     option: true,
                     name: ["--clean"],
-                    num: 0
+                    num: 0,
                 });
                 var dis = this.ui.getView().dis;
                 if (args[0].active) {
@@ -2883,7 +2884,7 @@ var Chat;
             return Dischannel;
         }(Process));
         ChatCmdProcessCollection.Dischannel = Dischannel;
-        var Sl = (function (_super) {
+        var Sl = /** @class */ (function (_super) {
             __extends(Sl, _super);
             function Sl() {
                 return _super !== null && _super.apply(this, arguments) || this;
@@ -2984,7 +2985,7 @@ var Chat;
         ChatCmdProcessCollection.Sl = Sl;
     })(ChatCmdProcessCollection = Chat.ChatCmdProcessCollection || (Chat.ChatCmdProcessCollection = {}));
     //コマンドラインみたいなUI
-    var ChatCmdUI = (function (_super) {
+    var ChatCmdUI = /** @class */ (function (_super) {
         __extends(ChatCmdUI, _super);
         function ChatCmdUI(userData, receiver, process, view, dis) {
             var _this = _super.call(this, userData, receiver, process, view) || this;

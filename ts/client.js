@@ -1,3 +1,4 @@
+"use strict";
 /// <reference path="definition.ts"/>
 /// <reference path="connection.ts"/>
 /// <reference path="process.ts"/>
@@ -5,7 +6,7 @@
 var Chat;
 (function (Chat) {
     //枠的な?
-    var ChatClient = (function () {
+    var ChatClient = /** @class */ (function () {
         function ChatClient(userData, connection, receiver, process, view, api, channel) {
             this.userData = userData;
             this.connection = connection;
@@ -19,7 +20,7 @@ var Chat;
     }());
     Chat.ChatClient = ChatClient;
     //Factory
-    var ChatClientFactory = (function () {
+    var ChatClientFactory = /** @class */ (function () {
         //protected
         function ChatClientFactory(channel, com, connection) {
             var _this = this;
@@ -113,7 +114,7 @@ var Chat;
     }());
     Chat.ChatClientFactory = ChatClientFactory;
     //API
-    var ChatClientAPI = (function () {
+    var ChatClientAPI = /** @class */ (function () {
         function ChatClientAPI(userData, connection, receiver, process, view) {
             this.userData = userData;
             this.connection = connection;
@@ -141,7 +142,7 @@ var Chat;
         //入退室
         ChatClientAPI.prototype.inout = function (name) {
             var data = {
-                name: name
+                name: name,
             };
             this.process.inout(data);
         };
@@ -158,7 +159,7 @@ var Chat;
             var data = {
                 comment: comment,
                 response: response,
-                channel: channel
+                channel: channel,
             };
             this.process.comment(data);
         };

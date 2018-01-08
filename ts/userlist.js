@@ -1,3 +1,4 @@
+"use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
         ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -12,7 +13,7 @@ var __extends = (this && this.__extends) || (function () {
 var Chat;
 (function (Chat) {
     //userList
-    var UserListFactory = (function (_super) {
+    var UserListFactory = /** @class */ (function (_super) {
         __extends(UserListFactory, _super);
         function UserListFactory() {
             return _super.call(this, null, false, null) || this;
@@ -35,7 +36,7 @@ var Chat;
         return UserListFactory;
     }(Chat.ChatClientFactory));
     Chat.UserListFactory = UserListFactory;
-    var UserList = (function () {
+    var UserList = /** @class */ (function () {
         function UserList(userData, connection, receiver, view) {
             this.userData = userData;
             this.connection = connection;
@@ -46,7 +47,7 @@ var Chat;
     }());
     Chat.UserList = UserList;
     //ビュー
-    var UserListView = (function (_super) {
+    var UserListView = /** @class */ (function (_super) {
         __extends(UserListView, _super);
         //private userData:ChatUserData;
         //private connection:ChatConnection;

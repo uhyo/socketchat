@@ -1,10 +1,11 @@
+"use strict";
 /// <reference path="definition.ts"/>
 /// <reference path="connection.ts"/>
 var Chat;
 (function (Chat) {
     //-----------------
     //ユーザーの情報を保存するぞ!
-    var ChatUserData = (function () {
+    var ChatUserData = /** @class */ (function () {
         function ChatUserData() {
         }
         //読み込み
@@ -25,7 +26,7 @@ var Chat;
             this.dischannel = disc ? JSON.parse(disc) : [];
             var cmd = localStorage.getItem("cmd");
             this.cmd = cmd ? JSON.parse(cmd) : {
-                height: "30em", syschar: "\\"
+                height: "30em", syschar: "\\",
             };
             //autoin
             this.autoin = !!localStorage.getItem("socketchat_autoin");
@@ -60,7 +61,7 @@ var Chat;
     }());
     Chat.ChatUserData = ChatUserData;
     //チャットの動作管理をするぞ！
-    var ChatProcess = (function () {
+    var ChatProcess = /** @class */ (function () {
         //コネクション
         function ChatProcess(connection, receiver, userData, channel) {
             var _this = this;
@@ -71,7 +72,7 @@ var Chat;
             if (userData.autoin && userData.name) {
                 receiver.ready(function () {
                     _this.inout({
-                        name: userData.name
+                        name: userData.name,
                     }, "in");
                 });
             }
@@ -154,7 +155,7 @@ var Chat;
                     });
                     //初期化してあげる
                     win.postMessage({
-                        name: "init"
+                        name: "init",
                     }, "*", [channel.port2]);
                 }
             });
@@ -162,7 +163,7 @@ var Chat;
             function ping() {
                 //送る（反応あったら受付開始したとわかる）
                 win.postMessage({
-                    name: "ping"
+                    name: "ping",
                 }, "*");
                 //次のpingを用意
                 timerid = setTimeout(ping, wait);

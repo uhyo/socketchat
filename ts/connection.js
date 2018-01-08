@@ -1,3 +1,4 @@
+"use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
         ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -16,7 +17,7 @@ var Chat;
         return new window.EventEmitter;
     }
     Chat.getEventEmitter = getEventEmitter;
-    var ChatConnection = (function () {
+    var ChatConnection = /** @class */ (function () {
         function ChatConnection() {
             this.event = getEventEmitter();
         }
@@ -82,7 +83,7 @@ var Chat;
     }());
     Chat.ChatConnection = ChatConnection;
     //Socket.ioを用いたコネクション
-    var SocketConnection = (function (_super) {
+    var SocketConnection = /** @class */ (function (_super) {
         __extends(SocketConnection, _super);
         function SocketConnection() {
             return _super !== null && _super.apply(this, arguments) || this;
@@ -120,7 +121,7 @@ var Chat;
     }(ChatConnection));
     Chat.SocketConnection = SocketConnection;
     //親ウィンドウに寄生しているコネクション（チャネルウィンドウ用）
-    var ChildConnection = (function (_super) {
+    var ChildConnection = /** @class */ (function (_super) {
         __extends(ChildConnection, _super);
         function ChildConnection() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -148,7 +149,7 @@ var Chat;
                     _this.initPort(_this.port);
                     //準備ができたので伝える
                     _this.port.postMessage({
-                        name: "ready"
+                        name: "ready",
                     });
                     _this.event.emit("connect", null);
                 }
@@ -161,7 +162,7 @@ var Chat;
             //終了時は親に教える
             window.addEventListener("unload", function (ev) {
                 _this.port.postMessage({
-                    name: "unload"
+                    name: "unload",
                 });
             }, false);
         };
@@ -177,7 +178,7 @@ var Chat;
                     //func_arrayに覚えておく
                     func_array.push({
                         index: func_number + i,
-                        func: args[i]
+                        func: args[i],
                     });
                     //func_index_arrayで関数の位置を教えてあげる
                     func_index_array.push(func_number + i);
@@ -191,21 +192,21 @@ var Chat;
                 this.savedAck[this.ackId] = {
                     ackId: this.ackId,
                     func_number: func_number,
-                    func_array: func_array
+                    func_array: func_array,
                 };
                 //ここからかいてね!
                 this.port.postMessage({
                     name: event,
                     args: args,
                     ackId: this.ackId,
-                    func_index_array: func_index_array
+                    func_index_array: func_index_array,
                 });
                 this.ackId++;
             }
             else {
                 this.port.postMessage({
                     name: event,
-                    args: args
+                    args: args,
                 });
             }
         };
@@ -279,7 +280,7 @@ var Chat;
     var ChatHub;
     (function (ChatHub) {
         //ハブ（自分から派生した子ウィンドウに送ってあげる）
-        var Hub = (function () {
+        var Hub = /** @class */ (function () {
             function Hub(receiver, connection) {
                 this.receiver = receiver;
                 this.connection = connection;
@@ -320,7 +321,7 @@ var Chat;
         }());
         ChatHub.Hub = Hub;
         //ハブでつながった子ども
-        var Child = (function () {
+        var Child = /** @class */ (function () {
             //hub:親のハブ
             //port:この子どもに送るためのMessagePort
             function Child(hub, port, closecallback) {
@@ -373,7 +374,7 @@ var Chat;
                             _this.send("ackresponse", {
                                 ackId: ackId,
                                 funcindex: i,
-                                args: args
+                                args: args,
                             });
                         });
                     };
@@ -436,7 +437,7 @@ var Chat;
                 }
                 this.port.postMessage({
                     name: event,
-                    args: args
+                    args: args,
                 });
             };
             //イベント発生を通知する
@@ -444,7 +445,7 @@ var Chat;
                 this.send("handle", {
                     args: args,
                     event: event,
-                    requestid: requestid
+                    requestid: requestid,
                 });
             };
             return Child;
@@ -452,7 +453,7 @@ var Chat;
         ChatHub.Child = Child;
     })(ChatHub = Chat.ChatHub || (Chat.ChatHub = {}));
     // サーバーから情報を受け取るぞ!
-    var ChatReceiver = (function () {
+    var ChatReceiver = /** @class */ (function () {
         //protected
         function ChatReceiver(connection, channel) {
             this.connection = connection;
@@ -487,7 +488,7 @@ var Chat;
                 data.time = this.oldest_time;
             }
             var query = {
-                motto: data
+                motto: data,
             };
             if (this.channel) {
                 //チャネルをaddする
@@ -562,7 +563,7 @@ var Chat;
         ChatReceiver.prototype.getUserinfo = function () {
             return this.myUserinfo || {
                 name: null,
-                rom: true
+                rom: true,
             };
         };
         //誰かきた

@@ -1,3 +1,4 @@
+"use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
         ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -12,7 +13,7 @@ var __extends = (this && this.__extends) || (function () {
 var Chat;
 (function (Chat) {
     //userList
-    var LogViewerFactory = (function (_super) {
+    var LogViewerFactory = /** @class */ (function (_super) {
         __extends(LogViewerFactory, _super);
         function LogViewerFactory() {
             return _super.call(this, null, false, null) || this;
@@ -44,7 +45,7 @@ var Chat;
         return LogViewerFactory;
     }(Chat.ChatClientFactory));
     Chat.LogViewerFactory = LogViewerFactory;
-    var LogViewer = (function () {
+    var LogViewer = /** @class */ (function () {
         function LogViewer(userData, connection, receiver, view) {
             this.userData = userData;
             this.connection = connection;
@@ -55,7 +56,7 @@ var Chat;
     }());
     Chat.LogViewer = LogViewer;
     //ビュー
-    var LogViewerView = (function (_super) {
+    var LogViewerView = /** @class */ (function (_super) {
         __extends(LogViewerView, _super);
         function LogViewerView(userData, connection, receiver) {
             return _super.call(this, userData, connection, receiver, null, false, null) || this;
@@ -93,7 +94,7 @@ var Chat;
     }(Chat.ChatView));
     Chat.LogViewerView = LogViewerView;
     //検索条件フォーム
-    var FindQueryForm = (function (_super) {
+    var FindQueryForm = /** @class */ (function (_super) {
         __extends(FindQueryForm, _super);
         function FindQueryForm() {
             var _this = _super.call(this) || this;
@@ -351,7 +352,7 @@ var Chat;
     }(Chat.ChatUICollection.UIObject));
     Chat.FindQueryForm = FindQueryForm;
     //拡張Receiver（resultをうけとれる）
-    var FindReceiver = (function (_super) {
+    var FindReceiver = /** @class */ (function (_super) {
         __extends(FindReceiver, _super);
         //private event:EventEmitter;
         function FindReceiver(connection) {

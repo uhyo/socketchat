@@ -9,9 +9,6 @@ interface HTMLOutputElement extends HTMLElement{
 	value:string;
 	readonly type:string;
 }
-interface Notification{
-    readonly permission: string;
-}
 interface NotificationOptions{
     timestamp: number;
 }

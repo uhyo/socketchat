@@ -1,3 +1,4 @@
+"use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
         ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -13,7 +14,7 @@ var Chat;
 (function (Chat) {
     var ChatUICollection;
     (function (ChatUICollection) {
-        var SwitchViewForm = (function (_super) {
+        var SwitchViewForm = /** @class */ (function (_super) {
             __extends(SwitchViewForm, _super);
             //public event:EventEmitter;
             //private container:HTMLFormElement;
@@ -76,7 +77,7 @@ var Chat;
         }(ChatUICollection.UIObject));
         ChatUICollection.SwitchViewForm = SwitchViewForm;
     })(ChatUICollection = Chat.ChatUICollection || (Chat.ChatUICollection = {}));
-    var ChatSmpView = (function (_super) {
+    var ChatSmpView = /** @class */ (function (_super) {
         __extends(ChatSmpView, _super);
         function ChatSmpView(userData, connection, receiver, process) {
             var _this = _super.call(this, userData, connection, receiver, process, false, null) || this;
@@ -89,7 +90,7 @@ var Chat;
                 "": [_this.logView.getContainer(), _this.ui.getContainer(), _this.motto.getContainer()],
                 "setting": [_this.settingView.getContainer()],
                 "userlist": [_this.userView.getContainer()],
-                "others": [_this.linksView.getContainer()]
+                "others": [_this.linksView.getContainer()],
             };
             ev.on("open", function (w) {
                 for (var key in elss) {
@@ -113,7 +114,7 @@ var Chat;
         return ChatSmpView;
     }(Chat.ChatView));
     Chat.ChatSmpView = ChatSmpView;
-    var SmpClientFactory = (function (_super) {
+    var SmpClientFactory = /** @class */ (function (_super) {
         __extends(SmpClientFactory, _super);
         function SmpClientFactory(channel, connection) {
             return _super.call(this, channel, false, connection) || this;
