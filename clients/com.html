@@ -15,7 +15,7 @@
     <script>
 //チャネル判定
 var result=location.hash.match(/^#(.+)$/);
-channel= result ? result[1] : null;
+channel= result ? decodeURIComponent(result[1]) : null;
 //Global!!
 var factory = new Chat.ChatClientFactory(channel,true,"socket");
 factory.getChat();
