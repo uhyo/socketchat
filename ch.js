@@ -39,10 +39,6 @@ for(var i in exports){
 }
 
 
-var mongoserver = new mongodb.Server(settings.DB_SERVER,settings.DB_PORT,{});
-var db = new mongodb.Db(settings.DB_NAME,mongoserver,{});
-
-
 //var app = require('express').createServer();
 var express=require('express');
 var app=express();
@@ -106,32 +102,39 @@ srv.listen(settings.HTTP_PORT);
 var io=socketio(srv);
 // io.set('log level',1);
 var log, chcoll;
+
 //データベース使用準備
-db.open(function(err,_db){
-	if(err){
-		console.log("DB Open err: "+err);
-		throw err;
-	}
-	db.authenticate(settings.DB_USER, settings.DB_PASS, function(err){
-		if(err){
-			console.log("DB Auth err: "+err);
-			throw err;
-		}
-		db.collection("log",function(err,collection){
-			log=collection;
-			db.collection("channel",function(err,collection){
-				chcoll=collection;
-				var syslog={"name" : "■起動通知",
-					"time":new Date(),
-				"ip":"127.0.0.1",
-				"comment":"「サーバー」さんが起動",
-				"syslog":true
-				};
-				makelog({"type":"system"},syslog);
-			});
-		});
-	});
+mongodb.MongoClient.connect(
+    'mongodb://'
+    + settings.DB_USER
+    + '@'
+    + settings.DB_SERVER
+    + ':'
+    + settings.DB_PORT
+    + '/'
+    + settings.DB_NAME,
+    {},
+)
+.then(function(db){
+    db.collection("log",function(err,collection){
+        log=collection;
+        db.collection("channel",function(err,collection){
+            chcoll=collection;
+            var syslog={"name" : "■起動通知",
+                "time":new Date(),
+            "ip":"127.0.0.1",
+            "comment":"「サーバー」さんが起動",
+            "syslog":true
+            };
+            makelog({"type":"system"},syslog);
+        });
+    });
+})
+.catch(function(err){
+    console.error(err);
+    process.exit(1);
 });
+
 var users=[],users_next=1;
 var dead=[];	//棺桶
 
