@@ -106,16 +106,18 @@ var log, chcoll;
 //データベース使用準備
 mongodb.MongoClient.connect(
     'mongodb://'
-    + settings.DB_USER
+    + encodeURIComponent(settings.DB_USER)
     + '@'
-    + settings.DB_SERVER
+    + encodeURIComponent(settings.DB_SERVER)
     + ':'
-    + settings.DB_PORT
+    + encodeURIComponent(settings.DB_PORT)
     + '/'
     + settings.DB_NAME,
     {},
 )
-.then(function(db){
+.then(function(client){
+    var db = client.db(settings.DB_NAME);
+
     db.collection("log",function(err,collection){
         log=collection;
         db.collection("channel",function(err,collection){

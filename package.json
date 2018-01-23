@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "dependencies": {
     "express": "~4.16",
-    "mongodb": "^2.2.24",
+    "mongodb": "^3.0.1",
     "socket.io": "^2.0.4"
   },
   "engines": {
