@@ -94,7 +94,7 @@ app.get(/^\/([^\/]+)$/,function(req,res){
 		if(result){
 			res.sendFile(__dirname + '/clients/'+req.params[0]+'.html');
 		}else{
-			res.send(404);
+			res.sendStatus(404);
 		}
 	});
 });
