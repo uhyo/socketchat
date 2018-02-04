@@ -939,8 +939,8 @@ var Chat;
                 {
                     thumb: true,
                     url: {
-                        image: "http://g.81.la/",
-                        thumbnailUrlGenerator: ChatLineMaker.getRegularUrlGenerator("http://g.81.la/thumb/"),
+                        image: "https://g.81.la/",
+                        thumbnailUrlGenerator: ChatLineMaker.getRegularUrlGenerator("https://g.81.la/thumb/"),
                         ext: false,
                     },
                     text: {
@@ -950,7 +950,7 @@ var Chat;
                     }
                 }
             ];
-            this.mimetexUrl = "http://81.la/cgi-bin/mimetex.cgi";
+            this.mimetexUrl = "https://81.la/cgi-bin/mimetex.cgi";
         }
         ChatLineMaker.prototype.make = function (obj) {
             var _this = this;

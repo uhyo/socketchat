@@ -964,8 +964,8 @@ module Chat{
 			{
 				thumb: true,
 				url: {
-					image: "http://g.81.la/",
-					thumbnailUrlGenerator: ChatLineMaker.getRegularUrlGenerator("http://g.81.la/thumb/"),
+					image: "https://g.81.la/",
+					thumbnailUrlGenerator: ChatLineMaker.getRegularUrlGenerator("https://g.81.la/thumb/"),
 					ext: false,
 				},
 				text: {
@@ -976,7 +976,7 @@ module Chat{
 			}
 		];
 		private static getRegularUrlGenerator = (url)=>(hash)=>url+hash+".png";
-		private mimetexUrl = "http://81.la/cgi-bin/mimetex.cgi";
+		private mimetexUrl = "https://81.la/cgi-bin/mimetex.cgi";
 		constructor(private userData:ChatUserData){
 		}
 		make(obj:LogObj):HTMLParagraphElement{
