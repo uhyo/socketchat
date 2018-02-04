@@ -921,7 +921,7 @@ module Chat{
 	export interface GyazoSettingObject{
 		thumb:boolean;  //サムネイル機能ありかどうか
 		url:{
-			image:string;	//画像のURL（あとにid付加）
+			host:string;	//gyazoサーバーのホスト
 			thumbnailUrlGenerator:(string)=>string;	//サムネイルURL生成関数
 			ext:boolean;	//?
 		};
@@ -938,7 +938,7 @@ module Chat{
 			{
 				thumb: true,
 				url: {
-					image: "https://gyazo.com/",
+					host: "gyazo.com",
 					thumbnailUrlGenerator: (hash)=>"https://gyazo.com/"+hash+"/raw",
 					ext: false,
 				},
@@ -951,7 +951,7 @@ module Chat{
 			{
 				thumb: false,
 				url: {
-					image: "http://myazo.net/",
+					host: "myazo.net",
 					thumbnailUrlGenerator: ChatLineMaker.getRegularUrlGenerator("http://myazo.net/s/"),
 					ext:true,
 				},
@@ -964,7 +964,7 @@ module Chat{
 			{
 				thumb: true,
 				url: {
-					image: "https://g.81.la/",
+					host: "g.81.la",
 					thumbnailUrlGenerator: ChatLineMaker.getRegularUrlGenerator("https://g.81.la/thumb/"),
 					ext: false,
 				},
@@ -1224,19 +1224,19 @@ module Chat{
 						continue;
 					}
 					//リンク
-					res=node.nodeValue.match(/^https?:\/\/\S+/);
+					res=node.nodeValue.match(/^(https?:\/\/)(\S+)/);
 					if(res){
 						var matched=false;
 						//URLがgyazo系かどうか調べる
 						for(var i=0,l=this.gyazoSetting.length;i<l;i++){
 							var settingObj:GyazoSettingObject=this.gyazoSetting[i];
-							var res2=res[0].match(new RegExp("^"+settingObj.url.image.replace(".","\\.")+"([0-9a-f]{32})(?:\\.png)?"));
+							var res2=res[2].match(new RegExp("^"+settingObj.url.host.replace(".","\\.")+"\/([0-9a-f]{32})(?:\\.png)?"));
 							if(!res2) continue;
 
 							//Gyazo
 							var a=<HTMLAnchorElement>document.createElement("a");
 							a.target="_blank";
-							a.href=settingObj.url.image+res2[1]+(settingObj.url.ext?".png":"");
+							a.href= res[1] + settingObj.url.host+"/"+res2[1]+(settingObj.url.ext?".png":"");
 							a.classList.add("gyoza");
 							if(settingObj.thumb && this.userData.gyoza===2){
 								//餃子常時展開
@@ -1245,7 +1245,7 @@ module Chat{
 								a.textContent=settingObj.text.normal;
 							}
 							//これは処理終了
-							node=node.splitText(res2[0].length);
+							node=node.splitText(res[1].length+res2[0].length);
 							//node.previousSiblingは、 splitTextで切断されたurl部分のテキストノード
 							node.parentNode.replaceChild(a,node.previousSibling);
 							matched=true;
@@ -1346,7 +1346,7 @@ module Chat{
 				a.removeChild(img);
 			},false);
 			img.src=settingObj.url.thumbnailUrlGenerator(imageid);
-			img.alt=settingObj.url.image+imageid+".png";
+			img.alt=imageid+".png";
 			//開いた印
 			a.classList.add("gyozaloaded");
 		}
@@ -1355,7 +1355,7 @@ module Chat{
 			for(var i=0,l=this.gyazoSetting.length;i<l;i++){
 				var settingObj=this.gyazoSetting[i];
 				if(!settingObj.thumb)continue;
-				var result=a.href.match(new RegExp("^"+settingObj.url.image.replace(".","\\.")+"([0-9a-f]{32})(?:\\.png)?$"));
+				var result=a.href.match(new RegExp("^https?://"+settingObj.url.host.replace(".","\\.")+"/([0-9a-f]{32})(?:\\.png)?$"));
 				if(result){
 					//これだ!
 					this.openGyoza(settingObj,a,result[1]);
