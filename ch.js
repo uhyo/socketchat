@@ -49,6 +49,8 @@ app.use('/fonts',express.static(__dirname+"/fonts"));
 app.use('/css',express.static(__dirname+"/css"));
 //library
 app.use('/lib',express.static(__dirname+"/lib"));
+//images
+app.use('/images',express.static(__dirname+"/images"));
 
 app.get(/^\/(index\.html)?$/, function(req, res){
 	res.sendFile(__dirname + '/clients/index.html');
@@ -59,6 +61,13 @@ app.get(/^\/((?:line|connection|client|firefoxapp)\.js|(sound|sound_sys1|sound_s
 //for client ts
 app.get(/^\/ts\/(.+\.js)$/, function(req,res){
 	res.sendFile(__dirname + "/ts/"+req.params[0]);
+});
+// service worker
+app.get(/^\/sw\.js$/, function(req,res){
+    res.sendFile(__dirname + "/sw.js");
+});
+app.get(/^\/manifest\.json$/, function(req,res){
+    res.sendFile(__dirname + "/manifest.json");
 });
 
 app.get(/^\/settings.js$/, function(req, res){

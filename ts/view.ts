@@ -157,7 +157,8 @@ module Chat{
 ・発言クリックで右に出る矢印について\n\
 　緑クリックで下に枠が出るのでそこに入力して発言すると返信になる\n\
 　灰色クリックで矢印を消す\n\
-");
+\n\
+License: Icon by fontawesome https://fontawesome.com/license");
 		}
 		//強制的にコンソールを開く
 		openConsole():void{
