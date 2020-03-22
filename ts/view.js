@@ -1430,6 +1430,9 @@ var Chat;
             li.dataset.id = String(user.id);
             li.dataset.ip = user.ip;
             li.appendChild(sp);
+            // emojify unicode to image (only if twemoji is declared in global)
+            if (typeof twemoji !== "undefined")
+                twemoji.parse(li);
             this.userList.appendChild(li);
         };
         //誰かがお亡くなりに
