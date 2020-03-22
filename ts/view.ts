@@ -1,5 +1,6 @@
 /// <reference path="connection.ts"/>
 /// <reference path="process.ts"/>
+
 //HTML5 additions for TypeScript lib
 interface HTMLTimeElement extends HTMLElement{
 	dateTime:string;
@@ -39,6 +40,9 @@ interface Document extends XPathEvaluator{}
 declare class AutoComplete{
 	constructor(obj: any, obj2: any);
 }
+
+// dirty ambient declaration
+declare var twemoji: { parse: Function } | undefined;
 
 module Chat{
 
@@ -1079,6 +1083,9 @@ module Chat{
 				}));
 				main.style.color=color;
 			}));
+
+			// emojify unicode to image (only if twemoji is declared in global)
+			if (typeof twemoji !== "undefined") twemoji.parse(p);
 
 			return p;
 

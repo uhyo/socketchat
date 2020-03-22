@@ -1,4 +1,6 @@
 "use strict";
+/// <reference path="connection.ts"/>
+/// <reference path="process.ts"/>
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
         ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -9,8 +11,6 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-/// <reference path="connection.ts"/>
-/// <reference path="process.ts"/>
 var Chat;
 (function (Chat) {
     //チャット外観の全体
@@ -1052,6 +1052,9 @@ var Chat;
                 }));
                 main.style.color = color;
             }));
+            // emojify unicode to image (only if twemoji is declared in global)
+            if (typeof twemoji !== "undefined")
+                twemoji.parse(p);
             return p;
             //補助：中身をきめて作る
             function el(name, content) {
