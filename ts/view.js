@@ -679,6 +679,9 @@ var Chat;
         ChatLogFlow.prototype.clickHandler = function (e) {
             var _this = this;
             var t = e.target;
+            // if emojified, target element is its parent
+            if (t.tagName === "IMG" && t.classList.contains("emoji"))
+                t = t.parentElement;
             var cl = t.classList;
             if (cl.contains("channel") && t.dataset.channel) {
                 //チャンネルだ

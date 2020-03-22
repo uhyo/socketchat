@@ -707,6 +707,8 @@ module Chat{
 		}
 		clickHandler(e:Event):void{
 			var t=<HTMLElement>e.target;
+			// if emojified, target element is its parent
+			if(t.tagName==="IMG"&&t.classList.contains("emoji")) t=t.parentElement;
 			var cl=t.classList;
 			if(cl.contains("channel") && t.dataset.channel){
 				//チャンネルだ
