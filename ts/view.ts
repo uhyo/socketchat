@@ -1,5 +1,6 @@
 /// <reference path="connection.ts"/>
 /// <reference path="process.ts"/>
+
 //HTML5 additions for TypeScript lib
 interface HTMLTimeElement extends HTMLElement{
 	dateTime:string;
@@ -39,6 +40,9 @@ interface Document extends XPathEvaluator{}
 declare class AutoComplete{
 	constructor(obj: any, obj2: any);
 }
+
+// dirty ambient declaration
+declare var twemoji: { parse: Function } | undefined;
 
 module Chat{
 
@@ -703,6 +707,8 @@ module Chat{
 		}
 		clickHandler(e:Event):void{
 			var t=<HTMLElement>e.target;
+			// if emojified, target element is its parent
+			if(t.tagName==="IMG"&&t.classList.contains("emoji")) t=t.parentElement;
 			var cl=t.classList;
 			if(cl.contains("channel") && t.dataset.channel){
 				//チャンネルだ
@@ -1080,6 +1086,9 @@ module Chat{
 				main.style.color=color;
 			}));
 
+			// emojify unicode to image (only if twemoji is declared in global)
+			if(typeof twemoji!=="undefined") twemoji.parse(p);
+
 			return p;
 
 			//補助：中身をきめて作る
@@ -1394,7 +1403,10 @@ module Chat{
 		}
 		clickHandler(e:Event):void{
 			//ユーザー一覧をクリック
-			var t=<HTMLElement>(<HTMLElement>e.target).parentNode;
+			var t=<HTMLElement>e.target;
+			// if emojified, target element is its parent of parent
+			if(t.tagName==="IMG"&&t.classList.contains("emoji")) t=t.parentElement.parentElement;
+			else t=t.parentElement;
 			if(/li/i.test(t.tagName) && t.dataset.ip){
 				if(!this.dis.addDisip(t.dataset.ip)){
 					//既にあった=消す
@@ -1440,6 +1452,8 @@ module Chat{
 			li.dataset.id=String(user.id);
 			li.dataset.ip=user.ip;
 			li.appendChild(sp);
+			// emojify unicode to image (only if twemoji is declared in global)
+			if (typeof twemoji!=="undefined") twemoji.parse(li);
 			this.userList.appendChild(li);
 		}
 		//誰かがお亡くなりに

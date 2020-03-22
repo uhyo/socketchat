@@ -1,4 +1,6 @@
 "use strict";
+/// <reference path="connection.ts"/>
+/// <reference path="process.ts"/>
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
         ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -9,8 +11,6 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-/// <reference path="connection.ts"/>
-/// <reference path="process.ts"/>
 var Chat;
 (function (Chat) {
     //チャット外観の全体
@@ -679,6 +679,9 @@ var Chat;
         ChatLogFlow.prototype.clickHandler = function (e) {
             var _this = this;
             var t = e.target;
+            // if emojified, target element is its parent
+            if (t.tagName === "IMG" && t.classList.contains("emoji"))
+                t = t.parentElement;
             var cl = t.classList;
             if (cl.contains("channel") && t.dataset.channel) {
                 //チャンネルだ
@@ -1052,6 +1055,9 @@ var Chat;
                 }));
                 main.style.color = color;
             }));
+            // emojify unicode to image (only if twemoji is declared in global)
+            if (typeof twemoji !== "undefined")
+                twemoji.parse(p);
             return p;
             //補助：中身をきめて作る
             function el(name, content) {
@@ -1381,7 +1387,12 @@ var Chat;
         };
         ChatUserView.prototype.clickHandler = function (e) {
             //ユーザー一覧をクリック
-            var t = e.target.parentNode;
+            var t = e.target;
+            // if emojified, target element is its parent of parent
+            if (t.tagName === "IMG" && t.classList.contains("emoji"))
+                t = t.parentElement.parentElement;
+            else
+                t = t.parentElement;
             if (/li/i.test(t.tagName) && t.dataset.ip) {
                 if (!this.dis.addDisip(t.dataset.ip)) {
                     //既にあった=消す
@@ -1427,6 +1438,9 @@ var Chat;
             li.dataset.id = String(user.id);
             li.dataset.ip = user.ip;
             li.appendChild(sp);
+            // emojify unicode to image (only if twemoji is declared in global)
+            if (typeof twemoji !== "undefined")
+                twemoji.parse(li);
             this.userList.appendChild(li);
         };
         //誰かがお亡くなりに

@@ -117,6 +117,9 @@ var Chat;
                 else {
                     td.textContent = user.name;
                 }
+                // emojify unicode to image (only if twemoji is declared in global)
+                if (typeof twemoji !== "undefined")
+                    twemoji.parse(td);
             }
         };
         //問題の行
