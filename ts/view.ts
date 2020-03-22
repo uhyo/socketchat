@@ -1085,7 +1085,7 @@ module Chat{
 			}));
 
 			// emojify unicode to image (only if twemoji is declared in global)
-			if (typeof twemoji !== "undefined") twemoji.parse(p);
+			if(typeof twemoji!=="undefined") twemoji.parse(p);
 
 			return p;
 

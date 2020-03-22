@@ -1,4 +1,6 @@
 /// <reference path="client.ts"/>
+// dirty ambient declaration
+declare var twemoji: { parse: Function } | undefined;
 module Chat{
 	//userList
 	export class UserListFactory extends ChatClientFactory{
@@ -96,6 +98,8 @@ module Chat{
 				}else{
 					td.textContent=user.name;
 				}
+				// emojify unicode to image (only if twemoji is declared in global)
+				if(typeof twemoji!=="undefined") twemoji.parse(td);
 			}
 		}
 		//問題の行
