@@ -1387,7 +1387,12 @@ var Chat;
         };
         ChatUserView.prototype.clickHandler = function (e) {
             //ユーザー一覧をクリック
-            var t = e.target.parentNode;
+            var t = e.target;
+            // if emojified, target element is its parent of parent
+            if (t.tagName === "IMG" && t.classList.contains("emoji"))
+                t = t.parentElement.parentElement;
+            else
+                t = t.parentElement;
             if (/li/i.test(t.tagName) && t.dataset.ip) {
                 if (!this.dis.addDisip(t.dataset.ip)) {
                     //既にあった=消す
