@@ -107,6 +107,7 @@ var log, chcoll;
 mongodb.MongoClient.connect(
     'mongodb://'
     + encodeURIComponent(settings.DB_USER)
+    + (settings.DB_PASS ? ":" + encodeURIComponent(settings.DB_PASS) : "")
     + '@'
     + encodeURIComponent(settings.DB_SERVER)
     + ':'
