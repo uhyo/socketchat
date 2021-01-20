@@ -4,7 +4,7 @@
   "dependencies": {
     "express": "~4.16",
     "mongodb": "^3.0.1",
-    "socket.io": "^2.0.4"
+    "socket.io": "^2.4.0"
   },
   "engines": {
     "node": ">=0.10"
