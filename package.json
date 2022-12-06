@@ -2,7 +2,7 @@
   "name": "socketchat",
   "version": "0.3.0",
   "dependencies": {
-    "express": "~4.16",
+    "express": "~4.18",
     "mongodb": "^3.0.1",
     "socket.io": "^2.0.4"
   },
